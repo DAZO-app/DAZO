@@ -1,2 +1,2 @@
-# dazo
+# DAZO
 Decision At Zero Objection
