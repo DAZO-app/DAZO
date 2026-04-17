@@ -36,4 +36,24 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_active' => 'boolean',
         ];
     }
+
+    public function notifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Notification::class);
+    }
+
+    /**
+     * Compatibility accessors for views using first_name/last_name
+     */
+    public function getFirstNameAttribute(): string
+    {
+        return explode(' ', $this->name)[0] ?? $this->name;
+    }
+
+    public function getLastNameAttribute(): string
+    {
+        $parts = explode(' ', $this->name);
+        return count($parts) > 1 ? end($parts) : '';
+    }
 }
+

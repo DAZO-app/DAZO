@@ -26,45 +26,38 @@ class DecisionFlowTest extends TestCase
         $animator = User::factory()->create();
         $member = User::factory()->create();
 
-        $circle = Circle::create([
+        $circle = Circle::factory()->create([
             'name' => 'Collectif Produit',
-            'type' => 'open',
         ]);
 
         $circle->members()->createMany([
-            ['user_id' => $author->id, 'role' => CircleMemberRole::ANIMATOR->value],
-            ['user_id' => $animator->id, 'role' => CircleMemberRole::ANIMATOR->value],
-            ['user_id' => $member->id, 'role' => CircleMemberRole::MEMBER->value],
+            ['user_id' => $author->id, 'role' => CircleMemberRole::ANIMATOR],
+            ['user_id' => $animator->id, 'role' => CircleMemberRole::ANIMATOR],
+            ['user_id' => $member->id, 'role' => CircleMemberRole::MEMBER],
         ]);
 
-        $decision = Decision::create([
+        $decision = Decision::factory()->create([
             'circle_id' => $circle->id,
             'title' => 'Adopter une nouvelle charte',
-            'status' => DecisionStatus::OBJECTION->value,
-            'visibility' => 'public',
-            'priority' => 0,
-            'emergency_mode' => false,
+            'status' => DecisionStatus::OBJECTION,
         ]);
 
-        $version = DecisionVersion::create([
+        $version = DecisionVersion::factory()->create([
             'decision_id' => $decision->id,
             'author_id' => $author->id,
-            'version_number' => 1,
             'is_current' => true,
-            'content' => 'Texte initial',
         ]);
 
         $decision->participants()->createMany([
-            ['user_id' => $author->id, 'role' => DecisionParticipantRole::AUTHOR->value],
-            ['user_id' => $animator->id, 'role' => DecisionParticipantRole::ANIMATOR->value],
+            ['user_id' => $author->id, 'role' => DecisionParticipantRole::AUTHOR],
+            ['user_id' => $animator->id, 'role' => DecisionParticipantRole::ANIMATOR],
         ]);
 
-        $feedback = Feedback::create([
+        $feedback = Feedback::factory()->create([
             'decision_version_id' => $version->id,
             'author_id' => $member->id,
-            'type' => FeedbackType::OBJECTION->value,
-            'status' => FeedbackStatus::SUBMITTED->value,
-            'content' => 'Je vois un risque juridique.',
+            'type' => FeedbackType::OBJECTION,
+            'status' => FeedbackStatus::SUBMITTED,
         ]);
 
         Sanctum::actingAs($animator);
@@ -76,63 +69,47 @@ class DecisionFlowTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('feedback.status', FeedbackStatus::TREATED->value);
 
-        $this->assertSame(DecisionStatus::ADOPTED, $decision->fresh()->status);
+        $this->assertEquals(DecisionStatus::ADOPTED, $decision->fresh()->status);
     }
 
     public function test_feedback_endpoint_is_scoped_to_the_given_decision(): void
     {
         $user = User::factory()->create();
 
-        $circle = Circle::create([
-            'name' => 'Cercle Test',
-            'type' => 'open',
-        ]);
+        $circle = Circle::factory()->create();
 
         $circle->members()->create([
             'user_id' => $user->id,
-            'role' => CircleMemberRole::ANIMATOR->value,
+            'role' => CircleMemberRole::ANIMATOR,
         ]);
 
-        $decisionA = Decision::create([
+        $decisionA = Decision::factory()->create([
             'circle_id' => $circle->id,
-            'title' => 'Decision A',
-            'status' => DecisionStatus::OBJECTION->value,
-            'visibility' => 'public',
-            'priority' => 0,
-            'emergency_mode' => false,
+            'status' => DecisionStatus::OBJECTION,
         ]);
 
-        DecisionVersion::create([
+        DecisionVersion::factory()->create([
             'decision_id' => $decisionA->id,
             'author_id' => $user->id,
-            'version_number' => 1,
             'is_current' => true,
-            'content' => 'Version A',
         ]);
 
-        $decisionB = Decision::create([
+        $decisionB = Decision::factory()->create([
             'circle_id' => $circle->id,
-            'title' => 'Decision B',
-            'status' => DecisionStatus::OBJECTION->value,
-            'visibility' => 'public',
-            'priority' => 0,
-            'emergency_mode' => false,
+            'status' => DecisionStatus::OBJECTION,
         ]);
 
-        $versionB = DecisionVersion::create([
+        $versionB = DecisionVersion::factory()->create([
             'decision_id' => $decisionB->id,
             'author_id' => $user->id,
-            'version_number' => 1,
             'is_current' => true,
-            'content' => 'Version B',
         ]);
 
-        $feedback = Feedback::create([
+        $feedback = Feedback::factory()->create([
             'decision_version_id' => $versionB->id,
             'author_id' => $user->id,
-            'type' => FeedbackType::OBJECTION->value,
-            'status' => FeedbackStatus::SUBMITTED->value,
-            'content' => 'Hors périmètre',
+            'type' => FeedbackType::OBJECTION,
+            'status' => FeedbackStatus::SUBMITTED,
         ]);
 
         Sanctum::actingAs($user);

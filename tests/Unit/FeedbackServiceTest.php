@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\DecisionStatus;
 use App\Enums\FeedbackStatus;
 use App\Enums\FeedbackType;
 use App\Models\Circle;
@@ -18,27 +19,15 @@ class FeedbackServiceTest extends TestCase
 
     private function makeVersion(): DecisionVersion
     {
-        $user = \App\Models\User::factory()->create();
-        $circle = Circle::create([
-            'name' => 'Cercle Test',
-            'type' => 'open',
-        ]);
-
-        $decision = Decision::create([
+        $circle = Circle::factory()->create();
+        $decision = Decision::factory()->create([
             'circle_id' => $circle->id,
-            'title' => 'Décision Test',
-            'status' => \App\Enums\DecisionStatus::OBJECTION->value,
-            'visibility' => 'public',
-            'priority' => 0,
-            'emergency_mode' => false,
+            'status' => DecisionStatus::OBJECTION,
         ]);
 
-        return DecisionVersion::create([
+        return DecisionVersion::factory()->create([
             'decision_id' => $decision->id,
-            'author_id' => $user->id,
-            'version_number' => 1,
             'is_current' => true,
-            'content' => 'Version de travail',
         ]);
     }
 
@@ -54,12 +43,10 @@ class FeedbackServiceTest extends TestCase
     {
         $version = $this->makeVersion();
         
-        Feedback::create([
+        Feedback::factory()->create([
             'decision_version_id' => $version->id,
-            'author_id' => \App\Models\User::factory()->create()->id,
-            'type' => FeedbackType::OBJECTION->value,
-            'status' => FeedbackStatus::SUBMITTED->value,
-            'content' => 'Objection ouverte',
+            'type' => FeedbackType::OBJECTION,
+            'status' => FeedbackStatus::SUBMITTED,
         ]);
 
         $service = app(FeedbackService::class);
@@ -70,12 +57,10 @@ class FeedbackServiceTest extends TestCase
     {
         $version = $this->makeVersion();
         
-        Feedback::create([
+        Feedback::factory()->create([
             'decision_version_id' => $version->id,
-            'author_id' => \App\Models\User::factory()->create()->id,
-            'type' => FeedbackType::OBJECTION->value,
-            'status' => FeedbackStatus::WITHDRAWN->value,
-            'content' => 'Objection retirée',
+            'type' => FeedbackType::OBJECTION,
+            'status' => FeedbackStatus::WITHDRAWN,
         ]);
 
         $service = app(FeedbackService::class);

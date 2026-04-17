@@ -7,9 +7,9 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 #[Signature('app:purge-old-logs')]
-    #[Description('Purge app logs older than 1 year')]
-    class PurgeOldLogs extends Command
-    {
+#[Description('Purge app logs older than 1 year')]
+class PurgeOldLogs extends Command
+{
         /**
          * Execute the console command.
          */

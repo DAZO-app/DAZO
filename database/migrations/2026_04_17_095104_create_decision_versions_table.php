@@ -12,14 +12,21 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('decision_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('author_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignUuid('previous_version_id')->nullable()->constrained('decision_versions')->nullOnDelete();
+            $table->uuid('previous_version_id')->nullable();
             $table->integer('version_number');
             $table->boolean('is_current')->default(false);
             $table->text('content');
             $table->text('change_reason')->nullable();
             $table->timestamps();
         });
-    }
+
+        Schema::table('decision_versions', function (Blueprint $table) {
+            $table->foreign('previous_version_id')
+                  ->references('id')
+                  ->on('decision_versions')
+                  ->nullOnDelete();
+        });
+   }
 
     public function down(): void
     {

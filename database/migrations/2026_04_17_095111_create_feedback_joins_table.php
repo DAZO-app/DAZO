@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('feedback_joins', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('feedback_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('feedback_id')->constrained('feedbacks')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
 
