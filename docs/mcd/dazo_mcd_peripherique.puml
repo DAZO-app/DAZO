@@ -1,0 +1,267 @@
+@startuml DAZO_MCD_Peripherique
+' ============================================================
+' DAZO — MCD Entités périphériques v2
+' Labels, catégories, pièces jointes, notifications,
+' paramètres instance, modèles, invitations
+' ============================================================
+
+skinparam entity {
+  BackgroundColor #EEF2FF
+  BorderColor #2D3580
+  FontColor #1A1A18
+  FontName Arial
+  FontSize 12
+}
+skinparam entityAttribute {
+  BackgroundColor #F8F9FE
+  BorderColor #C5CAEE
+}
+skinparam arrow {
+  Color #5C66C5
+  FontColor #374151
+  FontName Arial
+  FontSize 10
+}
+skinparam linetype ortho
+skinparam padding 4
+
+' ── RÉFÉRENCES ENTITÉS CORE (stub) ────────────────────────
+
+entity "USER" as USER {
+  * id : uuid <<PK>>
+}
+
+entity "DECISION" as DECISION {
+  * id : uuid <<PK>>
+}
+
+entity "DECISION_VERSION" as VERSION {
+  * id : uuid <<PK>>
+}
+
+entity "FEEDBACK" as FEEDBACK {
+  * id : uuid <<PK>>
+}
+
+entity "CIRCLE" as CIRCLE {
+  * id : uuid <<PK>>
+}
+
+' ── ORGANISATION THÉMATIQUE ───────────────────────────────
+
+entity "CATEGORY" as CATEGORY {
+  * id : uuid <<PK>>
+  --
+  parent_id : uuid <<FK nullable>>
+  * name : string
+  description : text
+  * created_by : uuid <<FK>>
+  * created_at : timestamp
+  ' Scope : GLOBAL à l'instance (indépendant des cercles)
+  ' Gérées par les administrateurs
+}
+
+entity "LABEL" as LABEL {
+  * id : uuid <<PK>>
+  --
+  * name : string
+  * color_hex : string
+  * created_by : uuid <<FK>>
+  * created_at : timestamp
+  ' Scope : GLOBAL à l'instance (indépendant des cercles)
+  ' Gérés par les administrateurs
+}
+
+entity "DECISION_LABEL" as DEC_LABEL {
+  * id : uuid <<PK>>
+  --
+  * decision_id : uuid <<FK>>
+  * label_id : uuid <<FK>>
+}
+
+' ── PIÈCES JOINTES ────────────────────────────────────────
+
+entity "ATTACHMENT" as ATTACH {
+  * id : uuid <<PK>>
+  --
+  * decision_version_id : uuid <<FK>>
+  ' Toujours rattachée à une version de décision — jamais orpheline
+  feedback_id : uuid <<FK nullable>>
+  ' Nullable : la pièce jointe peut être liée à la décision uniquement,
+  ' ou à la fois à une version ET à un feedback spécifique
+  * filename : string
+  * original_name : string
+  * mime_type : string
+  * file_size_mb : float
+  * storage_path : string
+  * uploaded_by : uuid <<FK nullable>>
+  * created_at : timestamp
+}
+
+' ── NOTIFICATIONS ─────────────────────────────────────────
+
+entity "NOTIFICATION" as NOTIF {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK nullable>>
+  * category : enum [lifecycle|feedback|vote|admin|system]
+  ' lifecycle : transitions de la décision
+  ' feedback  : objections, suggestions, réponses, soutiens
+  ' vote      : consentements en attente
+  ' admin     : administration (invitations, validation email, etc.)
+  ' system    : messages système
+  * event_type : enum [new_decision|new_version|\n  objection_submitted|suggestion_submitted|\n  feedback_replied|feedback_joined|\n  vote_pending|decision_adopted|\n  decision_adopted_override|decision_abandoned|\n  decision_lapsed|decision_deserted|\n  animator_invoked|email_validation|invitation]
+  related_decision_id : uuid <<FK nullable>>
+  related_feedback_id : uuid <<FK nullable>>
+  * is_read : boolean = false
+  sent_at : timestamp
+  * created_at : timestamp
+}
+
+entity "NOTIFICATION_PREFERENCE" as NOTIF_PREF {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  decision_id : uuid <<FK nullable>>
+  circle_id : uuid <<FK nullable>>
+  * category : enum [lifecycle|feedback|vote|admin|system]
+  ' Préférences exprimées par catégorie (aligné sur NOTIFICATION.category)
+  ' Priorité de résolution : décision > cercle > global (null = global)
+  ' Source de vérité : PHP Enum NotificationCategory partagé
+  * email_enabled : boolean = true
+  push_enabled : boolean = false
+}
+
+note right of NOTIF_PREF
+  La résolution des préférences suit la priorité :
+  1. Préférence liée à la décision (decision_id non null)
+  2. Préférence liée au cercle (circle_id non null)
+  3. Préférence globale (decision_id et circle_id null)
+  
+  La catégorie (category) est l'unité de granularité.
+  Source de vérité : PHP Enum NotificationCategory (backend).
+  L'enum est partagé entre NOTIFICATION et NOTIFICATION_PREFERENCE.
+end note
+
+' ── MODÈLES DE DÉCISION ───────────────────────────────────
+
+entity "DECISION_MODEL" as MODEL {
+  * id : uuid <<PK>>
+  --
+  * name : string
+  description : text
+  content_template : text
+  default_priority : integer
+  default_visibility : enum [public|private]
+  suggestions_enabled : boolean = true
+  requires_distinct_animator : boolean = false
+  ' Si true : les membres du cercle sont notifiés pour se porter volontaires
+  ' comme animateur si aucun n'est défini au moment de la publication
+  * created_by : uuid <<FK>>
+  ' Créé par un administrateur uniquement
+  * created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "HELP_TEXT" as HELP {
+  * id : uuid <<PK>>
+  --
+  model_id : uuid <<FK nullable>>
+  * field_key : string
+  * content : text
+  * level : enum [instance|model]
+  ' instance : texte d'aide global (fallback)
+  ' model    : texte d'aide spécifique à un modèle de décision
+  ' Priorité de résolution : model > instance
+  ' (si un HELP_TEXT de niveau model existe pour ce field_key, il prime)
+  * created_by : uuid <<FK>>
+  * created_at : timestamp
+}
+
+' ── INVITATIONS ───────────────────────────────────────────
+
+entity "INVITATION" as INVITATION {
+  * id : uuid <<PK>>
+  --
+  * email : string
+  * token : string <<unique>>
+  * invited_by : uuid <<FK>>
+  circle_id : uuid <<FK nullable>>
+  decision_id : uuid <<FK nullable>>
+  * role : enum [member|animator|participant]
+  * expires_at : timestamp
+  accepted_at : timestamp
+  * created_at : timestamp
+}
+
+' ── CONFIGURATION INSTANCE ────────────────────────────────
+
+entity "INSTANCE_CONFIG" as CONFIG {
+  * id : uuid <<PK>>
+  --
+  * key : string <<unique>>
+  * value : text
+  * type : enum [boolean|integer|float|string|json]
+  description : text
+  updated_at : timestamp
+}
+
+note right of CONFIG
+  Paramètres gérés via cette table :
+  use_circles, use_categories, use_labels,
+  default_visibility, session_lifetime_days,
+  animator_deadline_days, objection_round_ratio,
+  reminder_mid_delay, reminder_last_hours,
+  reminder_no_deadline_days, max_file_size_mb,
+  default_circle_quota_mb, mandatory_animator_priority,
+  mandatory_animator_participants,
+  dashboard_deadline_warning_days,
+  ai_enabled, ai_endpoint, ai_model
+
+  Accès via ConfigService (cache Redis).
+  Lecture directe en base interdite hors ConfigService.
+end note
+
+' ── LOGS ──────────────────────────────────────────────────
+
+entity "APP_LOG" as LOG {
+  * id : uuid <<PK>>
+  --
+  user_id : uuid <<FK nullable>>
+  * action : string
+  entity_type : string
+  entity_id : uuid
+  ip_address : string
+  user_agent : string
+  payload : json
+  * created_at : timestamp
+  ' Purge automatique après 1 an (conformité LCEN)
+}
+
+' ── RELATIONS ─────────────────────────────────────────────
+
+DECISION ||--o{ DEC_LABEL : "taguée"
+LABEL ||--o{ DEC_LABEL : "appliqué à"
+
+DECISION }o--|| CATEGORY : "classée dans"
+CATEGORY ||--o| CATEGORY : "sous-catégorie de"
+
+VERSION ||--o{ ATTACH : "possède"
+FEEDBACK ||--o{ ATTACH : "possède"
+
+USER ||--o{ NOTIF : "reçoit"
+USER ||--o{ NOTIF_PREF : "configure"
+DECISION ||--o{ NOTIF : "génère"
+FEEDBACK ||--o{ NOTIF : "génère"
+
+USER ||--o{ MODEL : "crée"
+DECISION }o--|| MODEL : "basée sur"
+MODEL ||--o{ HELP : "définit"
+
+USER ||--o{ INVITATION : "envoie"
+CIRCLE ||--o{ INVITATION : "vers"
+DECISION ||--o{ INVITATION : "vers"
+
+USER ||--o{ LOG : "trace"
+
+@enduml

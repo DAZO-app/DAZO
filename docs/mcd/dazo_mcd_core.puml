@@ -1,0 +1,286 @@
+@startuml DAZO_MCD_Core
+' ============================================================
+' DAZO — MCD Cœur métier v3
+' Entités principales : utilisateurs, cercles, décisions,
+' versions, consentements, feedbacks
+' ============================================================
+
+skinparam entity {
+  BackgroundColor #EEF2FF
+  BorderColor #2D3580
+  FontColor #1A1A18
+  FontName Arial
+  FontSize 12
+}
+skinparam entityAttribute {
+  BackgroundColor #F8F9FE
+  BorderColor #C5CAEE
+}
+skinparam arrow {
+  Color #5C66C5
+  FontColor #374151
+  FontName Arial
+  FontSize 10
+}
+skinparam linetype ortho
+skinparam padding 4
+
+' ── UTILISATEURS ──────────────────────────────────────────
+
+entity "USER" as USER {
+  * id : uuid <<PK>>
+  --
+  * name : string
+  * email : string <<unique>>
+  password_hash : string
+  avatar_url : string
+  * role : enum [superadmin|admin|user]
+  * is_global_animator : boolean = false
+  ' Peut être appelé en renfort sur n'importe quelle décision/cercle
+  ' même sans être membre du cercle concerné
+  * is_active : boolean = true
+  * email_verified_at : timestamp
+  remember_token : string
+  * created_at : timestamp
+  updated_at : timestamp
+  deleted_at : timestamp
+  ' Soft delete — affiché "compte supprimé #ID" après suppression
+  ' L'historique (décisions, feedbacks, consentements) est conservé intégralement
+}
+
+entity "OAUTH_PROVIDER" as OAUTH {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  * provider : enum [decidim|google|github]
+  * provider_uid : string
+  * created_at : timestamp
+}
+
+' ── CERCLES ───────────────────────────────────────────────
+
+entity "CIRCLE" as CIRCLE {
+  * id : uuid <<PK>>
+  --
+  parent_id : uuid <<FK nullable>>
+  ' Les sous-cercles servent à élargir la participation :
+  ' un cercle enfant peut être créé pour inclure des personnes
+  ' extérieures au cercle parent sur un périmètre de décisions donné.
+  ' Il n'y a PAS d'héritage automatique de décisions parent → enfant.
+  * name : string
+  description : text
+  * type : enum [open|closed|observer_open]
+  ' open          : tout utilisateur peut rejoindre comme membre
+  ' closed        : uniquement sur invitation de l'animateur du cercle
+  ' observer_open : tout utilisateur peut rejoindre comme observateur
+  * created_by : uuid <<FK>>
+  storage_quota_mb : integer = 500
+  storage_used_mb : integer = 0
+  * created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "CIRCLE_MEMBER" as CIRCLE_MEMBER {
+  * id : uuid <<PK>>
+  --
+  * circle_id : uuid <<FK>>
+  * user_id : uuid <<FK>>
+  * role : enum [member|animator|observer]
+  ' member   : propose des décisions, participe aux phases
+  ' animator : + gère l'adhésion au cercle (invitations pour cercle closed)
+  ' observer : peut voir les décisions et discussions — ne peut pas voter/commenter
+  ' NB : distinct du rôle dans une décision individuelle (cf. DECISION_PARTICIPANT)
+  * joined_at : timestamp
+}
+
+' ── DÉCISIONS ─────────────────────────────────────────────
+
+entity "DECISION" as DECISION {
+  * id : uuid <<PK>>
+  --
+  * circle_id : uuid <<FK>>
+  ' Toujours rattachée à un cercle — jamais orpheline
+  category_id : uuid <<FK nullable>>
+  ' author_id et animator_id supprimés — portés par DECISION_PARTICIPANT
+  ' Auteur courant  : DECISION_PARTICIPANT WHERE role = author  (unique)
+  ' Animateur courant : DECISION_PARTICIPANT WHERE role = animator (unique, nullable)
+  * title : string
+  * status : enum [draft|clarification|reaction|\n  objection|revision|adopted|adopted_override|\n  abandoned|lapsed|deserted]
+  ' adopted          : 0 objection bloquante — adoption propre
+  ' adopted_override : adoption forcée malgré objections — état terminal, visuellement distinct
+  ' abandoned        : annulé explicitement par auteur ou animateur
+  ' lapsed           : délai dépassé sans complétion du cycle
+  ' deserted         : aucune activité pendant la période configurée
+  * visibility : enum [public|private] = public
+  * priority : integer [1-10] = 5
+  deadline : timestamp
+  suggestions_enabled : boolean = true
+  anonymous_votes : boolean = false
+  anonymous_public : boolean = false
+  emergency_mode : boolean = false
+  ' Activé par auteur ou animateur (priorité dashboards/notifications)
+  objection_round_deadline : timestamp
+  model_id : uuid <<FK nullable>>
+  * created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "DECISION_VERSION" as VERSION {
+  * id : uuid <<PK>>
+  --
+  * decision_id : uuid <<FK>>
+  * author_id : uuid <<FK>>
+  ' Auteur de cette version spécifique (l'auteur de la décision en général)
+  previous_version_id : uuid <<FK nullable>>
+  * version_number : integer
+  * is_current : boolean = false
+  ' Index partiel unique : UNIQUE(decision_id) WHERE is_current = true
+  * content : text
+  change_reason : text
+  * created_at : timestamp
+}
+
+entity "DECISION_PARTICIPANT" as PARTICIPANT {
+  * id : uuid <<PK>>
+  --
+  * decision_id : uuid <<FK>>
+  * user_id : uuid <<FK>>
+  * role : enum [author|animator|participant]
+  ' author    : auteur de la décision (unique par décision)
+  ' animator  : animateur courant (unique par décision, peut changer — cf. DECISION_ANIMATOR_LOG)
+  ' participant : membre du cercle participant à la décision
+  ' Contrainte applicative : role=author et role=animator sont uniques par decision_id
+  ' Tous les membres du cercle participants sont inscrits ici
+  * added_at : timestamp
+}
+
+entity "DECISION_RELATION" as DEC_REL {
+  * id : uuid <<PK>>
+  --
+  * source_decision_id : uuid <<FK>>
+  * target_decision_id : uuid <<FK>>
+  * relation_type : enum [derives_from|blocks]
+  * created_by : uuid <<FK>>
+  * created_at : timestamp
+}
+
+entity "DECISION_ANIMATOR_LOG" as ANIM_LOG {
+  * id : uuid <<PK>>
+  --
+  * decision_id : uuid <<FK>>
+  old_animator_id : uuid <<FK nullable>>
+  new_animator_id : uuid <<FK nullable>>
+  * changed_by : uuid <<FK>>
+  reason : text
+  * created_at : timestamp
+  ' Historique complet des changements d'animateur
+  ' Quand l'animateur change : la ligne DECISION_PARTICIPANT (role=animator)
+  ' est mise à jour ET une entrée est ajoutée ici
+}
+
+' ── CONSENTEMENT PAR VERSION ──────────────────────────────
+
+entity "CONSENT" as CONSENT {
+  * id : uuid <<PK>>
+  --
+  * decision_version_id : uuid <<FK>>
+  * user_id : uuid <<FK>>
+  * signal : enum [no_objection|abstention]
+  ' no_objection : le membre consent à cette version
+  ' abstention   : le membre s'abstient
+  '
+  ' ⚠️  RÈGLE EXCLUSIVE NON RÉVERSIBLE :
+  ' Pour une version donnée, un membre ne peut faire QU'UNE SEULE de ces actions :
+  '   1. Soumettre un FEEDBACK (objection ou suggestion)
+  '   2. Rejoindre un FEEDBACK existant (FEEDBACK_JOIN)
+  '   3. Exprimer un CONSENT (no_objection ou abstention)
+  ' Une fois l'action posée, elle est définitive et non modifiable.
+  '
+  ' Contrainte : UNIQUE(decision_version_id, user_id)
+  * created_at : timestamp
+}
+
+' ── FEEDBACKS (objections + suggestions) ──────────────────
+
+entity "FEEDBACK" as FEEDBACK {
+  * id : uuid <<PK>>
+  --
+  * decision_version_id : uuid <<FK>>
+  * author_id : uuid <<FK nullable>>
+  * type : enum [objection|suggestion]
+  * content : text
+  * status : enum [submitted|clarification_requested|\n  in_treatment|treated|rejected|\n  acknowledged|withdrawn|ignored]
+  ' Transitions objection : contrôlées par l'auteur du feedback
+  ' Transitions suggestion : contrôlées par l'auteur de la décision ou l'animateur
+  is_anonymous : boolean = false
+  * created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "FEEDBACK_JOIN" as FEEDBACK_JOIN {
+  * id : uuid <<PK>>
+  --
+  * feedback_id : uuid <<FK>>
+  * user_id : uuid <<FK>>
+  * joined_at : timestamp
+  ' Rejoindre un feedback = l'approuver ("like") ET passer son tour de soumission.
+  ' Action NON RÉVERSIBLE — voir règle exclusive sur CONSENT.
+  ' Contrainte : UNIQUE(feedback_id, user_id)
+}
+
+entity "FEEDBACK_MESSAGE" as FB_MSG {
+  * id : uuid <<PK>>
+  --
+  * feedback_id : uuid <<FK>>
+  * author_id : uuid <<FK nullable>>
+  * content : text
+  * created_at : timestamp
+  ' Thread de clarification interne au feedback
+  ' Accès restreint : auteur du feedback, auteur de la décision, animateur
+}
+
+entity "THREAD_MESSAGE" as THREAD {
+  * id : uuid <<PK>>
+  --
+  * decision_id : uuid <<FK>>
+  * author_id : uuid <<FK nullable>>
+  * tour : enum [clarification|reaction]
+  ' clarification : questions sur la proposition (phase clarification)
+  ' reaction      : ressenti personnel style CNV (phase réaction)
+  ' Les échanges sur les feedbacks individuels → FEEDBACK_MESSAGE
+  * content : text
+  is_moderator_note : boolean = false
+  * created_at : timestamp
+}
+
+' ── RELATIONS ─────────────────────────────────────────────
+
+USER ||--o{ OAUTH : "a"
+USER ||--o{ CIRCLE_MEMBER : "appartient à"
+USER ||--o{ DECISION_PARTICIPANT : "participe à"
+USER ||--o{ CONSENT : "exprime"
+USER ||--o{ FEEDBACK : "soumet"
+USER ||--o{ FEEDBACK_JOIN : "approuve"
+USER ||--o{ FEEDBACK_MESSAGE : "envoie"
+USER ||--o{ THREAD_MESSAGE : "écrit"
+USER ||--o{ DECISION_ANIMATOR_LOG : "modifie"
+
+CIRCLE ||--o{ CIRCLE_MEMBER : "contient"
+CIRCLE ||--o| CIRCLE : "sous-cercle de"
+CIRCLE ||--o{ DECISION : "héberge"
+
+DECISION ||--o{ DECISION_VERSION : "versionnée en"
+DECISION ||--o{ DECISION_PARTICIPANT : "implique"
+DECISION ||--o{ THREAD_MESSAGE : "reçoit"
+DECISION ||--o{ DECISION_ANIMATOR_LOG : "historique animateur"
+DECISION ||--o{ DEC_REL : "source de"
+DECISION ||--o{ DEC_REL : "cible de"
+
+DECISION_VERSION ||--o{ CONSENT : "reçoit"
+DECISION_VERSION ||--o{ FEEDBACK : "reçoit"
+DECISION_VERSION ||--o| DECISION_VERSION : "précède"
+
+FEEDBACK ||--o{ FEEDBACK_MESSAGE : "fil"
+FEEDBACK ||--o{ FEEDBACK_JOIN : "approuvé par"
+
+@enduml

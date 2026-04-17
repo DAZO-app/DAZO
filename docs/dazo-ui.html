@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAZO — Maquettes UI V1</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DAZO — Design System Standalone
+   ============================================================ */
+:root {
+  --blue-900: #1a2060;
+  --blue-800: #2D3580;
+  --blue-700: #3d47a0;
+  --blue-600: #5C66C5;
+  --blue-400: #8892e0;
+  --blue-200: #c5caee;
+  --blue-100: #dfe2f7;
+  --blue-50:  #f0f2fd;
+
+  --teal-600: #0f6e56;
+  --teal-100: #d0f0e8;
+  --teal-50:  #e8f8f3;
+
+  --red-600:  #c0392b;
+  --red-100:  #fde8e6;
+  --red-50:   #fff4f3;
+
+  --amber-600: #b45309;
+  --amber-100: #fde8c0;
+  --amber-50:  #fff8ed;
+
+  --gray-900: #111827;
+  --gray-800: #1f2937;
+  --gray-700: #374151;
+  --gray-600: #4b5563;
+  --gray-500: #6b7280;
+  --gray-400: #9ca3af;
+  --gray-300: #d1d5db;
+  --gray-200: #e5e7eb;
+  --gray-100: #f3f4f6;
+  --gray-50:  #f9fafb;
+  --white:    #ffffff;
+
+  --font-sans: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.10);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background: #eef0f8;
+  color: var(--gray-900);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── NAV PROTOTYPE ── */
+.proto-nav {
+  background: var(--blue-900);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.proto-nav-title {
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-right: 16px;
+  white-space: nowrap;
+}
+.proto-btn {
+  padding: 10px 14px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.proto-btn:hover { color: rgba(255,255,255,0.85); }
+.proto-btn.active { color: #fff; border-bottom-color: var(--blue-400); }
+
+/* ── APP SHELL ── */
+.view { display: none; }
+.view.active { display: flex; min-height: calc(100vh - 42px); }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--blue-800);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+}
+.sidebar-logo {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 12px;
+}
+.sidebar-logo-mark {
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  letter-spacing: -0.02em;
+}
+.sidebar-logo-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.sidebar-section {
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin: 8px 0 4px;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  transition: all 0.12s;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+}
+.sidebar-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9); }
+.sidebar-item.active { background: rgba(255,255,255,0.1); color: white; border-left-color: var(--blue-400); font-weight: 500; }
+.sidebar-item .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; flex-shrink: 0; }
+.sidebar-item .badge-count { margin-left: auto; background: var(--red-600); color: white; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: var(--radius-full); }
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.av-blue   { background: var(--blue-100); color: var(--blue-800); }
+.av-teal   { background: var(--teal-100); color: var(--teal-600); }
+.av-red    { background: var(--red-100); color: var(--red-600); }
+.av-amber  { background: var(--amber-100); color: var(--amber-600); }
+.av-gray   { background: var(--gray-200); color: var(--gray-600); }
+.av-purple { background: #ede9fe; color: #5b21b6; }
+.sidebar-user-name { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.8); }
+.sidebar-user-role { font-size: 10px; color: rgba(255,255,255,0.35); }
+
+/* ── MAIN CONTENT ── */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--gray-50);
+}
+.page-header {
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.page-title { font-size: 16px; font-weight: 600; color: var(--gray-900); }
+.page-subtitle { font-size: 12px; color: var(--gray-500); margin-top: 1px; }
+.page-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.page-body { padding: 24px 28px; }
+
+/* ── CARDS ── */
+.card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-title { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+.card-body { padding: 16px 18px; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.12s;
+  line-height: 1;
+  text-decoration: none;
+}
+.btn-primary { background: var(--blue-800); color: white; border-color: var(--blue-800); }
+.btn-primary:hover { background: var(--blue-700); }
+.btn-secondary { background: white; color: var(--gray-700); border-color: var(--gray-300); }
+.btn-secondary:hover { background: var(--gray-50); border-color: var(--gray-400); }
+.btn-danger { background: white; color: var(--red-600); border-color: var(--red-100); }
+.btn-danger:hover { background: var(--red-50); }
+.btn-ghost { background: transparent; color: var(--gray-600); border-color: transparent; }
+.btn-ghost:hover { background: var(--gray-100); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { width: 30px; height: 30px; padding: 0; justify-content: center; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.badge-blue   { background: var(--blue-50);   color: var(--blue-800);   border: 1px solid var(--blue-200); }
+.badge-teal   { background: var(--teal-50);   color: var(--teal-600);   border: 1px solid var(--teal-100); }
+.badge-red    { background: var(--red-50);    color: var(--red-600);    border: 1px solid var(--red-100); }
+.badge-amber  { background: var(--amber-50);  color: var(--amber-600);  border: 1px solid var(--amber-100); }
+.badge-gray   { background: var(--gray-100);  color: var(--gray-600);   border: 1px solid var(--gray-200); }
+.badge-purple { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+
+/* ── STATUS INDICATORS ── */
+.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot-blue   { background: var(--blue-600); }
+.dot-teal   { background: var(--teal-600); }
+.dot-red    { background: var(--red-600); }
+.dot-amber  { background: var(--amber-600); }
+.dot-gray   { background: var(--gray-400); }
+
+/* ── LABELS / TAGS ── */
+.tag { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 500; }
+
+/* ── FORMS ── */
+.form-group { margin-bottom: 16px; }
+.label { display: block; font-size: 12px; font-weight: 500; color: var(--gray-700); margin-bottom: 5px; }
+.label-hint { font-weight: 400; color: var(--gray-400); margin-left: 4px; }
+.input, .textarea, .select {
+  width: 100%;
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--gray-900);
+  background: white;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.input:focus, .textarea:focus, .select:focus {
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px rgba(92,102,197,0.12);
+}
+.textarea { resize: vertical; min-height: 80px; }
+.input-help { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+.input-help.info { color: var(--blue-600); background: var(--blue-50); padding: 6px 10px; border-radius: var(--radius-sm); border-left: 3px solid var(--blue-600); }
+
+/* ── PROGRESS ── */
+.progress { height: 3px; background: var(--gray-200); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 2px; background: var(--blue-600); transition: width 0.3s; }
+
+/* ── STEPS ── */
+.steps { display: flex; align-items: center; gap: 0; }
+.step { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; }
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; flex-shrink: 0;
+}
+.step-done .step-num { background: var(--teal-600); color: white; }
+.step-active .step-num { background: var(--blue-800); color: white; }
+.step-pending .step-num { background: var(--gray-200); color: var(--gray-500); }
+.step-done .step-label { color: var(--teal-600); }
+.step-active .step-label { color: var(--blue-800); font-weight: 600; }
+.step-pending .step-label { color: var(--gray-400); }
+.step-sep { width: 24px; height: 1px; background: var(--gray-200); margin: 0 4px; flex-shrink: 0; }
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--gray-200); margin: 16px 0; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { padding: 8px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); text-align: left; border-bottom: 1px solid var(--gray-200); background: var(--gray-50); }
+td { padding: 11px 14px; font-size: 13px; color: var(--gray-700); border-bottom: 1px solid var(--gray-100); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--gray-50); }
+
+/* ── VOTE BUTTONS ── */
+.vote-row { display: flex; gap: 8px; }
+.vote-btn {
+  flex: 1; padding: 10px; border-radius: var(--radius-md);
+  font-family: var(--font-sans); font-size: 12px; font-weight: 600;
+  border: 2px solid transparent; cursor: pointer; transition: all 0.12s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.vote-ok { background: var(--teal-50); color: var(--teal-600); border-color: var(--teal-100); }
+.vote-ok:hover, .vote-ok.selected { background: var(--teal-600); color: white; border-color: var(--teal-600); }
+.vote-obj { background: var(--red-50); color: var(--red-600); border-color: var(--red-100); }
+.vote-obj:hover, .vote-obj.selected { background: var(--red-600); color: white; border-color: var(--red-600); }
+.vote-abs { background: var(--gray-100); color: var(--gray-600); border-color: var(--gray-200); }
+.vote-abs:hover, .vote-abs.selected { background: var(--gray-500); color: white; border-color: var(--gray-500); }
+.vote-icon { font-size: 18px; line-height: 1; }
+
+/* ── OBJECTION CARD ── */
+.feedback-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.feedback-card-header {
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+}
+.feedback-card-body { padding: 12px 14px; font-size: 13px; color: var(--gray-700); line-height: 1.6; }
+.feedback-card-footer { padding: 8px 14px; background: var(--gray-50); border-top: 1px solid var(--gray-100); display: flex; align-items: center; gap: 8px; }
+.feedback-obj { border-left: 3px solid var(--red-600); }
+.feedback-sug { border-left: 3px solid var(--blue-600); }
+.join-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: var(--radius-full);
+  font-size: 11px; font-weight: 600;
+  border: 1px solid var(--gray-300); background: white;
+  color: var(--gray-600); cursor: pointer; transition: all 0.12s;
+}
+.join-btn:hover { background: var(--blue-50); border-color: var(--blue-200); color: var(--blue-700); }
+.join-btn.joined { background: var(--blue-50); border-color: var(--blue-200); color: var(--blue-700); }
+
+/* ── PING-PONG ── */
+.message { display: flex; gap: 8px; margin-bottom: 10px; }
+.message-bubble {
+  flex: 1; padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12px; line-height: 1.55;
+}
+.msg-porteur .message-bubble { background: var(--blue-50); border: 1px solid var(--blue-100); color: var(--gray-700); }
+.msg-animateur .message-bubble { background: var(--amber-50); border: 1px solid var(--amber-100); color: var(--gray-700); }
+.msg-objecteur .message-bubble { background: var(--red-50); border: 1px solid var(--red-100); color: var(--gray-700); }
+.msg-meta { font-size: 10px; color: var(--gray-400); margin-top: 3px; }
+
+/* ── HISTORY ── */
+.history-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+.history-item:last-child { border-bottom: none; }
+.history-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 1px; }
+.history-text { font-size: 12px; color: var(--gray-600); }
+.history-time { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+
+/* ── STAT CARD ── */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.stat-card { background: white; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 14px 16px; }
+.stat-value { font-size: 24px; font-weight: 600; color: var(--gray-900); line-height: 1; }
+.stat-label { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
+.stat-sub { font-size: 11px; margin-top: 6px; font-weight: 500; }
+
+/* ── LAYOUTS ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.gap-24 { gap: 24px; }
+.mt-8  { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mb-8  { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; }
+.text-sm   { font-size: 12px; }
+.text-xs   { font-size: 11px; }
+.text-muted { color: var(--gray-500); }
+.text-strong { font-weight: 600; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── DECISION LIST ITEM ── */
+.decision-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--gray-100);
+  cursor: pointer;
+  transition: background 0.1s;
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.decision-item:last-child { border-bottom: none; }
+.decision-item:hover { background: var(--gray-50); }
+.decision-item-main { flex: 1; min-width: 0; }
+.decision-title { font-size: 13px; font-weight: 500; color: var(--gray-900); margin-bottom: 4px; }
+.decision-meta { font-size: 11px; color: var(--gray-400); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.decision-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+.decision-priority { display: flex; align-items: center; gap: 3px; }
+.priority-bar { width: 3px; height: 14px; border-radius: 2px; background: var(--gray-200); }
+.priority-bar.filled { background: var(--blue-600); }
+
+/* ── ALERT BOX ── */
+.alert { padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px; display: flex; gap: 8px; align-items: flex-start; }
+.alert-warning { background: var(--amber-50); border: 1px solid var(--amber-100); color: var(--amber-600); }
+.alert-info { background: var(--blue-50); border: 1px solid var(--blue-100); color: var(--blue-800); }
+.alert-success { background: var(--teal-50); border: 1px solid var(--teal-100); color: var(--teal-600); }
+.alert-error { background: var(--red-50); border: 1px solid var(--red-100); color: var(--red-600); }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  flex-wrap: wrap;
+}
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 500; border: 1px solid var(--gray-300);
+  background: white; color: var(--gray-600); cursor: pointer;
+  transition: all 0.12s;
+}
+.filter-chip:hover { border-color: var(--blue-400); color: var(--blue-700); }
+.filter-chip.active { background: var(--blue-800); color: white; border-color: var(--blue-800); }
+.search-input {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--gray-100); border: 1px solid var(--gray-200);
+  border-radius: var(--radius-full); padding: 4px 12px;
+  font-size: 12px; color: var(--gray-500);
+}
+
+/* ── CONNECTED INDICATOR ── */
+.connected-bar {
+  background: var(--blue-800); color: rgba(255,255,255,0.85);
+  padding: 6px 18px; font-size: 11px; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+}
+.pulse { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ── ANON BADGE ── */
+.anon-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600; padding: 2px 7px;
+  border-radius: var(--radius-full); background: var(--gray-200); color: var(--gray-500);
+}
+
+/* ── TOOLTIP HELP ── */
+.help-bubble {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--gray-200); color: var(--gray-500);
+  font-size: 10px; font-weight: 700; cursor: help;
+  margin-left: 4px; vertical-align: middle;
+}
+
+/* ── VERSION PILL ── */
+.version-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--font-mono); font-size: 11px;
+  background: var(--gray-100); color: var(--gray-600);
+  padding: 2px 8px; border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-200);
+}
+
+/* ── VOTE RESULTS ── */
+.vote-result-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--gray-100); }
+.vote-result-row:last-child { border-bottom: none; }
+.vote-signal { font-size: 12px; font-weight: 600; min-width: 110px; }
+.vote-bar-wrap { flex: 1; height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden; }
+.vote-bar { height: 100%; border-radius: 3px; }
+.vbar-ok { background: var(--teal-600); }
+.vbar-obj { background: var(--red-600); }
+.vbar-abs { background: var(--gray-300); }
+
+/* ── ADOPTED BANNER ── */
+.adopted-banner {
+  background: linear-gradient(135deg, var(--teal-600), #1a9e7a);
+  color: white; padding: 20px 24px; border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+}
+.adopted-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.adopted-sub { font-size: 12px; opacity: 0.8; }
+
+/* ── CHECKLIST ── */
+.checklist-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; font-size: 12px; color: var(--gray-600); }
+.check-icon { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0; margin-top: 1px; }
+.check-ok { background: var(--teal-600); color: white; }
+.check-pending { background: var(--gray-200); color: var(--gray-400); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION PROTOTYPE -->
+<nav class="proto-nav">
+  <span class="proto-nav-title">DAZO — Maquettes V1</span>
+  <button class="proto-btn active" onclick="showView('dashboard')">① Tableau de bord</button>
+  <button class="proto-btn" onclick="showView('liste')">② Liste décisions</button>
+  <button class="proto-btn" onclick="showView('detail')">③ Décision en cours</button>
+  <button class="proto-btn" onclick="showView('vote')">④ Tour d'objection</button>
+  <button class="proto-btn" onclick="showView('revision')">⑤ Révision porteur</button>
+  <button class="proto-btn" onclick="showView('adoptee')">⑥ Décision adoptée</button>
+  <button class="proto-btn" onclick="showView('creation')">⑦ Créer une décision</button>
+  <button class="proto-btn" onclick="showView('admin')">⑧ Panel admin</button>
+</nav>
+
+<!-- ================================================================
+     VUE 1 — TABLEAU DE BORD (config riche : cercles + labels + catégories)
+     ================================================================ -->
+<div id="view-dashboard" class="view active">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">DAZO</div>
+      <div class="sidebar-logo-sub">Decision At Zero Objection</div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <a class="sidebar-item active">
+      <span>⊞</span> Tableau de bord
+      <span class="badge-count">3</span>
+    </a>
+    <a class="sidebar-item"><span>◎</span> Décisions</a>
+    <a class="sidebar-item"><span>◯</span> Mes objections</a>
+    <div class="sidebar-section">Cercles</div>
+    <a class="sidebar-item"><span class="dot"></span> Gouvernance</a>
+    <a class="sidebar-item"><span class="dot"></span> Communication</a>
+    <a class="sidebar-item"><span class="dot"></span> RH & Vie interne</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar av-blue">MD</div>
+        <div>
+          <div class="sidebar-user-name">Marc Dupont</div>
+          <div class="sidebar-user-role">Animateur</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Bonjour Marc 👋</div>
+        <div class="page-subtitle">Mercredi 18 mars 2025</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-primary btn-sm">+ Nouvelle décision</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <!-- Stats -->
+      <div class="stat-grid mb-16">
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--red-600)">3</div>
+          <div class="stat-label">En attente de mon vote</div>
+          <div class="stat-sub" style="color:var(--red-600)">Action requise</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--blue-800)">2</div>
+          <div class="stat-label">Objections soumises</div>
+          <div class="stat-sub" style="color:var(--amber-600)">1 en attente retour</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">5</div>
+          <div class="stat-label">Décisions dont je suis porteur</div>
+          <div class="stat-sub" style="color:var(--teal-600)">2 adoptées ce mois</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--amber-600)">2</div>
+          <div class="stat-label">Deadlines < 7 jours</div>
+          <div class="stat-sub" style="color:var(--amber-600)">Dont 1 urgente</div>
+        </div>
+      </div>
+
+      <div class="grid-2 gap-16">
+        <!-- En attente de mon vote -->
+        <div>
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="status-dot dot-red"></span>
+              <span class="card-title">En attente de mon vote</span>
+              <span class="badge badge-red" style="margin-left:auto">3 décisions</span>
+            </div>
+            <div class="decision-item">
+              <div class="decision-item-main">
+                <div class="decision-title">Charte de gouvernance interne v3</div>
+                <div class="decision-meta">
+                  <span>Cercle : Gouvernance</span>
+                  <span>·</span>
+                  <span style="color:var(--red-600);font-weight:500">Expire dans 2 jours</span>
+                </div>
+                <div class="decision-tags">
+                  <span class="tag" style="background:#e0e7ff;color:#3730a3">Gouvernance</span>
+                  <span class="tag" style="background:#fce7f3;color:#9d174d">Priorité 8</span>
+                  <span class="version-pill">v3</span>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-sm">Voter</button>
+            </div>
+            <div class="decision-item">
+              <div class="decision-item-main">
+                <div class="decision-title">Budget formation 2025</div>
+                <div class="decision-meta">
+                  <span>Cercle : RH & Vie interne</span>
+                  <span>·</span>
+                  <span>Expire dans 5 jours</span>
+                </div>
+                <div class="decision-tags">
+                  <span class="tag" style="background:#d1fae5;color:#065f46">Finance</span>
+                  <span class="version-pill">v1</span>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-sm">Voter</button>
+            </div>
+            <div class="decision-item">
+              <div class="decision-item-main">
+                <div class="decision-title">Politique de télétravail</div>
+                <div class="decision-meta">
+                  <span>Cercle : RH & Vie interne</span>
+                  <span>·</span>
+                  <span>Expire dans 6 jours</span>
+                </div>
+                <div class="decision-tags">
+                  <span class="tag" style="background:#fef3c7;color:#92400e">RH</span>
+                  <span class="version-pill">v2</span>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-sm">Voter</button>
+            </div>
+          </div>
+
+          <!-- Mes objections -->
+          <div class="card">
+            <div class="card-header">
+              <span class="status-dot dot-amber"></span>
+              <span class="card-title">Mes objections</span>
+            </div>
+            <div style="padding:0 0 0 0">
+              <div class="decision-item">
+                <div class="decision-item-main">
+                  <div class="decision-title">Charte de gouvernance — Art. 4</div>
+                  <div class="decision-meta">Soumise il y a 3 jours</div>
+                </div>
+                <span class="badge badge-amber">Clarification</span>
+              </div>
+              <div class="decision-item">
+                <div class="decision-item-main">
+                  <div class="decision-title">Règlement intérieur — §12</div>
+                  <div class="decision-meta">Soumise il y a 8 jours</div>
+                </div>
+                <span class="badge badge-teal">Traitée</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colonne droite -->
+        <div>
+          <!-- Décisions dont je suis porteur/animateur -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="status-dot dot-blue"></span>
+              <span class="card-title">Je suis porteur ou animateur</span>
+            </div>
+            <div class="decision-item">
+              <div class="decision-item-main">
+                <div class="decision-title">Refonte du site web</div>
+                <div class="decision-meta">Animateur · Cercle : Communication</div>
+              </div>
+              <span class="badge badge-amber">Révision</span>
+            </div>
+            <div class="decision-item">
+              <div class="decision-item-main">
+                <div class="decision-title">Plan de communication Q2</div>
+                <div class="decision-meta">Porteur · Cercle : Communication</div>
+              </div>
+              <span class="badge badge-blue">Clarification</span>
+            </div>
+            <div class="decision-item">
+              <div class="decision-item-main">
+                <div class="decision-title">Recrutement bénévoles</div>
+                <div class="decision-meta">Porteur · Cercle : RH & Vie interne</div>
+              </div>
+              <span class="badge badge-gray">Brouillon</span>
+            </div>
+          </div>
+
+          <!-- Fil d'activité -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Activité récente</span>
+            </div>
+            <div class="card-body">
+              <div class="history-item">
+                <div class="history-icon" style="background:var(--teal-100);color:var(--teal-600)">✓</div>
+                <div>
+                  <div class="history-text"><strong>Règlement intérieur v2</strong> — adoptée</div>
+                  <div class="history-time">Aujourd'hui, 14h32 · Cercle Gouvernance</div>
+                </div>
+              </div>
+              <div class="history-item">
+                <div class="history-icon" style="background:var(--red-100);color:var(--red-600)">!</div>
+                <div>
+                  <div class="history-text"><strong>Sophie L.</strong> a soumis une objection sur la Charte</div>
+                  <div class="history-time">Hier, 16h45</div>
+                </div>
+              </div>
+              <div class="history-item">
+                <div class="history-icon" style="background:var(--blue-100);color:var(--blue-800)">↑</div>
+                <div>
+                  <div class="history-text"><strong>Budget formation</strong> — version 2 publiée</div>
+                  <div class="history-time">Hier, 11h20</div>
+                </div>
+              </div>
+              <div class="history-item">
+                <div class="history-icon" style="background:var(--gray-100);color:var(--gray-500)">+</div>
+                <div>
+                  <div class="history-text"><strong>Pierre D.</strong> a rejoint votre objection</div>
+                  <div class="history-time">Lundi, 09h15</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VUE 2 — LISTE DES DÉCISIONS (config simple : pas de catégories)
+     ================================================================ -->
+<div id="view-liste" class="view">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">DAZO</div>
+      <div class="sidebar-logo-sub">Decision At Zero Objection</div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <a class="sidebar-item"><span>⊞</span> Tableau de bord</a>
+    <a class="sidebar-item active"><span>◎</span> Décisions</a>
+    <a class="sidebar-item"><span>◯</span> Mes objections</a>
+    <div class="sidebar-section">Cercles</div>
+    <a class="sidebar-item"><span class="dot"></span> Gouvernance</a>
+    <a class="sidebar-item"><span class="dot"></span> Communication</a>
+    <a class="sidebar-item"><span class="dot"></span> RH & Vie interne</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar av-teal">SL</div>
+        <div>
+          <div class="sidebar-user-name">Sophie Laurent</div>
+          <div class="sidebar-user-role">Membre</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Décisions</div>
+        <div class="page-subtitle">14 décisions · 6 actives</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-primary btn-sm">+ Nouvelle décision</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="search-input">🔍 Rechercher...</div>
+      <span style="font-size:11px;color:var(--gray-400);margin-left:4px">Filtrer par :</span>
+      <button class="filter-chip active">Toutes</button>
+      <button class="filter-chip">En cours</button>
+      <button class="filter-chip">Objection</button>
+      <button class="filter-chip">Adoptées</button>
+      <button class="filter-chip">Cercle ▾</button>
+      <button class="filter-chip">Label ▾</button>
+      <button class="filter-chip">Priorité ▾</button>
+    </div>
+
+    <div class="page-body" style="padding:0">
+      <div class="card" style="border-radius:0;border-left:none;border-right:none;border-top:none">
+
+        <!-- Décision 1 : en objection -->
+        <div class="decision-item">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px">
+            <div class="priority-bar filled"></div>
+            <div class="priority-bar filled"></div>
+            <div class="priority-bar filled"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+          </div>
+          <div class="decision-item-main">
+            <div class="flex items-center gap-8 mb-8">
+              <div class="decision-title">Charte de gouvernance interne</div>
+              <span class="badge badge-red">● Objection</span>
+            </div>
+            <div class="decision-meta">
+              <span>Porteur : Marc D.</span>
+              <span>·</span>
+              <span>Animateur : Sophie L.</span>
+              <span>·</span>
+              <span>Cercle : Gouvernance</span>
+              <span>·</span>
+              <span style="color:var(--red-600);font-weight:500">Deadline : 20 mars</span>
+            </div>
+            <div class="flex items-center gap-8 mt-8">
+              <div class="decision-tags">
+                <span class="tag" style="background:#e0e7ff;color:#3730a3">Gouvernance</span>
+                <span class="tag" style="background:#fce7f3;color:#9d174d">Prioritaire</span>
+              </div>
+              <div class="version-pill">v3</div>
+              <div class="flex items-center gap-8 text-xs text-muted" style="margin-left:auto">
+                <span>👥 7 participants</span>
+                <span>⚠ 2 objections</span>
+                <span>💬 3 suggestions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Décision 2 : en clarification -->
+        <div class="decision-item">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px">
+            <div class="priority-bar filled"></div>
+            <div class="priority-bar filled"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+          </div>
+          <div class="decision-item-main">
+            <div class="flex items-center gap-8 mb-8">
+              <div class="decision-title">Budget formation 2025</div>
+              <span class="badge badge-blue">● Clarification</span>
+            </div>
+            <div class="decision-meta">
+              <span>Porteur : Aline L.</span>
+              <span>·</span>
+              <span>Cercle : RH & Vie interne</span>
+              <span>·</span>
+              <span>Deadline : 28 mars</span>
+            </div>
+            <div class="flex items-center gap-8 mt-8">
+              <div class="decision-tags">
+                <span class="tag" style="background:#d1fae5;color:#065f46">Finance</span>
+              </div>
+              <div class="version-pill">v1</div>
+              <div class="flex items-center gap-8 text-xs text-muted" style="margin-left:auto">
+                <span>👥 5 participants</span>
+                <span>💬 2 questions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Décision 3 : adoptée -->
+        <div class="decision-item" style="opacity:0.7">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px">
+            <div class="priority-bar filled"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+          </div>
+          <div class="decision-item-main">
+            <div class="flex items-center gap-8 mb-8">
+              <div class="decision-title">Règlement intérieur v2</div>
+              <span class="badge badge-teal">✓ Adoptée</span>
+            </div>
+            <div class="decision-meta">
+              <span>Porteur : Jean R.</span>
+              <span>·</span>
+              <span>Cercle : Gouvernance</span>
+              <span>·</span>
+              <span>Adoptée le 18 mars 2025</span>
+            </div>
+            <div class="flex items-center gap-8 mt-8">
+              <div class="version-pill">v2</div>
+              <div class="flex items-center gap-8 text-xs text-muted" style="margin-left:auto">
+                <span>👥 6 participants</span>
+                <span>✓ 3 objections traitées</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Décision 4 : brouillon -->
+        <div class="decision-item" style="opacity:0.65">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px">
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+          </div>
+          <div class="decision-item-main">
+            <div class="flex items-center gap-8 mb-8">
+              <div class="decision-title">Recrutement bénévoles printemps 2025</div>
+              <span class="badge badge-gray">Brouillon</span>
+            </div>
+            <div class="decision-meta">
+              <span>Porteur : Marc D.</span>
+              <span>·</span>
+              <span>Cercle : RH & Vie interne</span>
+              <span>·</span>
+              <span>Modifié il y a 2h</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Décision 5 : désertée -->
+        <div class="decision-item" style="opacity:0.55">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px">
+            <div class="priority-bar filled"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+            <div class="priority-bar"></div>
+          </div>
+          <div class="decision-item-main">
+            <div class="flex items-center gap-8 mb-8">
+              <div class="decision-title">Politique de remboursement des frais</div>
+              <span class="badge badge-gray">⚐ Désertée</span>
+            </div>
+            <div class="decision-meta">
+              <span>Porteur : Aline L.</span>
+              <span>·</span>
+              <span>Cercle : RH & Vie interne</span>
+              <span>·</span>
+              <span>Expirée le 10 mars · Aucune participation</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VUE 3 — DÉTAIL DÉCISION EN COURS (tour de réaction)
+     ================================================================ -->
+<div id="view-detail" class="view">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">DAZO</div>
+      <div class="sidebar-logo-sub">Decision At Zero Objection</div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <a class="sidebar-item"><span>⊞</span> Tableau de bord</a>
+    <a class="sidebar-item active"><span>◎</span> Décisions</a>
+    <a class="sidebar-item"><span>◯</span> Mes objections</a>
+    <div class="sidebar-section">Cercles</div>
+    <a class="sidebar-item"><span class="dot"></span> Gouvernance</a>
+    <a class="sidebar-item"><span class="dot"></span> Communication</a>
+    <a class="sidebar-item"><span class="dot"></span> RH & Vie interne</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar av-blue">MD</div>
+        <div>
+          <div class="sidebar-user-name">Marc Dupont</div>
+          <div class="sidebar-user-role">Porteur</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <button class="btn btn-ghost btn-sm" style="padding-left:0;color:var(--gray-500)">← Décisions</button>
+        <div class="page-title" style="margin-top:2px">Charte de gouvernance interne</div>
+      </div>
+      <div class="page-actions">
+        <span class="badge badge-blue">● Réaction</span>
+        <div class="version-pill">v1</div>
+        <button class="btn btn-secondary btn-sm">Historique</button>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div style="background:white;border-bottom:1px solid var(--gray-200);padding:12px 28px;">
+      <div class="steps">
+        <div class="step step-done"><div class="step-num">✓</div><span class="step-label">Brouillon</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-done"><div class="step-num">✓</div><span class="step-label">Clarification</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-active"><div class="step-num">3</div><span class="step-label">Réaction</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-pending"><div class="step-num">4</div><span class="step-label">Objection</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-pending"><div class="step-num">5</div><span class="step-label">Révision</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-pending"><div class="step-num">✓</div><span class="step-label">Adoption</span></div>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="alert alert-info mb-16">
+        <span>ℹ</span>
+        <span><strong>Tour de réaction ouvert</strong> — Exprime ton ressenti librement. Seul l'animateur peut intervenir dans ce fil. Durée restante : <strong>3 jours</strong>.</span>
+      </div>
+
+      <div class="grid-2 gap-16">
+        <div>
+          <!-- Proposition -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">Proposition</span>
+              <div class="flex items-center gap-8" style="margin-left:auto">
+                <span class="tag" style="background:#e0e7ff;color:#3730a3">Gouvernance</span>
+                <span class="badge badge-gray">Priorité 6/10</span>
+                <span class="anon-badge">🔒 Votes anonymes</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="flex items-center gap-8 mb-12">
+                <div class="avatar av-blue">MD</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500">Marc Dupont</div>
+                  <div style="font-size:11px;color:var(--gray-400)">Porteur · Posté le 15 mars</div>
+                </div>
+                <div style="margin-left:auto;display:flex;gap:6px">
+                  <div class="avatar av-teal">SL</div>
+                  <div style="font-size:11px;color:var(--gray-500);align-self:center">Animateur : Sophie L.</div>
+                </div>
+              </div>
+              <p style="font-size:13px;color:var(--gray-700);line-height:1.7">
+                Cette proposition vise à établir un cadre de gouvernance partagée au sein de notre organisation. Elle définit les processus de décision, les rôles de chaque membre et les mécanismes de responsabilité collective pour les années 2025-2027.
+              </p>
+              <p style="font-size:13px;color:var(--gray-700);line-height:1.7;margin-top:10px">
+                Les cercles thématiques auront une autonomie décisionnelle sur leur périmètre, avec obligation de consultation du cercle de gouvernance pour toute décision impactant l'ensemble de la structure.
+              </p>
+              <div class="flex items-center gap-8 mt-12" style="padding-top:12px;border-top:1px solid var(--gray-100)">
+                <span style="font-size:11px;color:var(--gray-400)">Pièces jointes :</span>
+                <button class="btn btn-secondary btn-sm">📄 charte_v1.pdf</button>
+                <button class="btn btn-secondary btn-sm">📊 comparatif.docx</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mon ressenti -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Mon ressenti</span>
+              <span style="font-size:11px;color:var(--gray-400);margin-left:auto">Tour de réaction</span>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-warning mb-12">
+                <span>⚠</span>
+                <span>Ce tour est réservé à ton ressenti — pas de questions ni d'arguments. L'animateur peut recadrer si nécessaire.</span>
+              </div>
+              <div class="form-group">
+                <label class="label">Ton ressenti <span class="help-bubble">?</span></label>
+                <textarea class="textarea" placeholder="Exprime ton ressenti sur cette proposition..."></textarea>
+              </div>
+              <button class="btn btn-primary" style="width:100%">Soumettre mon ressenti</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Thread réaction -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">Ressentis exprimés</span>
+              <span class="badge badge-gray" style="margin-left:auto">4 / 7</span>
+            </div>
+            <div class="card-body">
+              <div class="message msg-objecteur">
+                <div class="avatar av-teal" style="width:24px;height:24px;font-size:10px;flex-shrink:0">AL</div>
+                <div style="flex:1">
+                  <div class="message-bubble">Je trouve cette proposition encourageante. L'idée de cercles autonomes correspond bien à notre mode de fonctionnement actuel, même si certains points méritent précision.</div>
+                  <div class="msg-meta">Aline L. · 16 mars, 14h20</div>
+                </div>
+              </div>
+              <div class="message msg-objecteur" style="margin-top:8px">
+                <div class="avatar av-purple" style="width:24px;height:24px;font-size:10px;flex-shrink:0">JR</div>
+                <div style="flex:1">
+                  <div class="message-bubble">Globalement positif, bien que je sois mitigé sur le volet "obligation de consultation". Ça risque d'alourdir le processus.</div>
+                  <div class="msg-meta">Jean R. · 16 mars, 16h45</div>
+                </div>
+              </div>
+              <div class="message msg-animateur" style="margin-top:8px">
+                <div class="avatar av-amber" style="width:24px;height:24px;font-size:10px;flex-shrink:0">SL</div>
+                <div style="flex:1">
+                  <div class="message-bubble">⚑ <em>Jean, je t'invite à garder ce tour pour le ressenti. Les arguments sur le processus seront bienvenus au tour suivant.</em></div>
+                  <div class="msg-meta">Sophie L. (animateur) · 17 mars, 09h10</div>
+                </div>
+              </div>
+              <div class="message msg-objecteur" style="margin-top:8px">
+                <div class="avatar av-red" style="width:24px;height:24px;font-size:10px;flex-shrink:0">PD</div>
+                <div style="flex:1">
+                  <div class="message-bubble">Plutôt enthousiaste ! Ça clarifie beaucoup de choses qui étaient floues jusqu'ici.</div>
+                  <div class="msg-meta">Pierre D. · 17 mars, 11h30</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Participants -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Participants</span>
+              <span class="badge badge-gray" style="margin-left:auto">7 membres</span>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-blue">MD</div>
+                  <div style="flex:1;font-size:12px">Marc Dupont</div>
+                  <span class="badge badge-blue">Porteur</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-teal">SL</div>
+                  <div style="flex:1;font-size:12px">Sophie Laurent</div>
+                  <span class="badge badge-amber">Animatrice</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-teal">AL</div>
+                  <div style="flex:1;font-size:12px">Aline Laurent</div>
+                  <span class="badge badge-teal">A répondu</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-purple">JR</div>
+                  <div style="flex:1;font-size:12px">Jean Renaud</div>
+                  <span class="badge badge-teal">A répondu</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-red">PD</div>
+                  <div style="flex:1;font-size:12px">Pierre Dumont</div>
+                  <span class="badge badge-teal">A répondu</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-gray">CB</div>
+                  <div style="flex:1;font-size:12px;color:var(--gray-400)">Claire Bonnet</div>
+                  <span class="badge badge-gray">En attente</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-gray">TP</div>
+                  <div style="flex:1;font-size:12px;color:var(--gray-400)">Tom Petit</div>
+                  <span class="badge badge-gray">En attente</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VUE 4 — TOUR D'OBJECTION (vote en cours)
+     ================================================================ -->
+<div id="view-vote" class="view">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">DAZO</div>
+      <div class="sidebar-logo-sub">Decision At Zero Objection</div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <a class="sidebar-item"><span>⊞</span> Tableau de bord</a>
+    <a class="sidebar-item active"><span>◎</span> Décisions</a>
+    <div class="sidebar-section">Cercles</div>
+    <a class="sidebar-item"><span class="dot"></span> Gouvernance</a>
+    <a class="sidebar-item"><span class="dot"></span> Communication</a>
+    <a class="sidebar-item"><span class="dot"></span> RH & Vie interne</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar av-red">PD</div>
+        <div>
+          <div class="sidebar-user-name">Pierre Dumont</div>
+          <div class="sidebar-user-role">Participant</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="connected-bar">
+      <div class="pulse"></div>
+      <span>5 participants connectés en ce moment</span>
+      <span style="margin-left:auto;opacity:0.6">Mode synchrone · 18 mars 2025, 15h30</span>
+    </div>
+    <div class="page-header">
+      <div>
+        <button class="btn btn-ghost btn-sm" style="padding-left:0;color:var(--gray-500)">← Décisions</button>
+        <div class="page-title" style="margin-top:2px">Charte de gouvernance interne</div>
+      </div>
+      <div class="page-actions">
+        <span class="badge badge-red">● Tour d'objection</span>
+        <div class="version-pill">v3</div>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div style="background:white;border-bottom:1px solid var(--gray-200);padding:12px 28px;">
+      <div class="steps">
+        <div class="step step-done"><div class="step-num">✓</div><span class="step-label">Brouillon</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-done"><div class="step-num">✓</div><span class="step-label">Clarification</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-done"><div class="step-num">✓</div><span class="step-label">Réaction</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-active"><div class="step-num">4</div><span class="step-label">Objection</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-pending"><div class="step-num">5</div><span class="step-label">Révision</span></div>
+        <div class="step-sep"></div>
+        <div class="step step-pending"><div class="step-num">✓</div><span class="step-label">Adoption</span></div>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="alert alert-warning mb-16">
+        <span>⏱</span>
+        <span><strong>Tour d'objection — Version 3</strong> · Expire le <strong>20 mars à 18h00</strong> (dans 2 jours). Sans réponse de ta part, une abstention sera enregistrée automatiquement.</span>
+      </div>
+
+      <div class="grid-2 gap-16">
+        <div>
+          <!-- Mon vote -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">Mon signal — Version 3</span>
+              <span class="anon-badge" style="margin-left:auto">🔒 Vote anonyme</span>
+            </div>
+            <div class="card-body">
+              <p style="font-size:12px;color:var(--gray-500);margin-bottom:12px">Vote sur la version actuelle de la proposition. En cas d'objection, tu devras l'argumenter.</p>
+              <div class="vote-row" id="voteRow">
+                <button class="vote-btn vote-ok" onclick="selectVote('ok')">
+                  <span class="vote-icon">✓</span>
+                  <span>Pas d'objection</span>
+                </button>
+                <button class="vote-btn vote-obj" onclick="selectVote('obj')">
+                  <span class="vote-icon">⚑</span>
+                  <span>Objection</span>
+                </button>
+                <button class="vote-btn vote-abs" onclick="selectVote('abs')">
+                  <span class="vote-icon">—</span>
+                  <span>Abstention</span>
+                </button>
+              </div>
+              <div id="objForm" style="display:none;margin-top:12px">
+                <div class="form-group">
+                  <label class="label">Argumente ton objection <span class="help-bubble">?</span></label>
+                  <div class="input-help info mb-8">Une objection doit représenter un risque concret pour la communauté ou le projet. Définissez en quoi ce risque est factuel et argumentez votre position.</div>
+                  <textarea class="textarea" placeholder="Décris le risque factuel que cette décision représente pour l'organisation..."></textarea>
+                </div>
+                <button class="btn btn-danger" style="width:100%">⚑ Soumettre mon objection</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Objections en cours -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Objections actives</span>
+              <span class="badge badge-red" style="margin-left:auto">2 objections</span>
+            </div>
+            <div style="padding:12px">
+              <div class="feedback-card feedback-obj">
+                <div class="feedback-card-header">
+                  <div class="avatar av-teal" style="width:24px;height:24px;font-size:10px">AL</div>
+                  <span style="font-size:12px;font-weight:500">Aline Laurent</span>
+                  <span class="badge badge-amber" style="margin-left:auto">Clarification demandée</span>
+                  <span style="font-size:11px;color:var(--gray-400)">il y a 3h</span>
+                </div>
+                <div class="feedback-card-body">
+                  L'article 4 crée un conflit direct avec notre statut associatif actuel — une modification légale préalable serait nécessaire et bloquerait l'implémentation dans les délais.
+                </div>
+                <div class="feedback-card-footer">
+                  <button class="join-btn joined">+ 2 rejoints</button>
+                  <button class="btn btn-ghost btn-sm" style="margin-left:auto">Voir les échanges</button>
+                </div>
+              </div>
+
+              <div class="feedback-card feedback-obj mt-12">
+                <div class="feedback-card-header">
+                  <div class="anon-badge">🔒 Anonyme</div>
+                  <span class="badge badge-gray" style="margin-left:auto">Soumise</span>
+                  <span style="font-size:11px;color:var(--gray-400)">il y a 1h</span>
+                </div>
+                <div class="feedback-card-body">
+                  Le délai de 15 jours pour les décisions d'urgence est incompatible avec notre rythme opérationnel sur les projets en cours.
+                </div>
+                <div class="feedback-card-footer">
+                  <button class="join-btn">+ Rejoindre</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- État des votes -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">État des votes</span>
+              <span style="font-size:11px;color:var(--gray-400);margin-left:auto">5 / 7 ont répondu</span>
+            </div>
+            <div class="card-body">
+              <div class="progress mb-12" style="height:5px">
+                <div class="progress-fill" style="width:71%"></div>
+              </div>
+              <div class="vote-result-row">
+                <span class="vote-signal" style="color:var(--teal-600)">✓ Pas d'objection</span>
+                <div class="vote-bar-wrap"><div class="vote-bar vbar-ok" style="width:60%"></div></div>
+                <span class="text-xs text-muted">3</span>
+              </div>
+              <div class="vote-result-row">
+                <span class="vote-signal" style="color:var(--red-600)">⚑ Objection</span>
+                <div class="vote-bar-wrap"><div class="vote-bar vbar-obj" style="width:40%"></div></div>
+                <span class="text-xs text-muted">2</span>
+              </div>
+              <div class="vote-result-row">
+                <span class="vote-signal" style="color:var(--gray-400)">— Abstention</span>
+                <div class="vote-bar-wrap"><div class="vote-bar vbar-abs" style="width:0%"></div></div>
+                <span class="text-xs text-muted">0</span>
+              </div>
+              <div class="divider"></div>
+              <div style="font-size:12px;color:var(--gray-500);display:flex;justify-content:space-between">
+                <span>En attente : Claire B., Tom P.</span>
+                <span style="color:var(--amber-600)">+ rappel envoyé</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggestions -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Suggestions</span>
+              <span class="badge badge-blue" style="margin-left:auto">3 suggestions</span>
+            </div>
+            <div style="padding:12px">
+              <div class="feedback-card feedback-sug">
+                <div class="feedback-card-header">
+                  <div class="avatar av-purple" style="width:24px;height:24px;font-size:10px">JR</div>
+                  <span style="font-size:12px;font-weight:500">Jean Renaud</span>
+                  <span class="badge badge-teal" style="margin-left:auto">Prise en compte</span>
+                </div>
+                <div class="feedback-card-body">
+                  Prévoir une clause transitoire pour les décisions déjà en cours au moment de l'adoption de la charte.
+                </div>
+                <div class="feedback-card-footer">
+                  <button class="join-btn joined">+ 1 soutien</button>
+                </div>
+              </div>
+              <div class="feedback-card feedback-sug mt-8">
+                <div class="feedback-card-header">
+                  <div class="avatar av-red" style="width:24px;height:24px;font-size:10px">PD</div>
+                  <span style="font-size:12px;font-weight:500">Pierre Dumont</span>
+                  <span class="badge badge-gray" style="margin-left:auto">Soumise</span>
+                </div>
+                <div class="feedback-card-body">
+                  Ajouter un mécanisme d'évaluation annuelle de la charte pour permettre des ajustements.
+                </div>
+                <div class="feedback-card-footer">
+                  <button class="join-btn">+ Rejoindre</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VUE 5 — RÉVISION PAR LE PORTEUR
+     ================================================================ -->
+<div id="view-revision" class="view">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">DAZO</div>
+      <div class="sidebar-logo-sub">Decision At Zero Objection</div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <a class="sidebar-item"><span>⊞</span> Tableau de bord</a>
+    <a class="sidebar-item active"><span>◎</span> Décisions</a>
+    <div class="sidebar-section">Cercles</div>
+    <a class="sidebar-item"><span class="dot"></span> Gouvernance</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar av-blue">MD</div>
+        <div>
+          <div class="sidebar-user-name">Marc Dupont</div>
+          <div class="sidebar-user-role">Porteur</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <button class="btn btn-ghost btn-sm" style="padding-left:0;color:var(--gray-500)">← Décisions</button>
+        <div class="page-title" style="margin-top:2px">Charte de gouvernance interne — Révision</div>
+      </div>
+      <div class="page-actions">
+        <span class="badge badge-amber">● Révision</span>
+        <div class="version-pill">v3 → v4</div>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="alert alert-warning mb-16">
+        <span>⚑</span>
+        <span><strong>2 objections actives</strong> à traiter avant de pouvoir publier la version 4. Tu peux modifier la proposition et indiquer comment tu as pris en compte chaque objection.</span>
+      </div>
+
+      <div class="grid-2 gap-16">
+        <div>
+          <!-- Objections à traiter -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">Objections à traiter</span>
+            </div>
+            <div style="padding:12px">
+
+              <div class="feedback-card feedback-obj mb-12">
+                <div class="feedback-card-header">
+                  <div class="avatar av-teal" style="width:24px;height:24px;font-size:10px">AL</div>
+                  <span style="font-size:12px;font-weight:500">Aline Laurent</span>
+                  <span class="badge badge-red" style="margin-left:auto">Ouverte</span>
+                </div>
+                <div class="feedback-card-body">
+                  L'article 4 crée un conflit direct avec notre statut associatif actuel — une modification légale préalable serait nécessaire.
+                </div>
+                <!-- Ping-pong -->
+                <div style="padding:8px 14px;background:var(--gray-50);border-top:1px solid var(--gray-100)">
+                  <div class="message msg-porteur mb-8">
+                    <div class="avatar av-blue" style="width:22px;height:22px;font-size:9px;flex-shrink:0">MD</div>
+                    <div style="flex:1">
+                      <div class="message-bubble">Merci Aline, je vais revoir l'article 4. Peux-tu préciser quel article de nos statuts est en conflit ?</div>
+                      <div class="msg-meta">Marc D. · hier 10h</div>
+                    </div>
+                  </div>
+                  <div class="message msg-objecteur">
+                    <div class="avatar av-teal" style="width:22px;height:22px;font-size:9px;flex-shrink:0">AL</div>
+                    <div style="flex:1">
+                      <div class="message-bubble">Article 12 des statuts : toute modification du mode de décision doit être votée en AG.</div>
+                      <div class="msg-meta">Aline L. · hier 14h</div>
+                    </div>
+                  </div>
+                  <div style="margin-top:8px">
+                    <textarea class="textarea" style="min-height:50px" placeholder="Répondre à Aline..."></textarea>
+                    <button class="btn btn-secondary btn-sm mt-8">Envoyer</button>
+                  </div>
+                </div>
+                <div class="feedback-card-footer">
+                  <button class="btn btn-ghost btn-sm" style="color:var(--teal-600)">✓ Marquer comme traitée</button>
+                  <button class="btn btn-ghost btn-sm" style="color:var(--red-600);margin-left:auto">✗ Demander rejet à l'animateur</button>
+                </div>
+              </div>
+
+              <div class="feedback-card feedback-obj">
+                <div class="feedback-card-header">
+                  <div class="anon-badge">🔒 Anonyme</div>
+                  <span class="badge badge-amber" style="margin-left:auto">En traitement</span>
+                </div>
+                <div class="feedback-card-body">
+                  Le délai de 15 jours pour les décisions d'urgence est incompatible avec notre rythme opérationnel.
+                </div>
+                <div class="feedback-card-footer">
+                  <button class="btn btn-ghost btn-sm" style="color:var(--teal-600)">✓ Marquer comme traitée</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Nouvelle version -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Rédiger la version 4</span>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="label">Contenu de la proposition</label>
+                <textarea class="textarea" style="min-height:160px">Cette proposition vise à établir un cadre de gouvernance partagée au sein de notre organisation. Elle définit les processus de décision, les rôles de chaque membre et les mécanismes de responsabilité collective pour les années 2025-2027.
+
+[RÉVISÉ] L'article 4 a été reformulé pour être compatible avec l'article 12 de nos statuts. La mise en place sera soumise à validation en AG extraordinaire avant application.
+
+[RÉVISÉ] Le délai d'urgence est réduit à 7 jours avec possibilité d'extension sur décision de l'animateur.</textarea>
+              </div>
+              <div class="form-group">
+                <label class="label">Justification des changements <span class="label-hint">(visible dans l'historique)</span></label>
+                <textarea class="textarea" style="min-height:70px" placeholder="Explique ce qui a changé et pourquoi...">Article 4 revu pour conformité statutaire (objection Aline L.). Délai urgence réduit à 7 jours (objection anonyme).</textarea>
+              </div>
+              <div class="form-group">
+                <label class="label">Pièces jointes</label>
+                <button class="btn btn-secondary btn-sm">+ Ajouter un fichier</button>
+              </div>
+              <div class="alert alert-info mb-12">
+                <span>ℹ</span>
+                <span>La publication de la v4 ouvrira un nouveau tour d'objection pour tous les participants.</span>
+              </div>
+              <button class="btn btn-primary" style="width:100%">Publier la version 4 →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VUE 6 — DÉCISION ADOPTÉE
+     ================================================================ -->
+<div id="view-adoptee" class="view">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">DAZO</div>
+      <div class="sidebar-logo-sub">Decision At Zero Objection</div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <a class="sidebar-item"><span>⊞</span> Tableau de bord</a>
+    <a class="sidebar-item active"><span>◎</span> Décisions</a>
+    <div class="sidebar-section">Cercles</div>
+    <a class="sidebar-item"><span class="dot"></span> Gouvernance</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar av-purple">JR</div>
+        <div>
+          <div class="sidebar-user-name">Jean Renaud</div>
+          <div class="sidebar-user-role">Participant</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <button class="btn btn-ghost btn-sm" style="padding-left:0;color:var(--gray-500)">← Décisions</button>
+        <div class="page-title" style="margin-top:2px">Règlement intérieur v2</div>
+      </div>
+      <div class="page-actions">
+        <span class="badge badge-teal">✓ Adoptée</span>
+        <button class="btn btn-secondary btn-sm">📄 Exporter CSV</button>
+      </div>
+    </div>
+    <div class="page-body">
+
+      <div class="adopted-banner mb-16">
+        <div class="adopted-title">✓ Décision adoptée par consentement</div>
+        <div class="adopted-sub">18 mars 2025 à 14h32 · Version 2 · Cercle : Gouvernance · 6 participants</div>
+      </div>
+
+      <div class="grid-2 gap-16">
+        <div>
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">Proposition finale — Version 2</span>
+            </div>
+            <div class="card-body">
+              <div class="flex items-center gap-8 mb-12">
+                <div class="avatar av-purple">JR</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500">Jean Renaud</div>
+                  <div style="font-size:11px;color:var(--gray-400)">Porteur · Animateur : Marc D.</div>
+                </div>
+              </div>
+              <p style="font-size:13px;color:var(--gray-700);line-height:1.7">
+                Le règlement intérieur de l'association définit les règles de fonctionnement, les droits et obligations de ses membres, les modalités de participation aux activités et les processus de résolution des conflits internes.
+              </p>
+              <p style="font-size:13px;color:var(--gray-700);line-height:1.7;margin-top:10px">
+                Toute modification du règlement intérieur sera soumise au processus DAZO avec participation obligatoire de tous les membres actifs.
+              </p>
+            </div>
+          </div>
+
+          <!-- Historique versions -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Historique des versions</span>
+            </div>
+            <div class="card-body">
+              <div class="history-item">
+                <div class="history-icon" style="background:var(--teal-100);color:var(--teal-600)">2</div>
+                <div style="flex:1">
+                  <div class="history-text"><strong>Version 2</strong> — adoptée · <span style="color:var(--teal-600)">Zéro objection</span></div>
+                  <div class="history-time">Jean R. · 18 mars, 10h15</div>
+                  <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Délai de préavis porté à 30 jours (objection traitée)</div>
+                </div>
+              </div>
+              <div class="history-item">
+                <div class="history-icon" style="background:var(--blue-100);color:var(--blue-800)">1</div>
+                <div style="flex:1">
+                  <div class="history-text"><strong>Version 1</strong> — 3 objections traitées</div>
+                  <div class="history-time">Jean R. · 12 mars, 09h00</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Résultats du vote -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">Résultats du vote final</span>
+            </div>
+            <div class="card-body">
+              <div class="vote-result-row">
+                <span class="vote-signal" style="color:var(--teal-600)">✓ Pas d'objection</span>
+                <div class="vote-bar-wrap"><div class="vote-bar vbar-ok" style="width:83%"></div></div>
+                <span class="text-xs text-muted">5 / 6</span>
+              </div>
+              <div class="vote-result-row">
+                <span class="vote-signal" style="color:var(--red-600)">⚑ Objection</span>
+                <div class="vote-bar-wrap"><div class="vote-bar vbar-obj" style="width:0%"></div></div>
+                <span class="text-xs text-muted">0 / 6</span>
+              </div>
+              <div class="vote-result-row">
+                <span class="vote-signal" style="color:var(--gray-400)">— Abstention</span>
+                <div class="vote-bar-wrap"><div class="vote-bar vbar-abs" style="width:17%"></div></div>
+                <span class="text-xs text-muted">1 / 6</span>
+              </div>
+              <div class="divider"></div>
+              <div class="checklist-item"><div class="check-icon check-ok">✓</div> Zéro objection — condition d'adoption atteinte</div>
+              <div class="checklist-item"><div class="check-icon check-ok">✓</div> Compte-rendu généré automatiquement</div>
+              <div class="checklist-item"><div class="check-icon check-ok">✓</div> Tous les participants notifiés</div>
+            </div>
+          </div>
+
+          <!-- Participants finaux -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Participants</span></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-purple">JR</div>
+                  <div style="flex:1;font-size:12px">Jean Renaud — Porteur</div>
+                  <span class="badge badge-teal">✓</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-blue">MD</div>
+                  <div style="flex:1;font-size:12px">Marc Dupont — Animateur</div>
+                  <span class="badge badge-teal">✓</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-teal">AL</div>
+                  <div style="flex:1;font-size:12px">Aline Laurent</div>
+                  <span class="badge badge-teal">✓</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-teal">SL</div>
+                  <div style="flex:1;font-size:12px">Sophie Laurent</div>
+                  <span class="badge badge-teal">✓</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-red">PD</div>
+                  <div style="flex:1;font-size:12px">Pierre Dumont</div>
+                  <span class="badge badge-teal">✓</span>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="avatar av-gray">CB</div>
+                  <div style="flex:1;font-size:12px;color:var(--gray-500)">Claire Bonnet</div>
+                  <span class="badge badge-gray">— Abstention</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VUE 7 — CRÉER UNE DÉCISION (depuis un template)
+     ================================================================ -->
+<div id="view-creation" class="view">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">DAZO</div>
+      <div class="sidebar-logo-sub">Decision At Zero Objection</div>
+    </div>
+    <div class="sidebar-section">Navigation</div>
+    <a class="sidebar-item"><span>⊞</span> Tableau de bord</a>
+    <a class="sidebar-item active"><span>◎</span> Décisions</a>
+    <div class="sidebar-section">Cercles</div>
+    <a class="sidebar-item"><span class="dot"></span> Gouvernance</a>
+    <a class="sidebar-item"><span class="dot"></span> Communication</a>
+    <a class="sidebar-item"><span class="dot"></span> RH & Vie interne</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar av-teal">AL</div>
+        <div>
+          <div class="sidebar-user-name">Aline Laurent</div>
+          <div class="sidebar-user-role">Membre</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <button class="btn btn-ghost btn-sm" style="padding-left:0;color:var(--gray-500)">← Annuler</button>
+        <div class="page-title" style="margin-top:2px">Nouvelle décision</div>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="grid-2 gap-16">
+        <div>
+          <!-- Choix du template -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">Modèle de décision <span class="label-hint">(optionnel)</span></span>
+            </div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="padding:10px;border:2px solid var(--blue-800);border-radius:var(--radius-md);background:var(--blue-50);cursor:pointer">
+                  <div style="font-size:12px;font-weight:600;color:var(--blue-800)">Décision standard</div>
+                  <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Tous les tours, suggestions activées</div>
+                </div>
+                <div style="padding:10px;border:1px solid var(--gray-200);border-radius:var(--radius-md);cursor:pointer">
+                  <div style="font-size:12px;font-weight:600;color:var(--gray-700)">Décision budgétaire</div>
+                  <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Avec pièces jointes requises</div>
+                </div>
+                <div style="padding:10px;border:1px solid var(--gray-200);border-radius:var(--radius-md);cursor:pointer">
+                  <div style="font-size:12px;font-weight:600;color:var(--gray-700)">Recrutement</div>
+                  <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Animateur distinct obligatoire</div>
+                </div>
+                <div style="padding:10px;border:1px solid var(--gray-200);border-radius:var(--radius-md);cursor:pointer">
+                  <div style="font-size:12px;font-weight:600;color:var(--gray-700)">Décision urgente</div>
+                  <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Mode urgence, délai court</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Formulaire -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Contenu</span></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="label">Titre <span class="help-bubble">?</span></label>
+                <input type="text" class="input" placeholder="Formule clairement l'objet de la décision...">
+              </div>
+              <div class="form-group">
+                <label class="label">Proposition <span class="help-bubble">?</span></label>
+                <div class="input-help info mb-8">Décris la proposition de façon factuelle et complète. Elle sera soumise au processus de consentement tel quelle.</div>
+                <textarea class="textarea" style="min-height:120px" placeholder="Je propose que..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="label">Pièces jointes <span class="label-hint">(optionnel)</span></label>
+                <button class="btn btn-secondary btn-sm">+ Ajouter un fichier</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card mb-16">
+            <div class="card-header"><span class="card-title">Organisation</span></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="label">Cercle <span class="help-bubble">?</span></label>
+                <select class="select">
+                  <option>Gouvernance</option>
+                  <option>Communication</option>
+                  <option selected>RH & Vie interne</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="label">Catégorie <span class="label-hint">(optionnel)</span></label>
+                <select class="select">
+                  <option value="">— Aucune —</option>
+                  <option>Ressources humaines</option>
+                  <option>Finance</option>
+                  <option>Vie associative</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="label">Labels <span class="label-hint">(optionnel)</span></label>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px;border:1px solid var(--gray-300);border-radius:var(--radius-md)">
+                  <span class="tag" style="background:#d1fae5;color:#065f46;cursor:pointer">RH ✓</span>
+                  <span class="tag" style="background:var(--gray-100);color:var(--gray-500);cursor:pointer">Finance +</span>
+                  <span class="tag" style="background:var(--gray-100);color:var(--gray-500);cursor:pointer">Gouvernance +</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-16">
+            <div class="card-header"><span class="card-title">Paramètres</span></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="label">Animateur <span class="help-bubble">?</span></label>
+                <select class="select">
+                  <option>Je suis également animateur</option>
+                  <option>Marc Dupont</option>
+                  <option>Sophie Laurent</option>
+                </select>
+                <div class="input-help">⚠ Pour les décisions de priorité ≥ 7 ou avec ≥ 5 participants, un animateur distinct est obligatoire.</div>
+              </div>
+              <div class="form-group">
+                <label class="label">Priorité <span class="help-bubble">?</span></label>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <input type="range" min="1" max="10" value="4" style="flex:1" oninput="document.getElementById('prio').textContent=this.value">
+                  <span id="prio" style="font-size:14px;font-weight:600;min-width:20px;color:var(--blue-800)">4</span>
+                  <span style="font-size:12px;color:var(--gray-400)">/10</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="label">Deadline <span class="label-hint">(optionnel)</span></label>
+                <div style="display:flex;gap:8px">
+                  <input type="number" class="input" value="21" style="width:80px">
+                  <select class="select" style="width:120px">
+                    <option>jours</option>
+                    <option>semaines</option>
+                    <option>mois</option>
+                  </select>
+                  <span style="font-size:12px;color:var(--gray-400);align-self:center">→ 8 avril 2025</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:10px;background:var(--gray-50);border-radius:var(--radius-md)">
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+                  <input type="checkbox" checked> <span>Suggestions activées</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+                  <input type="checkbox"> <span>Votes anonymes</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+                  <input type="checkbox"> <span>Affichage public anonyme</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+                  <input type="checkbox" checked> <span>Décision publique</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" style="flex:1">Sauver en brouillon</button>
+            <button class="btn btn-primary" style="flex:1">Lancer la clarification →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VUE 8 — PANEL ADMIN (config simple — petite structure)
+     ================================================================ -->
+<div id="view-admin" class="view">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">DAZO</div>
+      <div class="sidebar-logo-sub">Administration</div>
+    </div>
+    <div class="sidebar-section">Admin</div>
+    <a class="sidebar-item active"><span>⊞</span> Vue d'ensemble</a>
+    <a class="sidebar-item"><span>👥</span> Utilisateurs</a>
+    <a class="sidebar-item"><span>◯</span> Cercles</a>
+    <a class="sidebar-item"><span>🏷</span> Labels</a>
+    <a class="sidebar-item"><span>📁</span> Catégories</a>
+    <a class="sidebar-item"><span>📋</span> Modèles</a>
+    <a class="sidebar-item"><span>⚙</span> Paramètres</a>
+    <a class="sidebar-item"><span>🔔</span> Notifications</a>
+    <a class="sidebar-item"><span>🔑</span> OAuth</a>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar av-amber">SA</div>
+        <div>
+          <div class="sidebar-user-name">Super Admin</div>
+          <div class="sidebar-user-role" style="color:var(--amber-100)">superadmin</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Administration</div>
+        <div class="page-subtitle">Instance : DAZO Commune · Version 1.0.0</div>
+      </div>
+    </div>
+    <div class="page-body">
+
+      <!-- Stats instance -->
+      <div class="stat-grid mb-16">
+        <div class="stat-card">
+          <div class="stat-value">24</div>
+          <div class="stat-label">Utilisateurs actifs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">6</div>
+          <div class="stat-label">Cercles</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">47</div>
+          <div class="stat-label">Décisions totales</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--teal-600)">31</div>
+          <div class="stat-label">Décisions adoptées</div>
+        </div>
+      </div>
+
+      <div class="grid-2 gap-16">
+        <div>
+          <!-- Config modules -->
+          <div class="card mb-16">
+            <div class="card-header"><span class="card-title">Modules activés</span></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="flex items-center gap-8">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:500">Cercles</div>
+                    <div style="font-size:11px;color:var(--gray-400)">Organisation par groupes avec hiérarchie</div>
+                  </div>
+                  <div style="width:36px;height:20px;background:var(--teal-600);border-radius:10px;position:relative;cursor:pointer">
+                    <div style="width:16px;height:16px;background:white;border-radius:50%;position:absolute;right:2px;top:2px"></div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:500">Catégories</div>
+                    <div style="font-size:11px;color:var(--gray-400)">Classification thématique à 2 niveaux</div>
+                  </div>
+                  <div style="width:36px;height:20px;background:var(--gray-300);border-radius:10px;position:relative;cursor:pointer">
+                    <div style="width:16px;height:16px;background:white;border-radius:50%;position:absolute;left:2px;top:2px"></div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:500">Labels</div>
+                    <div style="font-size:11px;color:var(--gray-400)">Tags libres colorisés</div>
+                  </div>
+                  <div style="width:36px;height:20px;background:var(--teal-600);border-radius:10px;position:relative;cursor:pointer">
+                    <div style="width:16px;height:16px;background:white;border-radius:50%;position:absolute;right:2px;top:2px"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paramètres clés -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Paramètres clés</span>
+              <button class="btn btn-secondary btn-sm" style="margin-left:auto">Tous les paramètres</button>
+            </div>
+            <div class="card-body">
+              <table>
+                <tr><th>Paramètre</th><th>Valeur</th></tr>
+                <tr><td>Visibilité par défaut</td><td><span class="badge badge-teal">Publique</span></td></tr>
+                <tr><td>Durée session "Se souvenir"</td><td>30 jours</td></tr>
+                <tr><td>Délai nomination animateur</td><td>7 jours</td></tr>
+                <tr><td>Ratio tour d'objection</td><td>20% deadline</td></tr>
+                <tr><td>Rappel mi-délai</td><td><span class="badge badge-teal">Activé</span></td></tr>
+                <tr><td>Rappel final</td><td>24h avant expiration</td></tr>
+                <tr><td>Priorité animateur distinct</td><td>≥ 7</td></tr>
+                <tr><td>Participants animateur distinct</td><td>≥ 5</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Utilisateurs récents -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">Utilisateurs</span>
+              <button class="btn btn-secondary btn-sm" style="margin-left:auto">Gérer</button>
+            </div>
+            <div class="card-body" style="padding:0">
+              <table>
+                <tr><th>Utilisateur</th><th>Rôle</th><th>Statut</th></tr>
+                <tr>
+                  <td><div class="flex items-center gap-8"><div class="avatar av-blue" style="width:22px;height:22px;font-size:10px">MD</div>Marc Dupont</div></td>
+                  <td><span class="badge badge-amber">admin</span></td>
+                  <td><span class="badge badge-teal">Actif</span></td>
+                </tr>
+                <tr>
+                  <td><div class="flex items-center gap-8"><div class="avatar av-teal" style="width:22px;height:22px;font-size:10px">SL</div>Sophie Laurent</div></td>
+                  <td><span class="badge badge-gray">user</span></td>
+                  <td><span class="badge badge-teal">Actif</span></td>
+                </tr>
+                <tr>
+                  <td><div class="flex items-center gap-8"><div class="avatar av-purple" style="width:22px;height:22px;font-size:10px">JR</div>Jean Renaud</div></td>
+                  <td><span class="badge badge-gray">user</span></td>
+                  <td><span class="badge badge-teal">Actif</span></td>
+                </tr>
+                <tr>
+                  <td><div class="flex items-center gap-8"><div class="avatar av-gray" style="width:22px;height:22px;font-size:10px">CB</div>Claire Bonnet</div></td>
+                  <td><span class="badge badge-gray">user</span></td>
+                  <td><span class="badge badge-amber">En attente</span></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- Labels -->
+          <div class="card mb-16">
+            <div class="card-header">
+              <span class="card-title">Labels</span>
+              <button class="btn btn-secondary btn-sm" style="margin-left:auto">+ Créer</button>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <span class="tag" style="background:#e0e7ff;color:#3730a3;padding:4px 10px">Gouvernance</span>
+                <span class="tag" style="background:#d1fae5;color:#065f46;padding:4px 10px">Finance</span>
+                <span class="tag" style="background:#fef3c7;color:#92400e;padding:4px 10px">RH</span>
+                <span class="tag" style="background:#fce7f3;color:#9d174d;padding:4px 10px">Prioritaire</span>
+                <span class="tag" style="background:#e0f2fe;color:#0c4a6e;padding:4px 10px">Communication</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stockage -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Stockage</span></div>
+            <div class="card-body">
+              <div style="font-size:12px;color:var(--gray-500);margin-bottom:8px">Instance · 124 Mo / 2 Go utilisés</div>
+              <div class="progress" style="height:6px;margin-bottom:12px">
+                <div class="progress-fill" style="width:6%"></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div class="flex items-center gap-8 text-sm">
+                  <span style="flex:1;color:var(--gray-600)">Cercle Gouvernance</span>
+                  <span style="color:var(--gray-400)">38 Mo / 500 Mo</span>
+                </div>
+                <div class="flex items-center gap-8 text-sm">
+                  <span style="flex:1;color:var(--gray-600)">Cercle Communication</span>
+                  <span style="color:var(--gray-400)">52 Mo / 500 Mo</span>
+                </div>
+                <div class="flex items-center gap-8 text-sm">
+                  <span style="flex:1;color:var(--gray-600)">Cercle RH & Vie interne</span>
+                  <span style="color:var(--gray-400)">34 Mo / 500 Mo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.proto-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function selectVote(type) {
+  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  event.target.closest('.vote-btn').classList.add('selected');
+  document.getElementById('objForm').style.display = type === 'obj' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
