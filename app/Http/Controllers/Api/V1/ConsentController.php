@@ -34,13 +34,35 @@ class ConsentController extends Controller
         abort_unless($decision->versions()->whereKey($versionId)->exists(), 404);
 
         // Règle exclusive de non-cumul (ni feedback ni soutiens)
-        $hasFeedback = Feedback::where('decision_version_id', $versionId)->where('author_id', $user->id)->exists();
-        if ($hasFeedback) throw ValidationException::withMessages(['general' => "Vous avez soumis un feedback sur cette version."]);
+        $status = $decision->status->value;
+        $phaseFeedbackTypes = [];
+        if ($status === \App\Enums\DecisionStatus::CLARIFICATION->value) {
+            $phaseFeedbackTypes = [\App\Enums\FeedbackType::CLARIFICATION->value];
+        } elseif ($status === \App\Enums\DecisionStatus::REACTION->value) {
+            $phaseFeedbackTypes = [\App\Enums\FeedbackType::REACTION->value];
+        } elseif ($status === \App\Enums\DecisionStatus::OBJECTION->value) {
+            $phaseFeedbackTypes = [\App\Enums\FeedbackType::OBJECTION->value, \App\Enums\FeedbackType::SUGGESTION->value];
+        }
 
-        $hasJoined = FeedbackJoin::whereHas('feedback', function($q) use ($versionId) {
-            $q->where('decision_version_id', $versionId);
-        })->where('user_id', $user->id)->exists();
-        if ($hasJoined) throw ValidationException::withMessages(['general' => "Vous soutenez un feedback sur cette version."]);
+        // Exception pour la phase REACTION où on permet le cumul car le signal est souvent automatique
+        if ($status !== \App\Enums\DecisionStatus::REACTION->value) {
+            $hasFeedbackInPhase = Feedback::where('decision_version_id', $versionId)
+                ->where('author_id', $user->id)
+                ->whereIn('type', $phaseFeedbackTypes)
+                ->exists();
+            
+            if ($hasFeedbackInPhase) {
+                throw ValidationException::withMessages(['general' => "Vous avez déjà soumis un retour pour cette phase."]);
+            }
+
+            $hasJoinedInPhase = FeedbackJoin::whereHas('feedback', function($q) use ($versionId, $phaseFeedbackTypes) {
+                $q->where('decision_version_id', $versionId)->whereIn('type', $phaseFeedbackTypes);
+            })->where('user_id', $user->id)->exists();
+            
+            if ($hasJoinedInPhase) {
+                throw ValidationException::withMessages(['general' => "Vous soutenez déjà un retour pour cette phase."]);
+            }
+        }
 
         $consent = Consent::updateOrCreate(
             ['decision_version_id' => $versionId, 'user_id' => $user->id],

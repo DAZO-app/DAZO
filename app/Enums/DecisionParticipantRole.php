@@ -7,4 +7,5 @@ enum DecisionParticipantRole: string
     case AUTHOR = 'author';
     case ANIMATOR = 'animator';
     case PARTICIPANT = 'participant';
+    case EXCLUDED = 'excluded';
 }

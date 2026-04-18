@@ -9,6 +9,7 @@ Le front-end de DAZO est une Single Page Application (SPA) bâtie avec Vue 3, in
 * **Store global** : Pinia (État réactif et persistant)
 * **Client HTTP** : Axios (Configuré avec Sanctum CSRF / Interceptors)
 * **Styling** : CSS Vanilla (Design system importé de `dazo-ui.html`)
+* **Édition riche** : Quill 2 chargé côté client pour la rédaction des décisions
 
 ## Architecture des Dossiers (`resources/js/`)
 ```
@@ -28,6 +29,9 @@ resources/js/
 │   ├── DecisionList.vue # Liste des décisions, explorateur
 │   └── DecisionDetail.vue # Vue principale de décision (moteur métier central)
 └── components/
+    ├── AttachmentPanel.vue # Affichage, upload, suppression et téléchargement des pièces jointes
+    ├── ParticipantPhasePanel.vue # Suivi des participants et de leur progression par phase
+    ├── RichTextEditor.vue # Wrapper Quill réutilisable pour l'édition HTML
     ├── DecisionThread.vue  # Composant fil de discussion (clarification & réactions)
     └── FeedbackEngine.vue  # Mécanique de soumission d'objections et suggestions
 ```
@@ -47,3 +51,7 @@ Inspiré par le prototype HTML, le CSS repose sur :
 L'ensemble de l'interface respecte les prérequis métier du projet :
 * **Un accès aux actions en "deux clics"** pour les interactions vitales (consentement sans objection, rejoins d'objection).
 * **Affichage distinct** des phases du cycle de vie (Clarification, Réaction, Objection) avec chargement conditionnel des composants Vue appropriés (`DecisionThread.vue` ou `FeedbackEngine.vue` selon l'état).
+* **Édition complète du brouillon** directement dans `DecisionDetail.vue`, avec éditeur riche, animateur, exclusions, pièces jointes et suppression du brouillon.
+* **Actions de pilotage remontées dans le fil d'ariane** pour garder la colonne latérale centrée sur la participation.
+* **Panneau participants** dans la colonne de droite, montrant le rôle de chaque personne et son avancement sur les phases Clarification / Réaction / Objection.
+* **Pièces jointes visibles sur tous les écrans de consultation d'une décision**, avec ouverture directe et téléchargement.

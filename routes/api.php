@@ -22,12 +22,25 @@ Route::prefix('v1')->group(function () {
 
         // Cercles CRUD
         Route::apiResource('circles', \App\Http\Controllers\Api\V1\CircleController::class)
-            ->only(['index', 'store', 'show', 'update']);
+            ->only(['index', 'store', 'show', 'update', 'destroy']);
+            
+        // Catégories (lecture publique)
+        Route::get('/categories', [\App\Http\Controllers\Api\V1\CategoryController::class, 'index']);
+        Route::get('/dashboard', [\App\Http\Controllers\Api\V1\DashboardController::class, 'index']);
+        
+        // Utilisateurs
+        Route::get('/users/me', [\App\Http\Controllers\Api\V1\UserController::class, 'me']);
+        Route::get('/users/search', [\App\Http\Controllers\Api\V1\UserController::class, 'search']);
+
+        // Données de navigation (compteurs en attente)
+        Route::get('/pending-counts', [\App\Http\Controllers\Api\V1\PendingCountsController::class, 'index']);
+        Route::get('/pending-items', [\App\Http\Controllers\Api\V1\PendingItemsController::class, 'index']);
 
         // Cercles Adhésion & Membres
         Route::get('/circles/{circle}/members', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'index']);
         Route::post('/circles/{circle}/join', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'join']);
         Route::post('/circles/{circle}/leave', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'leave']);
+        Route::put('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'update']);
         Route::delete('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'destroy']);
 
         // Invitations
@@ -43,8 +56,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/circles/{circle}/decisions', [\App\Http\Controllers\Api\V1\DecisionController::class, 'index']);
         Route::post('/circles/{circle}/decisions', [\App\Http\Controllers\Api\V1\DecisionController::class, 'store']);
 
-        // Lecture d'une décision spécifique
+        // Lecture et modification d'une décision spécifique
         Route::get('/decisions/{id}', [\App\Http\Controllers\Api\V1\DecisionController::class, 'show']);
+        Route::put('/decisions/{id}', [\App\Http\Controllers\Api\V1\DecisionController::class, 'update']);
+        Route::delete('/decisions/{id}', [\App\Http\Controllers\Api\V1\DecisionController::class, 'destroy']);
+        Route::put('/decisions/{id}/animator', [\App\Http\Controllers\Api\V1\DecisionController::class, 'updateAnimator']);
 
         // Lecture et création des versions d'une décision
         Route::get('/decisions/{decision_id}/versions', [\App\Http\Controllers\Api\V1\DecisionVersionController::class, 'index']);
@@ -75,6 +91,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/decisions/{id}/versions/{versionId}/consent', [\App\Http\Controllers\Api\V1\ConsentController::class, 'index']);
         Route::post('/decisions/{id}/versions/{versionId}/consent', [\App\Http\Controllers\Api\V1\ConsentController::class, 'store']);
 
+        // Pièces Jointes
+        Route::post('/attachments', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'store']);
+        Route::post('/decisions/versions/{versionId}/attachments/link', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'link']);
+        Route::delete('/attachments/{attachment}', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'destroy']);
+
         // Notifications
         Route::get('/notifications', [\App\Http\Controllers\Api\V1\NotificationController::class, 'index']);
         Route::post('/notifications/read-all', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAllAsRead']);
@@ -84,7 +105,17 @@ Route::prefix('v1')->group(function () {
         Route::prefix('admin')->middleware(['admin'])->group(function () {
             Route::get('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'index']);
             Route::put('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'update']);
-            // TODO: CategoryController, LabelController admin routes
+            
+            // Impersonation
+            Route::post('/impersonate/{user}', [\App\Http\Controllers\Api\V1\Admin\ImpersonationController::class, 'impersonate']);
+            
+            // Users CRUD
+            Route::apiResource('users', \App\Http\Controllers\Api\V1\Admin\UserController::class)
+                ->only(['index', 'update', 'destroy']);
+                
+            // Categories CRUD
+            Route::apiResource('categories', \App\Http\Controllers\Api\V1\Admin\CategoryController::class)
+                ->except(['show']);
         });
     });
 });

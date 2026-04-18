@@ -42,9 +42,10 @@
 | Méthode | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/v1/decisions` | Liste des décisions accessibles |
-| `POST` | `/api/v1/decisions` | Créer une décision |
 | `GET` | `/api/v1/decisions/{id}` | Détail d'une décision (version courante) |
-| `PUT` | `/api/v1/decisions/{id}` | Modifier les métadonnées (draft uniquement) |
+| `PUT` | `/api/v1/decisions/{id}` | Modifier un brouillon (titre, contenu, animateur, exclusions) |
+| `DELETE` | `/api/v1/decisions/{id}` | Supprimer un brouillon |
+| `POST` | `/api/v1/circles/{circleId}/decisions` | Créer une décision dans un cercle |
 
 ### Versions
 
@@ -60,6 +61,14 @@
 |---|---|---|
 | `POST` | `/api/v1/decisions/{id}/transition` | Déclencher une transition d'état |
 | `POST` | `/api/v1/decisions/{id}/abandon` | Abandonner une décision |
+
+### Pièces jointes
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/attachments` | Upload d'une pièce jointe, liée directement à une version si `decision_version_id` est fourni |
+| `POST` | `/api/v1/decisions/versions/{versionId}/attachments/link` | Lier des uploads existants à une version |
+| `DELETE` | `/api/v1/attachments/{attachmentId}` | Supprimer une pièce jointe |
 
 ### Animateur
 
@@ -164,3 +173,4 @@
 - Conçu pour SPA et usage mobile
 - L'API évoluera — les versions majeures breaking seront `/api/v2/`
 - Les réponses d'erreur suivent le format standard Laravel (`message`, `errors`)
+- Le détail d'une décision retourne aussi les pièces jointes de la version courante, les consentements, les feedbacks de la version et une matrice de participation par phase pour alimenter l'interface de suivi

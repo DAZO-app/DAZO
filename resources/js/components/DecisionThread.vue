@@ -9,13 +9,13 @@
       <div v-for="msg in messages" :key="msg.id" class="message" :class="isMe(msg) ? 'msg-me' : 'msg-other'">
         <!-- Avatar pour other -->
         <div v-if="!isMe(msg)" class="avatar av-purple" style="width:24px;height:24px;font-size:10px;margin-top:2px;">
-           {{ msg.author?.first_name?.[0] }}{{ msg.author?.last_name?.[0] }}
+           {{ initials(msg.author?.name) }}
         </div>
         
         <div class="message-bubble" :class="bubbleClass(msg)">
           <div style="white-space: pre-wrap">{{ msg.content }}</div>
           <div class="msg-meta">
-            {{ isMe(msg) ? 'Moi' : msg.author?.first_name }} 
+            {{ isMe(msg) ? 'Moi' : msg.author?.name }} 
             <span v-if="msg.is_moderator_note" class="badge badge-amber badge-sm" style="font-size:9px;padding:0 4px">Modération</span> 
             · {{ new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}
           </div>
@@ -23,7 +23,7 @@
 
         <!-- Avatar pour me -->
         <div v-if="isMe(msg)" class="avatar av-blue" style="width:24px;height:24px;font-size:10px;margin-top:2px;">
-           {{ msg.author?.first_name?.[0] }}{{ msg.author?.last_name?.[0] }}
+           {{ initials(msg.author?.name) }}
         </div>
       </div>
 
@@ -75,6 +75,17 @@ const canPost = computed(() => {
 });
 
 const isMe = (msg) => authStore.user && msg.author_id === authStore.user.id;
+
+const initials = (name) => {
+    if (!name) return '?';
+    return name
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase();
+};
 
 const bubbleClass = (msg) => {
     if (msg.is_moderator_note) return 'msg-animateur';

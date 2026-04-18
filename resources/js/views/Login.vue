@@ -1,14 +1,14 @@
 <template>
   <div class="login-wrapper">
     <div class="card login-card">
-      <div class="card-header justify-center" style="border:none;flex-direction:column;gap:4px">
-        <div class="sidebar-logo-mark" style="color:var(--blue-900);font-size:28px">DAZO</div>
-        <div class="sidebar-logo-sub" style="color:var(--gray-500)">Decision At Zero Objection</div>
+      <div class="card-header justify-center" style="border:none;flex-direction:column;gap:8px;align-items:center;">
+        <img src="/images/dazo-logo.svg" alt="DAZO" class="login-logo">
+        <div class="login-tagline">Decision At Zero Objection</div>
       </div>
       <div class="card-body">
         <form @submit.prevent="handleLogin">
           <div v-if="error" class="alert alert-error mb-16">{{ error }}</div>
-          <div class="text-sm text-muted mb-16">Compte de démonstration: admin@dazo.test / password</div>
+          <div class="text-sm text-muted mb-16" style="text-align:center;">Compte de démonstration: admin@dazo.test / password</div>
           
           <div class="form-group">
             <label class="label">Email</label>
@@ -68,5 +68,15 @@ const handleLogin = async () => {
 .login-card {
   width: 100%;
   max-width: 400px;
+}
+.login-logo {
+  width: 160px;
+  height: auto;
+}
+.login-tagline {
+  font-size: 11px;
+  color: var(--gray-500);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 </style>

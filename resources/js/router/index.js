@@ -23,10 +23,69 @@ const routes = [
                 component: () => import('../views/DecisionList.vue')
             },
             {
+                path: 'decisions/create',
+                name: 'DecisionCreate',
+                component: () => import('../views/DecisionCreate.vue')
+            },
+            {
+                path: 'decisions/clarifications',
+                name: 'PendingClarifications',
+                component: () => import('../views/PendingList.vue'),
+                props: { type: 'clarifications' }
+            },
+            {
+                path: 'decisions/reactions',
+                name: 'PendingReactions',
+                component: () => import('../views/PendingList.vue'),
+                props: { type: 'reactions' }
+            },
+            {
+                path: 'decisions/objections',
+                name: 'PendingObjections',
+                component: () => import('../views/PendingList.vue'),
+                props: { type: 'objections' }
+            },
+            {
                 path: 'decisions/:id',
                 name: 'DecisionDetail',
                 component: () => import('../views/DecisionDetail.vue')
-            }
+            },
+            {
+                path: 'circles',
+                name: 'CircleList',
+                component: () => import('../views/CircleList.vue')
+            },
+            {
+                path: 'circles/:id',
+                name: 'CircleDetail',
+                component: () => import('../views/CircleDetail.vue')
+            },
+            // Admin
+            {
+                path: 'admin',
+                name: 'Admin',
+                component: () => import('../views/admin/AdminDashboard.vue')
+            },
+            {
+                path: 'admin/circles',
+                name: 'AdminCircles',
+                component: () => import('../views/admin/AdminCircles.vue')
+            },
+            {
+                path: 'admin/users',
+                name: 'AdminUsers',
+                component: () => import('../views/admin/AdminUsers.vue')
+            },
+            {
+                path: 'admin/categories',
+                name: 'AdminCategories',
+                component: () => import('../views/admin/AdminCategories.vue')
+            },
+            {
+                path: 'admin/config',
+                name: 'AdminConfig',
+                component: () => import('../views/admin/AdminConfig.vue')
+            },
         ]
     }
 ];
@@ -40,7 +99,6 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore();
     
-    // Tente de recover l'utilisateur s'il n'est pas encore loadé
     if (!authStore.user && localStorage.getItem('dazo_logged_in') === 'true') {
         await authStore.fetchUser();
     }

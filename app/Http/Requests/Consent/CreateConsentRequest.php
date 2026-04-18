@@ -16,8 +16,7 @@ class CreateConsentRequest extends FormRequest
 
         if ($version->decision_id !== $decision->id) return false;
         
-        // Phase Objection requise
-        if ($decision->status->value !== \App\Enums\DecisionStatus::OBJECTION->value) return false;
+        if (!in_array($decision->status->value, [\App\Enums\DecisionStatus::CLARIFICATION->value, \App\Enums\DecisionStatus::REACTION->value, \App\Enums\DecisionStatus::OBJECTION->value])) return false;
 
         $user = $this->user();
 
@@ -26,16 +25,20 @@ class CreateConsentRequest extends FormRequest
             return false;
         }
 
-        $isAuthor = $decision->participants()->where('user_id', $user->id)
-            ->where('role', \App\Enums\DecisionParticipantRole::AUTHOR->value)->exists();
+        $participant = $decision->participants()->where('user_id', $user->id)->first();
+        $role = $participant?->role->value;
         
-        return !$isAuthor;
+        if (in_array($role, [\App\Enums\DecisionParticipantRole::AUTHOR->value, \App\Enums\DecisionParticipantRole::ANIMATOR->value])) {
+            return false;
+        }
+        
+        return true;
     }
 
     public function rules(): array
     {
         return [
-            'type' => ['required', Rule::in(['no_objection', 'abstention'])],
+            'type' => ['required', Rule::in(['no_objection', 'abstention', 'no_questions', 'no_reaction'])],
         ];
     }
 }

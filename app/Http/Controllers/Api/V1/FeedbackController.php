@@ -26,7 +26,7 @@ class FeedbackController extends Controller
         abort_unless($decision->versions()->whereKey($versionId)->exists(), 404);
 
         $feedbacks = Feedback::where('decision_version_id', $versionId)
-            ->with(['author', 'joins'])
+            ->with(['author', 'joins', 'messages.author'])
             ->get();
 
         return response()->json(['feedbacks' => $feedbacks]);

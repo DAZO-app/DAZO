@@ -37,4 +37,10 @@ class DecisionPolicy
         
         return $isAuthor || $isAnimator || $user->is_global_animator;
     }
+
+    public function delete(User $user, Decision $decision): bool
+    {
+        return $decision->status->value === \App\Enums\DecisionStatus::DRAFT->value
+            && $this->update($user, $decision);
+    }
 }

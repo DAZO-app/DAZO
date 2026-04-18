@@ -72,6 +72,26 @@ class CircleMemberController extends Controller
         return response()->json(['message' => 'Vous avez quitté le cercle.']);
     }
 
+    public function update(Request $request, Circle $circle, string $userId): JsonResponse
+    {
+        if ($request->user()->cannot('update', $circle)) {
+            abort(403, "Seul un animateur peut modifier le rôle d'un membre.");
+        }
+
+        $validated = $request->validate([
+            'role' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\CircleMemberRole::class)],
+        ]);
+
+        $member = $circle->members()->where('user_id', $userId)->firstOrFail();
+        $member->role = $validated['role'];
+        $member->save();
+
+        return response()->json([
+            'message' => 'Rôle mis à jour.',
+            'member' => $member->load('user')
+        ]);
+    }
+
     public function destroy(Request $request, Circle $circle, string $userId): JsonResponse
     {
         if ($request->user()->cannot('update', $circle)) {

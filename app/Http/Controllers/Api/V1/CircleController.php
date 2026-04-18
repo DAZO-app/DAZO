@@ -58,4 +58,18 @@ class CircleController extends Controller
             'circle' => $circle->fresh(),
         ]);
     }
+
+    public function destroy(Request $request, Circle $circle): JsonResponse
+    {
+        if ($request->user()->cannot('delete', $circle)) {
+            abort(403, "Vous ne pouvez pas supprimer ce cercle.");
+        }
+
+        try {
+            $circle->delete();
+            return response()->json(['message' => 'Cercle supprimé.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Impossible de supprimer ce cercle (des décisions y sont liées).'], 403);
+        }
+    }
 }

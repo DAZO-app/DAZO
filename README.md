@@ -26,22 +26,24 @@ Notre progression étape par étape :
 * [Étape 7 — Fondations Front-End (SPA Vue 3)](./docs/steps/07_frontend_foundations.md)
 * [Étape 8 — Moteur de Décision (Composants UI)](./docs/steps/08_moteur_decision_ui.md)
 * [Étape 9 — Finalisation Infrastructure Backend](./docs/steps/09_infrastructure_backend.md)
+* [Étape 10 — Frontend Fonctionnel & Panel Admin](./docs/steps/10_frontend_features.md)
+* [Étape 11 — Impersonation (Se faire passer pour)](./docs/steps/11_impersonation.md)
 
 ---
 
-## 🛠 Guide d'Installation Exhaustif
+## 🛠 Guide d'Installation
 
 DAZO V1 est architecturé sur :
-* **Backend** : Laravel 13 (PHP 8.3+)
+* **Backend** : Laravel 11 (PHP 8.3+)
 * **Base de données** : PostgreSQL (avec support des UUID)
 * **Cache & Files d'attente** : Redis
-* **Frontend** : Vue 3 + Vite.js (Compilation native via `@vitejs/plugin-vue`)
+* **Frontend** : Vue 3 + Vite.js (SPA compilée via `@vitejs/plugin-vue`)
 
 ### 1. Pré-requis
-- PHP 8.3 ou supérieur (avec extensions PDO, mbstring, xml, curl, sqlite).
+- PHP 8.3 ou supérieur (avec extensions `pdo_pgsql`, `mbstring`, `xml`, `curl`)
 - Composer 2.x
 - Node.js 18+ et NPM
-- PostgreSQL 14+ ou Docker
+- PostgreSQL 14+
 - Redis
 
 ### 2. Configuration Initiale
@@ -62,10 +64,9 @@ Configurez les variables d'environnement :
 ```bash
 cp .env.example .env
 php artisan key:generate
-touch database/database.sqlite
 ```
 
-Le profil par défaut permet un démarrage local rapide en SQLite. Si vous souhaitez utiliser PostgreSQL et Redis, adaptez votre `.env` comme suit :
+Configurez PostgreSQL dans `.env` :
 ```env
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
@@ -83,44 +84,93 @@ SESSION_DRIVER=redis
 
 Lancez les migrations pour créer la structure et injecter les données de démonstration :
 ```bash
-php artisan migrate --seed
+php artisan migrate:fresh --seed
 ```
 
-### 4. Démarrage des Services de Développement
+### 4. Build du Frontend
 
-Pour faire tourner le projet en mode développement :
+Compilez les assets Vue :
 ```bash
-composer dev
+npm run build
 ```
 
-L'application est maintenant accessible sur `http://localhost:8000`.
+### 5. Démarrage du Serveur
+
+```bash
+php artisan serve
+```
+
+L'application est maintenant accessible sur `http://127.0.0.1:8000`.
 
 ---
 
 ## 🔐 Accès & Administration
 
-Dans la version V1, un compte administrateur de démonstration est injecté par le seeder :
-```text
-admin@dazo.test / password
-```
+### Comptes de démonstration
 
-**Accès au panel:**
-Les endpoints API d'administration (`/api/v1/admin/*`) seront immédiatement débloqués pour votre compte, vous permettant de configurer l'instance (via `ConfigService`). Les composants côté Vue afficheront des contrôles étendus si les permissions correspondent à ce rôle de session.
+| Rôle | Email | Mot de passe |
+|---|---|---|
+| **Administrateur** | `admin@dazo.test` | `password` |
+| **Utilisateur** | `user@dazo.test` | `password` |
+
+### Panel d'administration
+
+Le panel admin est accessible via l'icône ⚙ dans la sidebar (visible uniquement pour les admins). Il permet de :
+- **Gérer les cercles** : création, édition, gestion des membres
+- **Voir les utilisateurs** : liste des comptes et rôles
+- **Gérer les catégories** : organiser les décisions par thème
+- **Configurer l'instance** : paramètres globaux via les endpoints `/api/v1/admin/*`
 
 ## 📖 Utilisation Rapide (Scénario Métier)
 
-1. **Création d'un Cercle :** En tant qu'utilisateur vous formez un "Cercle" (Espace de la communauté) et vous invitez d'autres utilisateurs via des liens d'invitation.
-2. **Rédaction :** N'importe quel membre lance une `Decision` dans ce contexte avec le modèle souhaité. Elle démarre en phase de brouillon (`Draft`).
-3. **Clarification :** L'auteur pousse la décision en clarification. Le composant *Thread* s'ouvre, autorisant les réactions.
-4. **Objections :** L'animateur déclare la phase d'Objection. Le front-end présente l'interface `FeedbackEngine` où chaque utilisateur déclare s'il a une objection bloquante.
-5. **Adoption :** Si les objections sont résolues (*withdraw*) et que personne ne soutient des blocages stricts, l'adoption passe au vert.
+1. **Connectez-vous** avec les identifiants de démonstration
+2. **Explorez vos cercles** via la navigation latérale (⊛ Cercles)
+3. **Créez une décision** via le bouton `+ Nouvelle décision` sur le Dashboard ou la liste des décisions
+4. **Sélectionnez un cercle**, renseignez un titre et une proposition
+5. **Suivez le cycle de vie** : Brouillon → Clarification → Réaction → Objection → Adoption
+6. **Administrez** la plateforme via le panel admin (⚙)
 
 ---
 
-## 🧪 Exécuter la Suite de Tests Automatisés
+## 🧪 Exécuter la Suite de Tests
 
-DAZO comprend des tests critiques pour auditer les règles de validation du modèle. La suite utilise SQLite en mémoire pour rester autonome en local.
+DAZO utilise PostgreSQL pour les tests (base `dazo_test`). Créez cette base avant de lancer les tests :
 ```bash
+# Créer la base de test
+PGPASSWORD=secret psql -h 127.0.0.1 -U dazo_user -d postgres -c "CREATE DATABASE dazo_test"
+
 # Lancer toute la suite (Feature et Unit)
-php artisan test
+vendor/bin/phpunit
+```
+
+---
+
+## 📁 Structure du Projet
+
+```
+app/
+├── Console/Commands/     # Commandes Artisan (PurgeOldLogs)
+├── Enums/                # Enums PHP typés (DecisionStatus, FeedbackType...)
+├── Events/               # Événements métier (DecisionCreated, FeedbackSubmitted...)
+├── Http/
+│   ├── Controllers/Api/V1/  # Contrôleurs API REST
+│   ├── Middleware/           # Middleware (Active, Admin)
+│   └── Requests/            # FormRequests de validation
+├── Listeners/            # Listeners de notification
+├── Models/               # Modèles Eloquent avec UUID
+├── Policies/             # Politiques d'autorisation
+└── Services/             # Services métier (DecisionService, FeedbackService...)
+
+resources/js/
+├── components/           # Composants Vue réutilisables
+├── layouts/              # Layout principal (AppLayout)
+├── router/               # Configuration Vue Router
+├── stores/               # Stores Pinia (auth, decision, circle)
+└── views/                # Pages de l'application
+    └── admin/            # Pages du panel d'administration
+
+database/
+├── factories/            # Factories pour les tests
+├── migrations/           # Migrations PostgreSQL
+└── seeders/              # Données de démonstration
 ```
