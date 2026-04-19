@@ -2,10 +2,17 @@
 
 namespace App\Services;
 
+use App\Enums\CircleMemberRole;
+use App\Enums\ConsentSignal;
 use App\Enums\DecisionParticipantRole;
 use App\Enums\DecisionStatus;
+use App\Enums\FeedbackType;
+use App\Models\Attachment;
 use App\Models\Circle;
+use App\Models\Consent;
 use App\Models\Decision;
+use App\Models\DecisionVersion;
+use App\Models\Feedback;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -152,9 +159,9 @@ class DecisionService
     /**
      * Crée une nouvelle version et effectue la transition de révision vers clarification.
      */
-    public function createNewVersion(Decision $decision, string $content, User $author): \App\Models\DecisionVersion
+    public function createNewVersion(Decision $decision, string $content, User $author, array $attachmentIds = []): DecisionVersion
     {
-        return DB::transaction(function () use ($decision, $content, $author) {
+        return DB::transaction(function () use ($decision, $content, $author, $attachmentIds) {
             $oldVersion = $decision->currentVersion;
 
             // Désactive l'ancienne version courante
@@ -174,10 +181,75 @@ class DecisionService
                 'content' => $content,
             ]);
 
+            // Lier les pièces jointes explicitement reçues
+            if (!empty($attachmentIds)) {
+                Attachment::whereIn('id', $attachmentIds)
+                    ->update(['decision_version_id' => $newVersion->id]);
+            }
+
+            // Nettoyage des champs de brouillon
+            $decision->update([
+                'revision_content' => null,
+                'revision_attachment_ids' => null,
+            ]);
+
             // Forcer la transition auto de REVISION à CLARIFICATION (le nouveau cycle)
             $this->transition($decision, DecisionStatus::CLARIFICATION->value, $author, true);
 
             return $newVersion;
         });
+    }
+
+    /**
+     * Calcule les statistiques de participation pour une version spécifique.
+     */
+    public function getParticipationStats(Decision $decision, DecisionVersion $version, ?string $statusOverride = null): array
+    {
+        $circle = $decision->circle;
+        $totalMembers = $circle->members()->where('role', '!=', CircleMemberRole::OBSERVER->value)->pluck('user_id')->toArray();
+        $excludedOrManaging = $decision->participants()
+            ->whereIn('role', [
+                \App\Enums\DecisionParticipantRole::EXCLUDED->value,
+                \App\Enums\DecisionParticipantRole::AUTHOR->value,
+                \App\Enums\DecisionParticipantRole::ANIMATOR->value
+            ])->pluck('user_id')->toArray();
+        
+        $eligible = array_diff($totalMembers, $excludedOrManaging);
+        $status = $statusOverride ?? $decision->status->value;
+        $participated = 0;
+
+        $phaseFeedbackTypes = [];
+        $phaseConsentSignals = [];
+
+        if (in_array($status, [DecisionStatus::CLARIFICATION->value, DecisionStatus::REACTION->value, DecisionStatus::OBJECTION->value], true)) {
+            
+            if ($status === DecisionStatus::CLARIFICATION->value) {
+                $phaseFeedbackTypes = [FeedbackType::CLARIFICATION->value];
+                $phaseConsentSignals = [ConsentSignal::NO_QUESTIONS->value];
+            } elseif ($status === DecisionStatus::REACTION->value) {
+                $phaseFeedbackTypes = [FeedbackType::REACTION->value];
+                $phaseConsentSignals = [ConsentSignal::NO_REACTION->value];
+            } elseif ($status === DecisionStatus::OBJECTION->value) {
+                $phaseFeedbackTypes = [FeedbackType::OBJECTION->value, FeedbackType::SUGGESTION->value];
+                $phaseConsentSignals = [ConsentSignal::NO_OBJECTION->value, ConsentSignal::ABSTENTION->value];
+            }
+
+            $feedbackAuthors = Feedback::where('decision_version_id', $version->id)
+                ->whereIn('type', $phaseFeedbackTypes)
+                ->pluck('author_id')->toArray();
+                
+            $consentAuthors = Consent::where('decision_version_id', $version->id)
+                ->whereIn('signal', $phaseConsentSignals)
+                ->pluck('user_id')->toArray();
+            
+            $allParticipants = array_unique(array_merge($feedbackAuthors, $consentAuthors));
+            $participated = count(array_intersect($eligible, $allParticipants));
+        }
+
+        return [
+            'eligible'     => count($eligible),
+            'participated' => $participated,
+            'pending'      => max(0, count($eligible) - $participated)
+        ];
     }
 }

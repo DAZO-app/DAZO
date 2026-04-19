@@ -1,8 +1,12 @@
 <template>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Pièces jointes</span>
-      <button v-if="editable" class="btn btn-secondary btn-sm" type="button" @click="browseFiles">
+  <div v-if="editable || displayAttachments.length" class="premium-card">
+    <div class="pc-header pc-header-blue">
+      <div class="pc-header-icon">📎</div>
+      <div class="pc-header-content">
+        <div class="pc-header-title">Pièces jointes</div>
+        <div class="pc-header-sub">{{ displayAttachments.length }} fichier(s) associé(s)</div>
+      </div>
+      <button v-if="editable" class="btn btn-secondary btn-sm" type="button" @click="browseFiles" style="margin-left:auto; position:relative; z-index:1;">
         Ajouter
       </button>
     </div>
@@ -110,7 +114,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['changed']);
+const emit = defineEmits(['changed', 'uploaded', 'removed']);
 
 const fileInputRef = ref(null);
 const dragActive = ref(false);
@@ -146,7 +150,7 @@ const handleDrop = (event) => {
 };
 
 const uploadFiles = async (files) => {
-  if (!props.editable || !props.versionId) {
+  if (!props.editable) {
     return;
   }
 
@@ -167,7 +171,9 @@ const uploadFiles = async (files) => {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('decision_version_id', props.versionId);
+    if (props.versionId) {
+      formData.append('decision_version_id', props.versionId);
+    }
 
     try {
       const { data } = await axios.post('/api/v1/attachments', formData, {
@@ -190,6 +196,7 @@ const uploadFiles = async (files) => {
         progress: 100,
       });
 
+      emit('uploaded', data.attachment);
       emit('changed');
     } catch (error) {
       localAttachments.value = localAttachments.value.filter((attachment) => attachment.localKey !== tempKey);
@@ -214,6 +221,7 @@ const removeAttachment = async (attachment) => {
   try {
     await axios.delete(`/api/v1/attachments/${attachment.id}`);
     localAttachments.value = localAttachments.value.filter((item) => item.localKey !== attachment.localKey);
+    emit('removed', attachment.id);
     emit('changed');
   } catch (error) {
     window.alert(error.response?.data?.message || 'Suppression impossible pour le moment.');

@@ -43,7 +43,7 @@
 |---|---|---|
 | `GET` | `/api/v1/decisions` | Liste des décisions accessibles |
 | `GET` | `/api/v1/decisions/{id}` | Détail d'une décision (version courante) |
-| `PUT` | `/api/v1/decisions/{id}` | Modifier un brouillon (titre, contenu, animateur, exclusions) |
+| `PUT` | `/api/v1/decisions/{id}` | Modifier un brouillon (titre, contenu, animateur, exclusions) OU enregistrer un brouillon de révision en phase `revision` (`content`, `revision_attachment_ids`). Le contenu du brouillon est stocké dans `revision_content` sur le modèle Decision. |
 | `DELETE` | `/api/v1/decisions/{id}` | Supprimer un brouillon |
 | `POST` | `/api/v1/circles/{circleId}/decisions` | Créer une décision dans un cercle |
 
@@ -52,8 +52,8 @@
 | Méthode | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/v1/decisions/{id}/versions` | Historique des versions |
-| `POST` | `/api/v1/decisions/{id}/versions` | Créer une nouvelle version (phase revision) |
-| `GET` | `/api/v1/decisions/{id}/versions/{versionId}` | Détail d'une version |
+| `POST` | `/api/v1/decisions/{id}/versions` | Créer une nouvelle version (phase revision). Les colonnes `revision_content` et `revision_attachment_ids` du modèle Decision sont utilisées pour initialiser la version, puis réinitialisées. |
+| `GET` | `/api/v1/decisions/{id}/versions/{versionId}` | Détail d'une version (inclut `attachments`, `feedbacks`, `consents` et `participation_stats`). |
 
 ### Cycle de vie
 
@@ -66,7 +66,7 @@
 
 | Méthode | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/attachments` | Upload d'une pièce jointe, liée directement à une version si `decision_version_id` est fourni |
+| `POST` | `/api/v1/attachments` | Upload d'une pièce jointe. Liée directement si `decision_version_id` fourni, sinon retourne l'ID pour liaison ultérieure (ex: phase révision). |
 | `POST` | `/api/v1/decisions/versions/{versionId}/attachments/link` | Lier des uploads existants à une version |
 | `DELETE` | `/api/v1/attachments/{attachmentId}` | Supprimer une pièce jointe |
 

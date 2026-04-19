@@ -11,9 +11,11 @@ use App\Enums\DecisionStatus;
 use App\Enums\DecisionParticipantRole;
 use App\Enums\CircleMemberRole;
 use App\Enums\FeedbackStatus;
+use App\Traits\HasUserActionStatus;
 
 class DashboardController extends Controller
 {
+    use HasUserActionStatus;
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -21,14 +23,14 @@ class DashboardController extends Controller
         // 1a. Decisions where I am AUTHOR
         $authorDecisions = Decision::whereHas('participants', function ($q) use ($user) {
             $q->where('user_id', $user->id)->where('role', DecisionParticipantRole::AUTHOR->value);
-        })->with('circle', 'currentVersion', 'participants.user')->get();
+        })->with('circle', 'currentVersion.attachments', 'participants.user')->get();
 
         // 1b. Decisions where I am ANIMATOR (but not author)
         $authorIds = $authorDecisions->pluck('id')->toArray();
         $animatorDecisions = Decision::whereNotIn('id', $authorIds)
             ->whereHas('participants', function ($q) use ($user) {
                 $q->where('user_id', $user->id)->where('role', DecisionParticipantRole::ANIMATOR->value);
-            })->with('circle', 'currentVersion', 'participants.user')->get();
+            })->with('circle', 'currentVersion.attachments', 'participants.user')->get();
 
         // Group by circle name
         $groupByCircle = function ($decisions) {
@@ -42,6 +44,9 @@ class DashboardController extends Controller
 
         $myDecisionsGrouped   = $groupByCircle($authorDecisions);
         $myAnimatedGrouped    = $groupByCircle($animatorDecisions);
+        
+        $this->attachUserActionStatus($authorDecisions, $user->id);
+        $this->attachUserActionStatus($animatorDecisions, $user->id);
 
         // 2. Circle decisions: member but not author/animator
         $myAllIds = array_merge($authorIds, $animatorDecisions->pluck('id')->toArray());
@@ -50,9 +55,10 @@ class DashboardController extends Controller
                 $q->where('user_id', $user->id)->where('role', '!=', CircleMemberRole::OBSERVER->value);
             })
             ->whereNotIn('status', [DecisionStatus::DRAFT->value, DecisionStatus::ADOPTED->value, DecisionStatus::ABANDONED->value])
-            ->with(['circle', 'currentVersion', 'participants.user'])->get();
+            ->with(['circle', 'currentVersion.attachments', 'participants.user'])->get();
 
         $circleDecisionsGrouped = $groupByCircle($circleDecisions);
+        $this->attachUserActionStatus($circleDecisions, $user->id);
 
         // 3. My Clarifications (active threads)
         $terminal = [FeedbackStatus::WITHDRAWN->value, FeedbackStatus::ACKNOWLEDGED->value, FeedbackStatus::REJECTED->value, FeedbackStatus::TREATED->value];
@@ -64,7 +70,7 @@ class DashboardController extends Controller
                       $q2->where('user_id', $user->id)->whereIn('role', [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value]);
                   });
             })
-            ->with(['author', 'version.decision.circle', 'messages.author'])
+            ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'messages.author'])
             ->orderByDesc('created_at')->get();
 
         // 4. My Objections (active threads)
@@ -76,12 +82,16 @@ class DashboardController extends Controller
                       $q2->where('user_id', $user->id)->whereIn('role', [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value]);
                   });
             })
-            ->with(['author', 'version.decision.circle', 'messages.author'])
+            ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'messages.author'])
             ->orderByDesc('created_at')->get();
 
         // 5. STATS (all circle decisions visible to user)
-        $allVisible = Decision::whereHas('circle.members', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
+        $allVisible = Decision::where(function ($q) use ($user) {
+            $q->whereHas('circle.members', function ($q2) use ($user) {
+                $q2->where('user_id', $user->id);
+            })->orWhereHas('participants', function ($q2) use ($user) {
+                $q2->where('user_id', $user->id);
+            });
         })->where(function ($q) use ($user) {
             $q->where('status', '!=', DecisionStatus::DRAFT->value)
               ->orWhereHas('participants', function ($q2) use ($user) {

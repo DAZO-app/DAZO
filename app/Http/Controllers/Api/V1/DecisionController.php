@@ -17,8 +17,12 @@ use App\Services\DecisionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+use App\Traits\HasUserActionStatus;
+
 class DecisionController extends Controller
 {
+    use HasUserActionStatus;
+
     public function __construct(private DecisionService $decisionService)
     {
     }
@@ -28,11 +32,12 @@ class DecisionController extends Controller
         $decisions = Decision::whereHas('circle.members', function ($query) {
             $query->where('user_id', auth()->id());
         })
-            ->with(['circle', 'category', 'currentVersion', 'author.user', 'decisionModel', 'participants.user'])
+            ->with(['circle', 'category', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user'])
             ->latest()
             ->get();
 
         $this->attachParticipationStats($decisions);
+        $this->attachUserActionStatus($decisions, auth()->id());
 
         return response()->json(['decisions' => $decisions]);
     }
@@ -43,10 +48,11 @@ class DecisionController extends Controller
         $this->authorize('view', $circle);
 
         $decisions = Decision::where('circle_id', $circle->id)
-            ->with(['circle', 'category', 'currentVersion', 'author.user', 'decisionModel', 'participants.user'])
+            ->with(['circle', 'category', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user'])
             ->get();
 
         $this->attachParticipationStats($decisions);
+        $this->attachUserActionStatus($decisions, auth()->id());
 
         return response()->json(['decisions' => $decisions]);
     }
@@ -68,26 +74,32 @@ class DecisionController extends Controller
         $decision = Decision::findOrFail($id);
         $this->authorize('view', $decision);
 
-        // Participation Stats logic
-        $circle = $decision->circle;
-        $totalMembers = $circle->members()->where('role', '!=', CircleMemberRole::OBSERVER->value)->pluck('user_id')->toArray();
-        $excludedOrManaging = $decision->participants()
-            ->whereIn('role', [
-                DecisionParticipantRole::EXCLUDED->value,
-                DecisionParticipantRole::AUTHOR->value,
-                DecisionParticipantRole::ANIMATOR->value
-            ])->pluck('user_id')->toArray();
-        
-        $eligible = array_diff($totalMembers, $excludedOrManaging);
-        
+        $decision->load([
+            'currentVersion.attachments', 
+            'currentVersion.feedbacks', 
+            'currentVersion.consents', 
+            'participants.user', 
+            'circle.members.user',
+            'category', 
+            'decisionModel'
+        ]);
+
+        $participationStats = [
+            'eligible'     => 0,
+            'participated' => 0,
+            'pending'      => 0
+        ];
+
         $v = $decision->currentVersion;
-        $participated = 0;
-        $status = $decision->status->value;
+
         $phaseFeedbackTypes = [];
         $phaseConsentSignals = [];
 
-        if ($v && in_array($status, [DecisionStatus::CLARIFICATION->value, DecisionStatus::REACTION->value, DecisionStatus::OBJECTION->value], true)) {
+        if ($v) {
+            $participationStats = $this->decisionService->getParticipationStats($decision, $v);
             
+            // Re-calcul des types de phase pour la suite du controller
+            $status = $decision->status->value;
             if ($status === DecisionStatus::CLARIFICATION->value) {
                 $phaseFeedbackTypes = [FeedbackType::CLARIFICATION->value];
                 $phaseConsentSignals = [ConsentSignal::NO_QUESTIONS->value];
@@ -98,26 +110,10 @@ class DecisionController extends Controller
                 $phaseFeedbackTypes = [FeedbackType::OBJECTION->value, FeedbackType::SUGGESTION->value];
                 $phaseConsentSignals = [ConsentSignal::NO_OBJECTION->value, ConsentSignal::ABSTENTION->value];
             }
-
-            $feedbackAuthors = Feedback::where('decision_version_id', $v->id)
-                ->whereIn('type', $phaseFeedbackTypes)
-                ->pluck('author_id')->toArray();
-                
-            $consentAuthors = Consent::where('decision_version_id', $v->id)
-                ->whereIn('signal', $phaseConsentSignals)
-                ->pluck('user_id')->toArray();
-            
-            $allParticipants = array_unique(array_merge($feedbackAuthors, $consentAuthors));
-            $participated = count(array_intersect($eligible, $allParticipants));
         }
 
-        $participationStats = [
-            'eligible'     => count($eligible),
-            'participated' => $participated,
-            'pending'      => max(0, count($eligible) - $participated)
-        ];
-
         $decision->setAttribute('participation_stats', $participationStats);
+        $decision->setAttribute('user_status', $this->calculateUserActionStatus($decision, auth()->id()));
 
         $myConsent = null;
         if ($v) {
@@ -174,15 +170,7 @@ class DecisionController extends Controller
         }
 
         return response()->json([
-            'decision' => $decision->load([
-                'currentVersion.attachments', 
-                'currentVersion.feedbacks', 
-                'currentVersion.consents', 
-                'participants.user', 
-                'circle.members.user',
-                'category', 
-                'decisionModel'
-            ]),
+            'decision' => $decision,
             'participation_stats' => $participationStats,
             'has_participated' => $hasFeedbackInPhase || $hasConsentInPhase,
             'phase_participation_map' => $phaseParticipationMap,
@@ -200,8 +188,8 @@ class DecisionController extends Controller
         $decision = Decision::findOrFail($id);
         $this->authorize('update', $decision);
 
-        if ($decision->status->value !== DecisionStatus::DRAFT->value) {
-            abort(400, "Seule une décision en brouillon peut être modifiée ainsi.");
+        if ($decision->status->value !== DecisionStatus::DRAFT->value && $decision->status->value !== DecisionStatus::REVISION->value) {
+            abort(400, "Cette décision ne peut pas être modifiée dans son état actuel.");
         }
 
         $validated = $request->validate([
@@ -212,6 +200,8 @@ class DecisionController extends Controller
             'excluded_members.*' => 'uuid',
             'category_id' => 'nullable|exists:categories,id',
             'model_id' => 'nullable|exists:decision_models,id',
+            'revision_attachment_ids' => 'nullable|array',
+            'revision_attachment_ids.*' => 'exists:attachments,id',
         ]);
 
         $decision->update([
@@ -220,9 +210,17 @@ class DecisionController extends Controller
             'model_id' => $validated['model_id'] ?? null,
         ]);
 
-        $version = $decision->currentVersion;
-        if ($version) {
-            $version->update(['content' => $validated['content']]);
+        if ($decision->status->value === DecisionStatus::DRAFT->value) {
+            $version = $decision->currentVersion;
+            if ($version) {
+                $version->update(['content' => $validated['content']]);
+            }
+        } else {
+            // REVISION status: save to draft fields
+            $decision->update([
+                'revision_content' => $validated['content'],
+                'revision_attachment_ids' => $validated['revision_attachment_ids'] ?? null,
+            ]);
         }
 
         // Sync Animator

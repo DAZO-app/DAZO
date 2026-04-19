@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Consent;
 use App\Models\Decision;
 use App\Models\Feedback;
+use App\Traits\HasUserActionStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PendingItemsController extends Controller
 {
+    use HasUserActionStatus;
     /**
      * Returns an array of pending items for the authenticated user, 
      * tailored to a specific phase.
@@ -99,31 +101,21 @@ class PendingItemsController extends Controller
 
                 if ((string) $lastMsg->author_id === (string) $user->id) continue;
 
-                $decision = $fb->version?->decision;
-                if (!$decision) continue;
-
-                $role = $decision->participants->where('user_id', $user->id)->first()?->role->value;
-                if (!$role) {
-                    $role = $decision->circle->members()->where('user_id', $user->id)->first()?->role->value;
-                }
-
-                $items[] = [
-                    'id'                  => 'thread-' . $fb->id,
-                    'decision_id'         => $decision->id,
-                    'circle_name'         => $decision->circle?->name,
-                    'decision_title'      => $decision->title,
-                    'version_number'      => $fb->version?->version_number ?? 1,
-                    'my_role'             => $role ?? 'participant',
-                    'needs_reply'         => true,
-                    'last_message'        => mb_strimwidth($lastMsg->content, 0, 80, '...'),
-                    'last_message_author' => $lastMsg->author?->name ?? 'Quelqu\'un',
-                ];
             }
         }
 
-        // Sort: needs_reply first, then by id desc
-        usort($items, fn($a, $b) => ($b['needs_reply'] <=> $a['needs_reply']));
-
-        return response()->json(['items' => $items]);
+        // We now return the Decision models directly, enriched with user_status
+        $decisionIds = array_unique(array_merge(
+            $decisions->pluck('id')->toArray(),
+            $feedbacks->map(fn($f) => $f->version->decision_id)->toArray()
+        ));
+        
+        $fullDecisions = Decision::whereIn('id', $decisionIds)
+            ->with(['circle', 'category', 'currentVersion', 'author.user', 'decisionModel', 'participants.user'])
+            ->get();
+            
+        $this->attachUserActionStatus($fullDecisions, $user->id);
+        
+        return response()->json(['decisions' => $fullDecisions]);
     }
 }

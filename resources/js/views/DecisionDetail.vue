@@ -36,12 +36,22 @@
       <div class="page-actions">
         <span class="badge" :class="statusClass">{{ statusLabel }}</span>
         <div class="header-nav">
-          <button class="btn btn-secondary btn-icon" :disabled="!previousDecisionId" @click="goToDecision(previousDecisionId)">
-            &lt;
-          </button>
-          <button class="btn btn-secondary btn-icon" :disabled="!nextDecisionId" @click="goToDecision(nextDecisionId)">
-            &gt;
-          </button>
+          <template v-if="isRevision && isAuthorOrAnimator">
+            <button class="btn btn-secondary" :disabled="savingDraft || publishing" @click="saveRevision">
+              {{ savingDraft ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+            <button class="btn btn-primary" :disabled="savingDraft || publishing" @click="publishRevision">
+              {{ publishing ? 'Publication...' : 'Publier' }}
+            </button>
+          </template>
+          <template v-else>
+            <button class="btn btn-secondary btn-icon" :disabled="!previousDecisionId" @click="goToDecision(previousDecisionId)">
+              &lt;
+            </button>
+            <button class="btn btn-secondary btn-icon" :disabled="!nextDecisionId" @click="goToDecision(nextDecisionId)">
+              &gt;
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -86,10 +96,13 @@
     <div class="page-body">
       <div class="grid-layout">
         <div class="col-main">
-          <div v-if="isDraft" class="card mb-16">
-            <div class="card-header draft-header">
-              <span class="card-title">Mode brouillon</span>
-              <span class="badge badge-amber">Édition active</span>
+          <div v-if="isDraft" class="premium-card mb-16">
+            <div class="pc-header pc-header-amber">
+              <div class="pc-header-icon">📝</div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Mode brouillon</div>
+                <div class="pc-header-sub">Édition active</div>
+              </div>
             </div>
 
             <div class="card-body">
@@ -158,44 +171,87 @@
             </div>
           </div>
 
-          <div v-else class="card mb-16">
-            <div class="card-header">
-              <span class="card-title">Contenu de la décision</span>
+          <div v-if="isRevision && isAuthorOrAnimator" class="premium-card mb-16">
+            <div class="pc-header pc-header-amber">
+              <div class="pc-header-icon">✍️</div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Révision de la proposition</div>
+                <div class="pc-header-sub">Préparez la nouvelle version suite aux retours</div>
+              </div>
             </div>
             <div class="card-body">
+              <div class="form-group">
+                <label class="label">Contenu de la nouvelle proposition</label>
+                <RichTextEditor
+                  v-model="draftForm.content"
+                  placeholder="Appliquez les modifications nécessaires ici..."
+                />
+              </div>
+
+              <div class="mb-16">
+                <AttachmentPanel
+                  :attachments="revisionAttachments"
+                  :editable="true"
+                  version-id=""
+                  @uploaded="handleRevisionFileUpload"
+                  @removed="handleRevisionFileRemove"
+                />
+              </div>
+
+              <div class="draft-actions">
+                <button class="btn btn-secondary" :disabled="savingDraft" @click="saveRevision">
+                  {{ savingDraft ? 'Enregistrement...' : 'Enregistrer le brouillon' }}
+                </button>
+                <button class="btn btn-primary" :disabled="publishing || savingDraft" @click="publishRevision">
+                  {{ publishing ? 'Publication...' : 'Publier cette version' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!isRevision && !isDraft" class="premium-card mb-16">
+            <div class="pc-header pc-header-blue">
+              <div class="pc-header-icon">{{ viewingVersionId ? '🕰' : '📄' }}</div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">{{ viewingVersionId ? 'Version ' + historicalVersionData.version_number : 'Contenu de la décision' }}</div>
+                <div class="pc-header-sub">{{ viewingVersionId ? 'Version historique' : 'Version actuelle de la proposition' }}</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div v-if="displayContent" class="decision-prose" v-html="displayContent"></div>
+              <div v-else class="text-muted text-sm">Aucun contenu disponible pour cette version.</div>
+            </div>
+          </div>
+
+          <div v-if="shouldShowAttachments" class="mb-16">
+            <AttachmentPanel
+              :attachments="displayAttachments"
+              :editable="false"
+              :version-id="viewingVersionId || currentVersion?.id || ''"
+            />
+          </div>
+          
+          <div v-if="isRevision && !isDraft" class="premium-card mb-16">
+            <div class="pc-header pc-header-blue" style="opacity: 0.9;">
+              <div class="pc-header-icon">🕰</div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">{{ isAuthorOrAnimator ? 'Proposition à réviser' : 'Proposition actuelle' }}</div>
+                <div class="pc-header-sub">Version {{ currentVersion?.version_number }} en cours de révision</div>
+              </div>
+            </div>
+            <div class="card-body" style="background: var(--gray-50); border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
               <div v-if="currentVersion?.content" class="decision-prose" v-html="currentVersion.content"></div>
               <div v-else class="text-muted text-sm">Aucun contenu disponible pour cette version.</div>
             </div>
           </div>
 
-          <div v-if="!isDraft" class="mb-16">
-            <AttachmentPanel
-              :attachments="currentVersion?.attachments || []"
-              :editable="false"
-              :version-id="currentVersion?.id || ''"
-            />
-          </div>
-
-          <div
-            v-if="['clarification', 'reaction'].includes(decision.status)"
-            class="mb-16"
-          >
-            <DecisionThread :decision="decision" />
-          </div>
-
-          <div
-            v-if="['clarification', 'objection', 'revision', 'adopted', 'adopted_override'].includes(decision.status)"
-            class="mb-16"
-          >
-            <FeedbackEngine :decision="decision" @refresh="refreshDecision" />
-          </div>
-        </div>
-
-        <div class="col-side">
-          <div v-if="showParticipationCard" class="card mb-16">
-            <div class="card-header" :class="hasAlreadyParticipated ? 'phase-header-done' : 'phase-header-pending'">
-              <span class="status-dot" :class="hasAlreadyParticipated ? 'dot-teal' : 'dot-amber'"></span>
-              <span class="card-title">{{ participationCardTitle }}</span>
+          <div v-if="showParticipationCard && !hasAlreadyParticipated" class="premium-card mb-16">
+            <div class="pc-header" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-amber'">
+              <div class="pc-header-icon">💬</div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">{{ participationCardTitle }}</div>
+                <div class="pc-header-sub">{{ hasAlreadyParticipated ? 'Participation enregistrée' : 'Action requise de votre part' }}</div>
+              </div>
             </div>
 
             <div class="card-body">
@@ -206,58 +262,114 @@
               </div>
 
               <template v-else>
-                <button class="btn btn-secondary btn-block mb-12" @click="openReactionModal">
-                  <span class="text-lg mr-8">💬</span>
-                  {{ modalActionLabel }}
-                </button>
-
-                <div class="divider mb-16">OU</div>
-
-                <div class="grid-2">
-                  <button
-                    v-if="decision.status === 'clarification'"
-                    class="vote-btn vote-ok"
-                    @click="submitConsent('no_questions')"
-                  >
-                    <span class="vote-icon">👌</span>
-                    C'est clair
+                <div class="grid-2 gap-12">
+                  <button class="btn btn-secondary" @click="openReactionModal" style="padding: 12px 8px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+                    <span class="text-xl">💬</span>
+                    <span>{{ modalActionLabelShort }}</span>
                   </button>
 
-                  <button
-                    v-if="decision.status === 'reaction'"
-                    class="vote-btn vote-ok"
-                    @click="submitConsent('no_reaction')"
-                  >
-                    <span class="vote-icon">👍</span>
-                    RAS / Consensus
-                  </button>
+                  <div v-if="decision.status === 'clarification'">
+                    <button class="vote-btn vote-ok" @click="submitConsent('no_questions')" style="width: 100%; height: 100%;">
+                      <span class="vote-icon">👌</span>
+                      C'est clair
+                    </button>
+                  </div>
 
-                  <button
-                    v-if="decision.status === 'objection'"
-                    class="vote-btn vote-ok"
-                    @click="submitConsent('no_objection')"
-                  >
-                    <span class="vote-icon">👍</span>
-                    Sans objection
-                  </button>
+                  <div v-if="decision.status === 'reaction'">
+                    <button class="vote-btn vote-ok" @click="submitConsent('no_reaction')" style="width: 100%; height: 100%;">
+                      <span class="vote-icon">👍</span>
+                      RAS
+                    </button>
+                  </div>
 
-                  <button
-                    v-if="decision.status === 'objection'"
-                    class="vote-btn vote-abs"
-                    @click="submitConsent('abstention')"
-                  >
-                    <span class="vote-icon">👀</span>
-                    Abstention
-                  </button>
+                  <div v-if="decision.status === 'objection'" class="grid-1 gap-8">
+                    <button class="vote-btn vote-ok" @click="submitConsent('no_objection')" style="width: 100%;">
+                      <span class="vote-icon">👍</span>
+                      Sans objection
+                    </button>
+                    <button class="vote-btn vote-abs" @click="submitConsent('abstention')" style="width: 100%;">
+                      <span class="vote-icon">👀</span>
+                      Abstention
+                    </button>
+                  </div>
                 </div>
               </template>
             </div>
           </div>
 
+          <div
+            v-if="isFeedbackEngineVisible"
+            class="mb-16"
+          >
+            <FeedbackEngine 
+                 :decision="viewingVersionId ? historicalVersionDecision : decision" 
+                 :historical-data="viewingVersionId ? historicalVersionData : null"
+                 @refresh="refreshDecision" 
+            />
+          </div>
+        </div>
+
+        <div class="col-side">
+          <!-- Cartes de Rôle / Participation -->
+          <div v-if="myRole === 'author'" class="premium-card mb-16">
+            <div class="pc-header pc-header-blue" style="padding: 12px;">
+              <div class="pc-header-icon" style="font-size: 1.2rem;">📣</div>
+              <div class="pc-header-content">
+                <div class="pc-header-title" style="font-size: 14px;">Porteur</div>
+                <div class="pc-header-sub" style="font-size: 12px;">Vous pilotez cette décision.</div>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="myRole === 'animator'" class="premium-card mb-16">
+            <div class="pc-header pc-header-amber" style="padding: 12px;">
+              <div class="pc-header-icon" style="font-size: 1.2rem;">🎭</div>
+              <div class="pc-header-content">
+                <div class="pc-header-title" style="font-size: 14px;">Animateur</div>
+                <div class="pc-header-sub" style="font-size: 12px;">Vous facilitez ce processus.</div>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="hasAlreadyParticipated" class="premium-card mb-16">
+            <div class="pc-header pc-header-teal" style="padding: 12px;">
+              <div class="pc-header-icon" style="font-size: 1.2rem;">✅</div>
+              <div class="pc-header-content">
+                <div class="pc-header-title" style="font-size: 14px;">Participation validée</div>
+                <div class="pc-header-sub" style="font-size: 12px;">Vous avez agi pour cette phase.</div>
+              </div>
+            </div>
+          </div>
+
           <ParticipantPhasePanel
-            :decision="decision"
-            :phase-participation-map="phaseParticipationMap"
+            :decision="viewingVersionId ? historicalVersionDecision : decision"
+            :phase-participation-map="viewingVersionId ? historicalPhaseParticipationMap : phaseParticipationMap"
           />
+
+          <!-- Navigation entre versions -->
+          <div v-if="allVersions.length > 1" class="premium-card mb-16">
+            <div class="pc-header pc-header-indigo" style="padding: 12px;">
+              <div class="pc-header-icon" style="font-size: 1.2rem;">📚</div>
+              <div class="pc-header-content">
+                <div class="pc-header-title" style="font-size: 14px;">Versions précédentes</div>
+                <div class="pc-header-sub" style="font-size: 12px;">Consulter l'historique</div>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 12px;">
+              <div class="form-group mb-8">
+                <select v-model="selectedVersionNavId" class="select select-sm" @change="handleVersionChange">
+                  <option v-for="v in allVersions" :key="v.id" :value="v.id">
+                    Version {{ v.version_number }} ({{ formatDateOnly(v.created_at) }})
+                  </option>
+                </select>
+              </div>
+              <button 
+                v-if="viewingVersionId" 
+                class="btn btn-secondary btn-sm w-full" 
+                @click="resetToCurrentVersion"
+              >
+                ⬅ Retour à la version en cours
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -298,12 +410,11 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import AnimatorSelector from '../components/AnimatorSelector.vue';
 import AttachmentPanel from '../components/AttachmentPanel.vue';
-import DecisionThread from '../components/DecisionThread.vue';
 import FeedbackEngine from '../components/FeedbackEngine.vue';
 import ParticipantPhasePanel from '../components/ParticipantPhasePanel.vue';
 import RichTextEditor from '../components/RichTextEditor.vue';
@@ -316,38 +427,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 const decisionStore = useDecisionStore();
 const pendingStore = usePendingStore();
-
-const loading = computed(() => decisionStore.loading);
-const error = computed(() => decisionStore.error);
-const decision = computed(() => decisionStore.currentDecision);
-const myConsent = computed(() => decisionStore.myConsent);
-const phaseParticipationMap = computed(() => decisionStore.phaseParticipationMap || {});
-
-const currentVersion = computed(() => decision.value?.current_version || null);
-const savingDraft = ref(false);
-const deletingDraft = ref(false);
-const publishing = ref(false);
-const transitioning = ref(false);
-const submittingReaction = ref(false);
-const showReactionModal = ref(false);
-
-const draftForm = ref({
-  title: '',
-  content: '',
-  animator_id: '',
-  excluded_members: [],
-});
-
-const reactionText = ref('');
-const reactionType = ref('objection');
-
-const roleMeta = {
-  author: { label: 'Porteur', icon: '💡', className: 'role-author' },
-  animator: { label: 'Animateur', icon: '🎭', className: 'role-animator' },
-  participant: { label: 'Participant', icon: '👥', className: 'role-participant' },
-  excluded: { label: 'Exclu', icon: '🚫', className: 'role-excluded' },
-  observer: { label: 'Observateur', icon: '👁', className: 'role-observer' },
-};
 
 const currentDecisionIndex = computed(() => {
   if (!decision.value) return -1;
@@ -363,6 +442,96 @@ const nextDecisionId = computed(() => {
   if (currentDecisionIndex.value === -1) return null;
   return decisionStore.decisions[currentDecisionIndex.value + 1]?.id || null;
 });
+
+const decision = computed(() => decisionStore.currentDecision);
+const myConsent = computed(() => decisionStore.myConsent);
+const phaseParticipationMap = computed(() => decisionStore.phaseParticipationMap || {});
+const loading = computed(() => decisionStore.loading);
+const error = computed(() => decisionStore.error);
+
+const currentVersion = computed(() => decision.value?.current_version || null);
+
+const displayContent = computed(() => {
+  if (viewingVersionId.value && historicalVersionData.value) {
+    return historicalVersionData.value.content;
+  }
+  return currentVersion.value?.content;
+});
+
+const displayAttachments = computed(() => {
+  if (viewingVersionId.value && historicalVersionData.value) {
+    return historicalVersionData.value.attachments || [];
+  }
+  return currentVersion.value?.attachments || [];
+});
+
+const historicalVersionDecision = computed(() => {
+  if (!viewingVersionId.value || !historicalVersionData.value) return null;
+  // On retourne un objet décision-like pour les composants enfants
+  return {
+    ...decision.value,
+    participation_stats: historicalVersionData.value.participation_stats || decision.value.participation_stats
+  };
+});
+
+const historicalPhaseParticipationMap = computed(() => {
+  if (!viewingVersionId.value || !historicalVersionData.value) return phaseParticipationMap.value;
+  
+  const map = { clarification: {}, reaction: {}, objection: {} };
+  const v = historicalVersionData.value;
+  
+  if (v.feedbacks) {
+    v.feedbacks.forEach(f => {
+      const type = f.type?.value || f.type;
+      if (type === 'clarification') map.clarification[f.author_id] = true;
+      if (type === 'reaction') map.reaction[f.author_id] = true;
+      if (['objection', 'suggestion'].includes(type)) map.objection[f.author_id] = true;
+    });
+  }
+  
+  if (v.consents) {
+    v.consents.forEach(c => {
+      const signal = c.signal?.value || c.signal;
+      if (signal === 'no_questions') map.clarification[c.user_id] = true;
+      if (signal === 'no_reaction') map.reaction[c.user_id] = true;
+      if (['no_objection', 'abstention'].includes(signal)) map.objection[c.user_id] = true;
+    });
+  }
+  
+  return map;
+});
+const savingDraft = ref(false);
+const deletingDraft = ref(false);
+const publishing = ref(false);
+const transitioning = ref(false);
+const submittingReaction = ref(false);
+const showReactionModal = ref(false);
+const revisionAttachments = ref([]);
+
+// Navigation Historique
+const allVersions = ref([]);
+const viewingVersionId = ref(null);
+const historicalVersionData = ref(null);
+const selectedVersionNavId = ref(null);
+const loadingHistorical = ref(false);
+
+const draftForm = ref({
+  title: '',
+  content: '',
+  animator_id: '',
+  excluded_members: [],
+});
+
+const reactionText = ref('');
+const reactionType = ref('objection');
+
+const roleMeta = {
+  author: { label: 'Porteur', icon: '📣', className: 'role-author' },
+  animator: { label: 'Animateur', icon: '🎭', className: 'role-animator' },
+  participant: { label: 'Participant', icon: '👥', className: 'role-participant' },
+  excluded: { label: 'Exclu', icon: '🚫', className: 'role-excluded' },
+  observer: { label: 'Observateur', icon: '👁', className: 'role-observer' },
+};
 
 const currentCircleMember = computed(() => {
   if (!decision.value || !authStore.user) return null;
@@ -381,6 +550,7 @@ const myRole = computed(() => {
 const myRoleInfo = computed(() => roleMeta[myRole.value] || roleMeta.participant);
 
 const isDraft = computed(() => decision.value?.status === 'draft');
+const isRevision = computed(() => currentStatus.value === 'revision');
 
 const isAuthorOrAnimator = computed(() => ['author', 'animator'].includes(myRole.value));
 
@@ -402,6 +572,9 @@ const excludableMembers = computed(() => (
 }));
 
 const hasAlreadyParticipated = computed(() => {
+  if (decision.value?.user_status) {
+    return !decision.value.user_status.needs_action;
+  }
   return Boolean(decisionStore.hasParticipated || myConsent.value?.has_participated);
 });
 
@@ -422,6 +595,32 @@ const modalActionLabel = computed(() => {
   if (decision.value?.status === 'clarification') return 'Poser une question / demander une clarification';
   if (decision.value?.status === 'reaction') return 'Donner votre avis / réaction';
   return 'Soumettre une objection ou une suggestion';
+});
+
+const hasActionStatus = computed(() => !!decision.value?.user_status);
+
+const shouldShowAttachments = computed(() => {
+  return !isDraft.value && displayAttachments.value.length > 0;
+});
+
+const isFeedbackEngineVisible = computed(() => {
+  if (!decision.value) return false;
+  const statusValues = ['clarification', 'reaction', 'objection', 'revision', 'adopted', 'adopted_override'];
+  const currentStatusValue = (typeof decision.value.status === 'object' && decision.value.status !== null) 
+    ? decision.value.status.value 
+    : decision.value.status;
+  return statusValues.includes(currentStatusValue);
+});
+const currentStatus = computed(() => {
+  const s = decision.value?.status;
+  return (typeof s === 'object' && s !== null) ? s.value : s;
+});
+
+const modalActionLabelShort = computed(() => {
+  const s = currentStatus.value;
+  if (s === 'clarification') return 'Clarifier';
+  if (s === 'reaction') return 'Réagir';
+  return 'Objecter';
 });
 
 const modalTitle = computed(() => {
@@ -454,7 +653,7 @@ const statusLabel = computed(() => {
     deserted: 'Désertée',
   };
 
-  return labels[decision.value?.status] || 'Inconnue';
+  return labels[currentStatus.value] || 'Inconnue';
 });
 
 const statusClass = computed(() => {
@@ -471,7 +670,7 @@ const statusClass = computed(() => {
     deserted: 'badge-gray',
   };
 
-  return classes[decision.value?.status] || 'badge-gray';
+  return classes[currentStatus.value] || 'badge-gray';
 });
 
 const stepActions = computed(() => {
@@ -479,7 +678,7 @@ const stepActions = computed(() => {
 
   const actions = [];
 
-  if (decision.value.status === 'draft') {
+  if (currentStatus.value === 'draft') {
     actions.push({
       key: 'publish',
       label: publishing.value ? 'Publication…' : 'Publier la décision',
@@ -488,7 +687,7 @@ const stepActions = computed(() => {
     });
   }
 
-  if (decision.value.status === 'clarification') {
+  if (currentStatus.value === 'clarification') {
     actions.push({
       key: 'to-reaction',
       label: 'Passer aux réactions',
@@ -497,7 +696,7 @@ const stepActions = computed(() => {
     });
   }
 
-  if (decision.value.status === 'reaction') {
+  if (currentStatus.value === 'reaction') {
     actions.push({
       key: 'to-objection',
       label: 'Passer aux objections',
@@ -506,7 +705,7 @@ const stepActions = computed(() => {
     });
   }
 
-  if (decision.value.status === 'objection') {
+  if (currentStatus.value === 'objection') {
     actions.push({
       key: 'to-revision',
       label: 'Nouvelle version',
@@ -524,27 +723,44 @@ const stepActions = computed(() => {
   return actions;
 });
 
-watch(decision, (value) => {
+const updateDraftForm = () => {
+  const value = decision.value;
   if (!value) return;
+
+  const status = (typeof value.status === 'object' && value.status !== null) ? value.status.value : value.status;
 
   draftForm.value = {
     title: value.title || '',
-    content: value.current_version?.content || '',
-    animator_id: value.participants?.find((participant) => participant.role === 'animator')?.user_id || '',
+    content: status === 'revision' ? (value.revision_content || value.current_version?.content || '') : (value.current_version?.content || ''),
+    animator_id: value.participants?.find((p) => p.role === 'animator')?.user_id || '',
     excluded_members: (value.participants || [])
-      .filter((participant) => participant.role === 'excluded')
-      .map((participant) => participant.user_id),
+      .filter((p) => p.role === 'excluded')
+      .map((p) => p.user_id),
   };
+
+  // Hydrate revision attachments if any
+  if (status === 'revision' && value.revision_attachment_ids) {
+    revisionAttachments.value = value.current_version?.attachments?.filter(a => value.revision_attachment_ids.includes(a.id)) || [];
+  } else {
+    revisionAttachments.value = [];
+  }
+};
+
+watch(decision, () => {
+  updateDraftForm();
 }, { immediate: true });
 
-watch(() => route.params.id, (id) => {
+watch(() => route.params.id, async (id) => {
   if (id) {
-    decisionStore.fetchDecisionById(id);
+    resetToCurrentVersion();
+    await decisionStore.fetchDecisionById(id);
     if (!decisionStore.decisions.length) {
-      decisionStore.fetchDecisions();
+      await decisionStore.fetchDecisions();
     }
+    updateDraftForm();
+    await fetchAllVersions();
   }
-}, { immediate: true });
+});
 
 const getStepClass = (step) => {
   const status = decision.value?.status;
@@ -618,6 +834,104 @@ const publishDecision = async () => {
   }
 };
 
+const handleRevisionFileUpload = (attachment) => {
+  revisionAttachments.value.push(attachment);
+};
+
+const handleRevisionFileRemove = (attachmentId) => {
+  revisionAttachments.value = revisionAttachments.value.filter(a => a.id !== attachmentId);
+};
+
+const saveRevision = async () => {
+  if (!decision.value) return;
+  savingDraft.value = true;
+  try {
+    const payload = {
+      ...draftForm.value,
+      revision_attachment_ids: revisionAttachments.value.map(a => a.id),
+    };
+    await axios.put(`/api/v1/decisions/${decision.value.id}`, payload);
+    await refreshDecision();
+  } catch (error) {
+    window.alert(error.response?.data?.message || 'Impossible d’enregistrer la révision.');
+  } finally {
+    savingDraft.value = false;
+  }
+};
+
+const publishRevision = async () => {
+  if (!decision.value) return;
+  if (!window.confirm('Publier cette nouvelle version ? Un nouveau cycle de clarification va commencer.')) return;
+
+  publishing.value = true;
+  try {
+    // D'abord on sauve le brouillon actuel
+    const payload = {
+      ...draftForm.value,
+      revision_attachment_ids: revisionAttachments.value.map(a => a.id),
+    };
+    await axios.put(`/api/v1/decisions/${decision.value.id}`, payload);
+
+    // Puis on publie une nouvelle version
+    await axios.post(`/api/v1/decisions/${decision.value.id}/versions`, {
+      content: draftForm.value.content,
+      attachment_ids: revisionAttachments.value.map(a => a.id)
+    });
+    
+    await refreshDecision();
+    resetToCurrentVersion();
+    pendingStore.fetch();
+  } catch (error) {
+    window.alert(error.response?.data?.message || 'Erreur lors de la publication de la révision.');
+  } finally {
+    publishing.value = false;
+  }
+};
+
+const fetchAllVersions = async () => {
+  if (!decision.value) return;
+  try {
+    const { data } = await axios.get(`/api/v1/decisions/${decision.value.id}/versions`);
+    allVersions.value = data.versions || [];
+    if (!selectedVersionNavId.value && decision.value.current_version?.id) {
+       selectedVersionNavId.value = decision.value.current_version.id;
+    }
+  } catch (e) { console.error(e); }
+};
+
+const handleVersionChange = async () => {
+  if (!selectedVersionNavId.value) return;
+  
+  if (selectedVersionNavId.value === decision.value.current_version?.id) {
+    resetToCurrentVersion();
+    return;
+  }
+  
+  loadingHistorical.value = true;
+  viewingVersionId.value = selectedVersionNavId.value;
+  
+  try {
+    const { data } = await axios.get(`/api/v1/decisions/${decision.value.id}/versions/${selectedVersionNavId.value}`);
+    historicalVersionData.value = {
+      ...data.version,
+      participation_stats: data.participation_stats
+    };
+  } catch (e) {
+    window.alert("Erreur lors du chargement de la version historique.");
+    resetToCurrentVersion();
+  } finally {
+    loadingHistorical.value = false;
+  }
+};
+
+const resetToCurrentVersion = () => {
+  viewingVersionId.value = null;
+  historicalVersionData.value = null;
+  if (decision.value) {
+    selectedVersionNavId.value = decision.value.current_version?.id;
+  }
+};
+
 const transitionStatus = async (to) => {
   if (!decision.value) return;
 
@@ -639,6 +953,7 @@ const refreshDecision = async () => {
   if (!decisionStore.decisions.length) {
     await decisionStore.fetchDecisions();
   }
+  await fetchAllVersions();
 };
 
 const goToDecision = (id) => {
@@ -723,6 +1038,16 @@ const consentIcon = (signal) => {
 
   return icons[normalized] || '✅';
 };
+
+// Removed redundant watch since it's already handled above with async/await
+
+onMounted(async () => {
+  if (route.params.id) {
+    await decisionStore.fetchDecisionById(route.params.id);
+    updateDraftForm();
+    await fetchAllVersions();
+  }
+});
 </script>
 
 <style scoped>

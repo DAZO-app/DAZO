@@ -1,8 +1,11 @@
 <template>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Utilisateurs concernés</span>
-      <span class="badge badge-gray">{{ participants.length }}</span>
+  <div class="premium-card">
+    <div class="pc-header pc-header-indigo">
+      <div class="pc-header-icon">👥</div>
+      <div class="pc-header-content">
+        <div class="pc-header-title">Utilisateurs concernés</div>
+        <div class="pc-header-sub">{{ participants.length }} membre(s) impliqué(s)</div>
+      </div>
     </div>
 
     <div class="card-body">
@@ -62,7 +65,7 @@ const phases = [
 ];
 
 const roleMeta = {
-  author: { label: 'Porteur', icon: '💡', className: 'role-author' },
+  author: { label: 'Porteur', icon: '📣', className: 'role-author' },
   animator: { label: 'Animateur', icon: '🎭', className: 'role-animator' },
   participant: { label: 'Participant', icon: '👥', className: 'role-participant' },
   excluded: { label: 'Exclu', icon: '🚫', className: 'role-excluded' },

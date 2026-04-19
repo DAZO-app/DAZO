@@ -10,6 +10,7 @@
 * Decision lifecycle (basic)
 * Feedback system (objection/suggestion)
 * Voting system
+* Decision versioning & historical navigation
 
 ### Technical
 
@@ -31,7 +32,6 @@
 
 ## 🔥 V2
 
-* Decision versioning
 * Advanced permissions (ACL)
 * Audit logs
 * AI assistant (decision helper)

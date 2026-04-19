@@ -71,11 +71,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/decisions/{decision_id}/transition', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'transition']);
         Route::post('/decisions/{decision_id}/abandon', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'abandon']);
 
-        // Phase Débat & Objections (Blocs 5, 6, 7)
-        // Thread (Reaction & Clarification)
-        Route::get('/decisions/{id}/thread', [\App\Http\Controllers\Api\V1\ThreadMessageController::class, 'index']);
-        Route::post('/decisions/{id}/thread', [\App\Http\Controllers\Api\V1\ThreadMessageController::class, 'store']);
-
         // Feedback & Joins
         Route::get('/decisions/{id}/feedback', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'index']);
         Route::post('/decisions/{id}/feedback', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'store']);

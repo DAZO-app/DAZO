@@ -14,8 +14,9 @@
 ### 2. Dépôt de Nouvelle Version / Révision (Bloc 9)
 La mise au propre et le raffinement constant de textes nécessitent des réécritures :
 - **Autorisation Stricte** : La création d'une nouvelle version n'est autorisée par `CreateDecisionVersionRequest` **que** lorsque le statut actuel de la décision est officiellement sur `REVISION` (suite logique après la phase `OBJECTION`). L'acteur doit être le rédacteur d'origine.
+- **Persistance des Brouillons de Révision** : L'auteur peut désormais enregistrer son travail en cours via les champs `revision_content` et `revision_attachment_ids` sur la table `decisions`. Cela permet de préparer la nouvelle proposition et ses pièces jointes sur plusieurs sessions sans affecter la version actuellement consultable.
 - **Désactivation Automatique** : Lors du POST final (`DecisionVersionController::store`), le `DecisionService::createNewVersion()` cherche statiquement l'ancienne version active (`is_current = true`), la passe sur `false`, et injecte la toute nouvelle dans la table en attribuant `is_current = true` et `version_number = N+1`.
-- **Lien des Archives** : La nouvelle version retient dynamiquement un pointeur `previous_version_id` vers l'archive.
+- **Lien des Archives & Pièces Jointes** : La nouvelle version retient dynamiquement un pointeur `previous_version_id` vers l'archive. Les fichiers préparés dans le brouillon de révision sont automatiquement liés à la nouvelle version lors de sa création.
 - **Relance Automatique du Cycle** : À l'issue de cet ajout, la décision est automatiquement redescendue au statut `CLARIFICATION`. Un tout nouveau round de débat peut alors s'ouvrir. Le Back-End DAZO est une boucle continue.
 
 ---

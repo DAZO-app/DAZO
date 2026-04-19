@@ -22,14 +22,12 @@
           </div>
           <div class="card-body" style="padding:0">
             <div v-if="decisions.length === 0" class="text-sm text-muted text-center" style="padding:16px 0;">Aucune décision dans ce cercle.</div>
-            <div v-for="d in decisions" :key="d.id" class="decision-mini" @click="$router.push({ name: 'DecisionDetail', params: { id: d.id } })">
-              <div class="decision-status-strip" :class="'strip-' + d.status"></div>
-              <div class="role-bg-mini" :class="'role-' + getMyRole(d)" :title="getMyRole(d)">
-                {{ getRolePicto(getMyRole(d)) }}
-              </div>
-              <div class="decision-title" style="flex:1">{{ d.title }}</div>
-              <span class="badge" :class="statusBadge(d.status)">{{ d.status?.toUpperCase() }}</span>
-            </div>
+            <DecisionListItem
+              v-for="d in decisions" :key="d.id" :decision="d"
+              @click="$router.push({ name: 'DecisionDetail', params: { id: d.id } })"
+              @filter-circle="() => {}"
+              @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
+            />
           </div>
         </div>
 
@@ -60,6 +58,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import DecisionListItem from '../components/DecisionListItem.vue';
 import axios from 'axios';
 
 const route = useRoute();
@@ -82,17 +81,6 @@ onMounted(async () => {
 const typeBadge = (t) => ({ open: 'badge-teal', closed: 'badge-red', observer_open: 'badge-blue' }[t] || 'badge-gray');
 const roleBadge = (r) => ({ animator: 'badge-amber', member: 'badge-blue', observer: 'badge-gray' }[r] || 'badge-gray');
 const statusBadge = (s) => ({ draft: 'badge-gray', clarification: 'badge-blue', reaction: 'badge-blue', objection: 'badge-amber', adopted: 'badge-teal' }[s] || 'badge-gray');
-
-const getMyRole = (decision) => {
-    if (!authStore.user || !decision.participants) return 'participant';
-    const p = decision.participants.find(p => p.user_id === authStore.user.id);
-    return p ? p.role : 'participant';
-};
-
-const getRolePicto = (role) => {
-    const map = { author: '📣', animator: '🎭', participant: '👥', observer: '👁️' };
-    return map[role] || '👥';
-};
 </script>
 
 <style scoped>

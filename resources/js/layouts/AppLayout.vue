@@ -5,7 +5,9 @@
     <!-- ============ TOPBAR MOBILE ============ -->
     <header class="topbar">
       <div class="topbar-left">
-        <img src="/DAZO-logo-carre-blanc.svg" alt="DAZO" class="topbar-logo" />
+        <router-link to="/">
+          <img src="/DAZO-logo-carre-blanc.svg" alt="DAZO" class="topbar-logo" />
+        </router-link>
       </div>
       <div class="topbar-right">
         <button class="btn-new-mobile" @click="$router.push({ name: 'DecisionCreate' })" title="Nouvelle décision">
@@ -45,10 +47,10 @@
       <!-- ============ DESKTOP SIDEBAR ============ -->
       <aside class="sidebar">
         <!-- Logo & Brand -->
-        <div class="sidebar-logo">
+        <router-link to="/" class="sidebar-logo">
           <img src="/DAZO-logo-carre-blanc.svg" alt="DAZO" class="sidebar-logo-img" />
           <div class="sidebar-logo-sub">Decision At Zero Objection</div>
-        </div>
+        </router-link>
 
         <!-- Bouton Nouvelle Décision -->
         <div class="sidebar-cta">
@@ -183,6 +185,7 @@ const logout = async () => {
 }
 
 .topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-left a { text-decoration: none; display: flex; align-items: center; }
 
 .topbar-logo {
   height: 28px; width: auto;
@@ -267,6 +270,7 @@ const logout = async () => {
   border-bottom: 1px solid rgba(255,255,255,0.1);
   margin-bottom: 8px;
   display: flex; flex-direction: column; align-items: center; text-align: center;
+  text-decoration: none; cursor: pointer;
 }
 .sidebar-logo-img {
   width: 140px; height: auto;

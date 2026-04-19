@@ -19,47 +19,14 @@
       </div>
 
       <div v-else class="pending-list">
-        <div
+        <DecisionListItem
           v-for="item in items"
           :key="item.id"
-          class="decision-item"
-          @click="$router.push({ name: 'DecisionDetail', params: { id: item.decision_id } })"
-        >
-          <div class="role-bg-mini" :class="'role-' + item.my_role" :title="item.my_role">
-            {{ getRolePicto(item.my_role) }}
-          </div>
-          
-          <div class="decision-item-main">
-            <div class="decision-title">
-              <span class="version-pill" v-if="item.version_number">v{{ item.version_number }}</span>
-              {{ item.decision_title }}
-            </div>
-            
-            <div class="decision-people">
-              <div v-if="item.last_message">
-                <span class="text-author">{{ item.last_message_author }} :</span>
-                <span class="text-animator"> "{{ item.last_message }}"</span>
-              </div>
-              <div v-else class="text-animator">Aucun retour pour le moment.</div>
-            </div>
-            
-            <div class="decision-tags" style="margin-top: 8px;">
-               <div style="display:flex; align-items:center; gap: 6px;">
-                 <span v-if="item.needs_reply" class="status-dot dot-red"></span>
-                 <span v-else class="status-dot dot-green"></span>
-                 <span v-if="item.needs_reply" class="text-xs text-red-600 font-semibold">Action requise</span>
-                 <span v-else class="text-xs text-teal-600 font-semibold">En attente des autres</span>
-                 <span class="badge ml-8" :class="props.type === 'clarifications' ? 'badge-amber' : props.type === 'reactions' ? 'badge-blue' : 'badge-red'">{{ typeLabel }}</span>
-               </div>
-            </div>
-          </div>
-
-          <div class="decision-end-actions">
-            <button class="action-badge-btn circle-btn" @click.stop="$router.push({ name: 'CircleDetail', params: { id: 1 /* FIXME later if circleId is returned */ } })">{{ item.circle_name || 'Général' }}</button>
-            <button class="btn btn-primary btn-sm" v-if="item.needs_reply" style="margin-top: auto;">Agir</button>
-            <button class="btn btn-outline btn-sm" v-else style="margin-top: auto;">Voir</button>
-          </div>
-        </div>
+          :decision="item"
+          @click="$router.push({ name: 'DecisionDetail', params: { id: item.id } })"
+          @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
+          @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
+        />
       </div>
     </div>
   </main>
@@ -70,6 +37,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { usePendingStore } from '../stores/pending';
+import DecisionListItem from '../components/DecisionListItem.vue';
 import axios from 'axios';
 
 const props = defineProps({
@@ -114,7 +82,7 @@ const fetchItems = async () => {
   loading.value = true;
   try {
     const { data } = await axios.get(`/api/v1/pending-items`, { params: { phase: phaseStatus.value } });
-    items.value = data.items || [];
+    items.value = data.decisions || [];
   } catch (e) {
     items.value = [];
   } finally {

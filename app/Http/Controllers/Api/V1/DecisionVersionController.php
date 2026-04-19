@@ -40,17 +40,41 @@ class DecisionVersionController extends Controller
 
         $version = DecisionVersion::where('decision_id', $decision->id)
             ->where('id', $versionId)
-            ->with(['author', 'previousVersion'])
+            ->with([
+                'author', 
+                'previousVersion', 
+                'attachments',
+                'feedbacks.author',
+                'feedbacks.messages.author',
+                'consents.user'
+            ])
             ->firstOrFail();
 
-        return response()->json(['version' => $version]);
+        // Si ce n'est pas la version courante, on considère l'état comme "complet" (Objection)
+        // pour le calcul des stats historiques, sauf si la décision est déjà adoptée.
+        $statusOverride = $version->is_current ? null : \App\Enums\DecisionStatus::OBJECTION->value;
+        if (!$version->is_current && ($decision->status->value === \App\Enums\DecisionStatus::ADOPTED->value || $decision->status->value === \App\Enums\DecisionStatus::ADOPTED_OVERRIDE->value)) {
+            $statusOverride = $decision->status->value;
+        }
+
+        $stats = $this->decisionService->getParticipationStats($decision, $version, $statusOverride);
+
+        return response()->json([
+            'version' => $version,
+            'participation_stats' => $stats
+        ]);
     }
 
     public function store(CreateDecisionVersionRequest $request, string $decisionId): JsonResponse
     {
         $decision = Decision::findOrFail($decisionId);
         
-        $newVersion = $this->decisionService->createNewVersion($decision, $request->content, $request->user());
+        $newVersion = $this->decisionService->createNewVersion(
+            $decision, 
+            $request->content, 
+            $request->user(),
+            $request->attachment_ids ?? []
+        );
 
         return response()->json([
             'message' => 'Nouvelle version soumise. La décision est repassée en clarification.',

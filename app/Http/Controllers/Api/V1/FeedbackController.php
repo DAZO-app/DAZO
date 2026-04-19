@@ -29,7 +29,22 @@ class FeedbackController extends Controller
             ->with(['author', 'joins', 'messages.author'])
             ->get();
 
-        return response()->json(['feedbacks' => $feedbacks]);
+        $consents = \App\Models\Consent::where('decision_version_id', $versionId)
+            ->with('user')
+            ->get()
+            ->groupBy('signal')
+            ->map(function ($group) {
+                return [
+                    'signal' => $group->first()->signal,
+                    'users' => $group->map(fn ($c) => $c->user?->name)->filter()->values()
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'feedbacks' => $feedbacks,
+            'consents' => $consents
+        ]);
     }
 
     public function store(CreateFeedbackRequest $request, string $decisionId): JsonResponse

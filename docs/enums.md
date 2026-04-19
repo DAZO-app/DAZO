@@ -92,6 +92,8 @@
 ### `ConsentSignal`
 | Valeur | Description |
 |---|---|
+| `no_questions` | Le membre n'a plus de questions (phase clarification) |
+| `no_reaction` | Le membre a exprimé son avis (phase réaction) |
 | `no_objection` | Le membre consent — pas d'objection sur cette version |
 | `abstention` | Le membre s'abstient |
 

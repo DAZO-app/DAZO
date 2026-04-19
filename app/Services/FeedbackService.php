@@ -23,7 +23,7 @@ class FeedbackService
         return DB::transaction(function () use ($decision, $data, $user) {
             $versionId = $decision->currentVersion->id;
 
-            $this->ensureExclusiveAction($versionId, $user->id);
+            $this->ensureExclusiveAction($versionId, $user->id, $data['type']);
 
             $feedback = Feedback::create([
                 'decision_version_id' => $versionId,
@@ -45,7 +45,7 @@ class FeedbackService
     public function joinFeedback(Decision $decision, Feedback $feedback, User $user): FeedbackJoin
     {
         return DB::transaction(function () use ($decision, $feedback, $user) {
-            $this->ensureExclusiveAction($feedback->decision_version_id, $user->id);
+            $this->ensureExclusiveAction($feedback->decision_version_id, $user->id, $feedback->type->value);
 
             $join = FeedbackJoin::create([
                 'feedback_id' => $feedback->id,
@@ -118,18 +118,30 @@ class FeedbackService
             ])->exists();
     }
 
-    private function ensureExclusiveAction(string $versionId, string $userId): void
+    private function ensureExclusiveAction(string $versionId, string $userId, ?string $type = null): void
     {
-        $hasFeedback = Feedback::where('decision_version_id', $versionId)->where('author_id', $userId)->exists();
-        if ($hasFeedback) throw ValidationException::withMessages(['general' => "Vous avez déjà soumis un feedback pour cette version."]);
+        $phaseTypes = match($type) {
+            'clarification' => [\App\Enums\FeedbackType::CLARIFICATION->value],
+            'reaction'      => [\App\Enums\FeedbackType::REACTION->value],
+            'objection', 'suggestion' => [
+                \App\Enums\FeedbackType::OBJECTION->value,
+                \App\Enums\FeedbackType::SUGGESTION->value
+            ],
+            default => []
+        };
 
-        $hasConsent = Consent::where('decision_version_id', $versionId)->where('user_id', $userId)->exists();
-        if ($hasConsent) throw ValidationException::withMessages(['general' => "Impossible : vous avez déjà consenti (ou vous êtes abstenu) sur cette version."]);
+        if (!empty($phaseTypes)) {
+            $hasFeedback = Feedback::where('decision_version_id', $versionId)
+                ->where('author_id', $userId)
+                ->whereIn('type', $phaseTypes)
+                ->exists();
+            if ($hasFeedback) throw ValidationException::withMessages(['general' => "Vous avez déjà soumis un retour pour cette phase."]);
 
-        $hasJoined = FeedbackJoin::whereHas('feedback', function($q) use ($versionId) {
-            $q->where('decision_version_id', $versionId);
-        })->where('user_id', $userId)->exists();
-        if ($hasJoined) throw ValidationException::withMessages(['general' => "Vous soutenez déjà un feedback pour cette version."]);
+            $hasJoined = FeedbackJoin::whereHas('feedback', function($q) use ($versionId, $phaseTypes) {
+                $q->where('decision_version_id', $versionId)->whereIn('type', $phaseTypes);
+            })->where('user_id', $userId)->exists();
+            if ($hasJoined) throw ValidationException::withMessages(['general' => "Vous soutenez déjà un retour pour cette phase."]);
+        }
     }
 
     private function ensureParticipant(Decision $decision, User $user): void

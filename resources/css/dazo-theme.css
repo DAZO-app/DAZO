@@ -226,4 +226,87 @@ body {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+/* ── PREMIUM CARDS ── */
+.premium-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255,255,255,0.8);
+  display: flex;
+  flex-direction: column;
+}
+
+.pc-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+  color: white;
+}
+
+.pc-header::after {
+  content: '';
+  position: absolute;
+  right: -30px;
+  top: -30px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+
+.pc-header-icon {
+  font-size: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.2);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.pc-header-content {
+  position: relative;
+  z-index: 1;
+}
+
+.pc-header-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pc-header-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.8);
+  margin-top: 2px;
+}
+
+.pc-header-blue    { background: linear-gradient(135deg, var(--blue-800), var(--blue-600)); }
+.pc-header-amber   { background: linear-gradient(135deg, var(--amber-600), #fab005); }
+.pc-header-red     { background: linear-gradient(135deg, var(--red-600), #fa5252); }
+.pc-header-teal    { background: linear-gradient(135deg, var(--teal-600), var(--teal-500)); }
+.pc-header-indigo  { background: linear-gradient(135deg, #364fc7, #4c6ef5); }
+.pc-header-purple  { background: linear-gradient(135deg, #7048e8, #845ef7); }
+
+.pc-body {
+  flex: 1;
+}
+
+/* Chips Premium */
+.pc-body.pc-chips {
+  padding: 16px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}

@@ -1,4 +1,4 @@
-# Étape 13 — Cycle de Vie des Décisions Brouillon (Draft) et Animations
+# Étape 13 — Cycle de Vie des Brouillons (Initial & Révision) et Animations
 
 > Date : 17 avril 2026
 
@@ -18,6 +18,7 @@ Permettre la modification des propositions non-publiées (Brouillon/Draft), l'af
 - Cette route contrôle que la décision cible est bien en statut `draft` avant toute altération.
 - Modifie directement le "title" principal et le "content" rattaché à la "current_version" (qui correspond obligatoirement à la V1 dans un repère temporel Brouillon).
 - Purge et synchronise la définition éventuelle d'un nouveau participant au rôle `ANIMATOR` ainsi que des cibles `EXCLUDED`.
+- **Nouveau (19 avril)** : La route `PUT` autorise également la modification en statut `revision`. Dans ce cas, les données sont stockées dans `revision_content` et `revision_attachment_ids` sur la table `decisions` pour préserver la version actuelle.
 
 #### Vue Frontend (DecisionDetail.vue)
 - En détectant le repère `status === 'draft'`, le module se désagrège de l'affichage conventionnel pour instancier un "Mode Édition".
@@ -27,6 +28,9 @@ Permettre la modification des propositions non-publiées (Brouillon/Draft), l'af
     - D'un selecteur unique "Animateur".
     - D'une liste de checkboxes empilée pour cocher les Exclus.
 - Implémentation du bouton `Publier la décision` appelant le flux de transition déjà existant `POST transition {to: clarification}` de l'`API`.
+- **Nouveau (19 avril) : Espace de Révision**
+  - Ajout d'un bloc de révision conditionnel en phase `revision`.
+  - Boutons **Enregistrer** et **Publier** intégrés dans l'en-tête pour une gestion fluide du brouillon de révision.
 
 ### 3. Nomination de l'Animateur à l'initiation
 - Dans le module `CreateDecisionModal.vue` figurant sur le Dashboard, la sélection d'un Cercle déclenche dynamiquement un `Watch()` asynchrone pour importer la nomenclature complète de ses membres `GET /api/v1/circles/{id}/members`.

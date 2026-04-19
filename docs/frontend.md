@@ -54,4 +54,6 @@ L'ensemble de l'interface respecte les prérequis métier du projet :
 * **Édition complète du brouillon** directement dans `DecisionDetail.vue`, avec éditeur riche, animateur, exclusions, pièces jointes et suppression du brouillon.
 * **Actions de pilotage remontées dans le fil d'ariane** pour garder la colonne latérale centrée sur la participation.
 * **Panneau participants** dans la colonne de droite, montrant le rôle de chaque personne et son avancement sur les phases Clarification / Réaction / Objection.
-* **Pièces jointes visibles sur tous les écrans de consultation d'une décision**, avec ouverture directe et téléchargement.
+* **Pièces jointes visibles sur tous les écrans de consultation**, avec ouverture directe et téléchargement. Un indicateur visuel (trombone 📎) est présent sur le Dashboard pour les décisions concernées.
+* **Navigation historique complète** : Un panneau "Versions précédentes" dans `DecisionDetail.vue` permet de naviguer entre les différentes itérations d'une proposition, avec accès aux contenus et échanges archivés.
+* **Mode Révision assisté** : Lors de la rédaction d'une nouvelle version, la proposition en vigueur reste visible sous l'éditeur pour faciliter le travail du porteur.

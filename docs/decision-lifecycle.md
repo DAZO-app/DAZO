@@ -80,9 +80,11 @@ une nouvelle version et relance le cycle depuis la phase `clarification`.
   est possible mais tracé et affiché visiblement.
 
 ### 🔧 Révision
-- L'auteur rédige une nouvelle `DECISION_VERSION` qui adresse les objections
-- Les feedbacks de la version précédente restent liés à leur version — non migrés
-- La nouvelle version repart en `clarification` (nouveau cycle complet)
+- L'auteur peut rédiger une nouvelle proposition tout en restant en phase de révision. 
+- Le mécanisme de **brouillon de révision** permet de sauvegarder le contenu (`revision_content`) et les pièces jointes (`revision_attachment_ids`) sans créer de version officielle ni écraser la version actuelle. Ce brouillon est accessible via la route `PUT /decisions/{id}` par l'auteur (avec le champ `content` mappé sur `revision_content`).
+- Les feedbacks de la version précédente restent liés à leur version — ils servent de base de travail pour la révision.
+- **Accès Historique** : Dans l'interface SPA, un panneau latéral "Versions précédentes" permet de naviguer dans l'historique complet de la décision, affichant le contenu, les pièces jointes et les échanges pour chaque version archivée.
+- La publication effective crée une nouvelle `DECISION_VERSION`, nettoie le brouillon, et fait repartir la décision en `clarification` (nouveau cycle complet).
 - Seuls les feedbacks de la version courante comptent pour la condition d'adoption
 
 ---

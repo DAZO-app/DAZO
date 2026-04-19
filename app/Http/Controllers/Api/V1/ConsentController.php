@@ -33,7 +33,7 @@ class ConsentController extends Controller
         $decision = Decision::findOrFail($decisionId);
         abort_unless($decision->versions()->whereKey($versionId)->exists(), 404);
 
-        // Règle exclusive de non-cumul (ni feedback ni soutiens)
+        // Règle exclusive de non-cumul limitée à la phase
         $status = $decision->status->value;
         $phaseFeedbackTypes = [];
         if ($status === \App\Enums\DecisionStatus::CLARIFICATION->value) {
@@ -41,11 +41,14 @@ class ConsentController extends Controller
         } elseif ($status === \App\Enums\DecisionStatus::REACTION->value) {
             $phaseFeedbackTypes = [\App\Enums\FeedbackType::REACTION->value];
         } elseif ($status === \App\Enums\DecisionStatus::OBJECTION->value) {
-            $phaseFeedbackTypes = [\App\Enums\FeedbackType::OBJECTION->value, \App\Enums\FeedbackType::SUGGESTION->value];
+            // Pour l'objection, on ne bloque le consentement que si une objection REELLE existe
+            $phaseFeedbackTypes = [\App\Enums\FeedbackType::OBJECTION->value];
         }
 
-        // Exception pour la phase REACTION où on permet le cumul car le signal est souvent automatique
-        if ($status !== \App\Enums\DecisionStatus::REACTION->value) {
+        // On ne bloque le consentement que pour la phase CLARIFICATION (si question en suspens)
+        // ou pour l'OBJECTION (si objection en suspens).
+        // On autorise le cumul pour REACTION et SUGGESTION.
+        if (in_array($status, [\App\Enums\DecisionStatus::CLARIFICATION->value, \App\Enums\DecisionStatus::OBJECTION->value])) {
             $hasFeedbackInPhase = Feedback::where('decision_version_id', $versionId)
                 ->where('author_id', $user->id)
                 ->whereIn('type', $phaseFeedbackTypes)

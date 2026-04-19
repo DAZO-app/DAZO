@@ -20,7 +20,8 @@ class Decision extends Model
 
     protected $fillable = [
         'circle_id', 'category_id', 'status', 'title', 'visibility',
-        'priority', 'emergency_mode', 'objection_round_deadline', 'model_id'
+        'priority', 'emergency_mode', 'objection_round_deadline', 'model_id',
+        'revision_content', 'revision_attachment_ids'
     ];
 
     protected function casts(): array
@@ -31,6 +32,7 @@ class Decision extends Model
             'emergency_mode' => 'boolean',
             'priority' => 'integer',
             'objection_round_deadline' => 'datetime',
+            'revision_attachment_ids' => 'array',
         ];
     }
 

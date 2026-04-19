@@ -2,10 +2,14 @@
   <div class="decision-item" @click="emit('click', decision.id)">
     <div class="role-bg-mini" :class="'role-' + getMyRole(decision)" :title="getMyRole(decision)">
       {{ getRolePicto(getMyRole(decision)) }}
+      <!-- Voyant d'état -->
+      <span v-if="decision.user_status?.needs_action" class="alert-dot dot-red"></span>
+      <span v-else-if="['clarification', 'reaction', 'objection'].includes(decision.status)" class="alert-dot dot-green"></span>
     </div>
     <div class="decision-item-main">
       <div class="decision-title">
         <span class="version-pill" v-if="decision.current_version" style="margin-right: 6px">v{{ decision.current_version.version_number }}</span>
+        <span v-if="decision.current_version?.attachments?.length > 0" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;">📎</span>
         {{ decision.title }}
       </div>
       <div class="decision-people">
@@ -111,4 +115,13 @@ const formatDateOnly = (isoString) => {
 .circle-btn:hover { background: var(--blue-100); }
 .category-btn { color: var(--purple-700); background: var(--purple-50); border-color: var(--purple-200); }
 .category-btn:hover { background: var(--purple-100); }
+
+/* Voyant d'état */
+.alert-dot {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid white;
+}
+.dot-red   { background: #ef4444; box-shadow: 0 0 0 2px #fee2e2; }
+.dot-green { background: #14b8a6; box-shadow: 0 0 0 2px #ccfbf1; }
 </style>

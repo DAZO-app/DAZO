@@ -26,35 +26,17 @@
         </div>
         <div class="stat-card v-proposals clickable" @click="$router.push('/decisions?filter=author')">
           <div class="stat-icon-wrap">📣</div>
-          <div class="ring-wrap">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle class="ring-bg" cx="36" cy="36" r="28"/>
-              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.as_author, dashboard.stats.total)"/>
-            </svg>
-            <div class="ring-center">{{ dashboard.stats.as_author }}</div>
-          </div>
+          <div class="stat-number-simple">{{ dashboard.stats.as_author }}</div>
           <div class="stat-label">Proposées</div>
         </div>
         <div class="stat-card v-anime clickable" @click="$router.push('/decisions?filter=animator')">
           <div class="stat-icon-wrap">🎭</div>
-          <div class="ring-wrap">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle class="ring-bg" cx="36" cy="36" r="28"/>
-              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.as_animator, dashboard.stats.total)"/>
-            </svg>
-            <div class="ring-center">{{ dashboard.stats.as_animator }}</div>
-          </div>
+          <div class="stat-number-simple">{{ dashboard.stats.as_animator }}</div>
           <div class="stat-label">J'Anime</div>
         </div>
         <div class="stat-card v-active clickable" @click="$router.push('/decisions?filter=active')">
           <div class="stat-icon-wrap">🔄</div>
-          <div class="ring-wrap">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle class="ring-bg" cx="36" cy="36" r="28"/>
-              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.in_progress, dashboard.stats.total)"/>
-            </svg>
-            <div class="ring-center">{{ dashboard.stats.in_progress }}</div>
-          </div>
+          <div class="stat-number-simple">{{ dashboard.stats.in_progress }}</div>
           <div class="stat-label">En Cours</div>
         </div>
         <div class="stat-card v-adopted clickable" @click="$router.push('/decisions?filter=adopted')">
@@ -71,61 +53,85 @@
       </div>
       
       <!-- LIGNE 1 : MES TICKETS ACTIFS (CLARIFICATIONS / OBJECTIONS) -->
-      <div class="grid-2 mb-16" v-if="hasActiveTickets">
+      <div class="grid-2 mb-16">
         
         <!-- Clarifications en cours -->
-        <div class="premium-card" v-if="dashboard.my_clarifications?.length">
+        <div class="premium-card">
           <div class="pc-header pc-header-amber">
             <div class="pc-header-icon">💬</div>
             <div class="pc-header-content">
               <div class="pc-header-title">Clarifications actives</div>
-              <div class="pc-header-sub">{{ dashboard.my_clarifications.length }} fil(s) en cours</div>
+              <div class="pc-header-sub">Tickets en attente de réponse</div>
             </div>
           </div>
           <div class="pc-body">
-            <div v-for="fb in dashboard.my_clarifications" :key="fb.id" class="ticket-item" @click="goToDecision(fb.version?.decision_id)">
-              <div class="ticket-role" :class="'role-' + getMyRole(fb.version?.decision)">{{ getRolePicto(getMyRole(fb.version?.decision)) }}</div>
-              <div class="ticket-content">
-                <div class="ticket-circle">{{ fb.version?.decision?.circle?.name }}</div>
-                <div class="ticket-title">{{ fb.version?.decision?.title }}</div>
+            <div v-if="!dashboard.my_clarifications?.length" class="pc-empty">
+              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
+              <span>Aucune clarification en cours.</span>
+            </div>
+            <div v-for="fb in dashboard.my_clarifications" :key="fb.id" class="decision-item" @click="goToDecision(fb.version?.decision_id)">
+              <div class="role-bg-mini" :class="'role-' + getMyRole(fb.version?.decision)">
+                {{ getRolePicto(getMyRole(fb.version?.decision)) }}
+              </div>
+              <div class="decision-item-main">
+                <div class="decision-title">
+                  <span class="version-pill" v-if="fb.version">v{{ fb.version.version_number }}</span>
+                  <span v-if="fb.version?.decision?.current_version?.attachments?.length" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;">📎</span>
+                  {{ fb.version?.decision?.title }}
+                </div>
+                <div class="decision-people">
+                  <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
+                </div>
                 <div class="ticket-msg" v-if="getLastMessageContent(fb)">
                   <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span> : "{{ getLastMessageContent(fb) }}"
                 </div>
               </div>
-              <div class="ticket-indicator">
-                <span v-if="needsMyAttention(fb)" class="alert-dot dot-red"></span>
-                <span v-else class="alert-dot dot-green"></span>
-                <span v-if="needsMyAttention(fb)" class="alert-text alert-text-red">À vous</span>
-                <span v-else class="alert-text alert-text-green">En attente</span>
+              <div class="decision-end-actions">
+                <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
+                  {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
+                </span>
+                <div class="text-xs text-muted mt-4">{{ getLastMessageDate(fb) }}</div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Objections en cours -->
-        <div class="premium-card" v-if="dashboard.my_objections?.length">
+        <div class="premium-card">
           <div class="pc-header pc-header-red">
             <div class="pc-header-icon">⚠️</div>
             <div class="pc-header-content">
               <div class="pc-header-title">Objections actives</div>
-              <div class="pc-header-sub">{{ dashboard.my_objections.length }} fil(s) en cours</div>
+              <div class="pc-header-sub">Tickets en attente de réponse</div>
             </div>
           </div>
           <div class="pc-body">
-            <div v-for="fb in dashboard.my_objections" :key="fb.id" class="ticket-item" @click="goToDecision(fb.version?.decision_id)">
-              <div class="ticket-role" :class="'role-' + getMyRole(fb.version?.decision)">{{ getRolePicto(getMyRole(fb.version?.decision)) }}</div>
-              <div class="ticket-content">
-                <div class="ticket-circle">{{ fb.version?.decision?.circle?.name }}</div>
-                <div class="ticket-title">{{ fb.version?.decision?.title }}</div>
+            <div v-if="!dashboard.my_objections?.length" class="pc-empty">
+              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
+              <span>Aucune objection en cours.</span>
+            </div>
+            <div v-for="fb in dashboard.my_objections" :key="fb.id" class="decision-item" @click="goToDecision(fb.version?.decision_id)">
+              <div class="role-bg-mini" :class="'role-' + getMyRole(fb.version?.decision)">
+                {{ getRolePicto(getMyRole(fb.version?.decision)) }}
+              </div>
+              <div class="decision-item-main">
+                <div class="decision-title">
+                  <span class="version-pill" v-if="fb.version">v{{ fb.version.version_number }}</span>
+                  <span v-if="fb.version?.decision?.current_version?.attachments?.length" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;">📎</span>
+                  {{ fb.version?.decision?.title }}
+                </div>
+                <div class="decision-people">
+                  <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
+                </div>
                 <div class="ticket-msg" v-if="getLastMessageContent(fb)">
                   <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span> : "{{ getLastMessageContent(fb) }}"
                 </div>
               </div>
-              <div class="ticket-indicator">
-                <span v-if="needsMyAttention(fb)" class="alert-dot dot-red"></span>
-                <span v-else class="alert-dot dot-green"></span>
-                <span v-if="needsMyAttention(fb)" class="alert-text alert-text-red">À vous</span>
-                <span v-else class="alert-text alert-text-green">En attente</span>
+              <div class="decision-end-actions">
+                <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
+                  {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
+                </span>
+                <div class="text-xs text-muted mt-4">{{ getLastMessageDate(fb) }}</div>
               </div>
             </div>
           </div>
@@ -150,15 +156,14 @@
               <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
               <span>Vous ne pilotez aucune décision.</span>
             </div>
-            <div v-for="(decisions, circleName) in dashboard.my_decisions" :key="circleName">
-              <div class="group-header">{{ circleName }}</div>
+            <template v-for="(decisions, circleName) in dashboard.my_decisions" :key="circleName">
               <DecisionListItem
                 v-for="d in decisions" :key="d.id" :decision="d"
                 @click="goToDecision"
                 @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
                 @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
               />
-            </div>
+            </template>
           </div>
         </div>
 
@@ -176,15 +181,14 @@
               <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
               <span>Vous n'animez aucune décision en cours.</span>
             </div>
-            <div v-for="(decisions, circleName) in dashboard.my_animated" :key="circleName">
-              <div class="group-header">{{ circleName }}</div>
+            <template v-for="(decisions, circleName) in dashboard.my_animated" :key="circleName">
               <DecisionListItem
                 v-for="d in decisions" :key="d.id" :decision="d"
                 @click="goToDecision"
                 @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
                 @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
               />
-            </div>
+            </template>
           </div>
         </div>
 
@@ -202,15 +206,14 @@
               <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
               <span>Rien à signaler dans vos cercles.</span>
             </div>
-            <div v-for="(decisions, circleName) in dashboard.circle_decisions" :key="circleName">
-              <div class="group-header">{{ circleName }}</div>
+            <template v-for="(decisions, circleName) in dashboard.circle_decisions" :key="circleName">
               <DecisionListItem
                 v-for="d in decisions" :key="d.id" :decision="d"
                 @click="goToDecision"
                 @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
                 @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
               />
-            </div>
+            </template>
           </div>
         </div>
 
@@ -438,83 +441,33 @@ const getMyRoleLabel = (decision) => {
 .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.7); }
 .mb-16 { margin-bottom: 16px; }
 
-/* ===== PREMIUM CARDS ===== */
-.premium-card {
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
-  border: 1px solid rgba(255,255,255,0.8);
-  display: flex; flex-direction: column;
-  margin-bottom: 0;
-}
+/* Styles DecisionListItem (dupliqués pour cohérence dashboard) */
+.decision-item { padding: 14px 18px; border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.1s; display: flex; align-items: flex-start; gap: 12px; }
+.decision-item:last-child { border-bottom: none; }
+.decision-item:hover { background: var(--gray-50); }
+.decision-item-main { flex: 1; min-width: 0; }
+.decision-title { font-size: 13px; font-weight: 500; color: var(--gray-900); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.decision-people { font-size: 12px; color: var(--gray-600); margin-bottom: 6px; font-weight: 500; }
+.text-author { color: var(--gray-700); }
+.version-pill { display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; background: var(--gray-100); color: var(--gray-600); padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid var(--gray-200); position: relative; top: -1px; }
 
-/* Card Header */
-.pc-header {
-  display: flex; align-items: center; gap: 14px; padding: 16px 20px;
-  position: relative; overflow: hidden;
+.role-bg-mini {
+  width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1.5px solid transparent;
+  flex-shrink: 0; margin-top: 2px;
 }
-.pc-header::after {
-  content: ''; position: absolute;
-  right: -30px; top: -30px; width: 100px; height: 100px;
-  border-radius: 50%; background: rgba(255,255,255,0.08);
-}
-.pc-header-icon {
-  font-size: 22px; width: 46px; height: 46px; border-radius: 12px;
-  background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.35);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; z-index: 1;
-}
-.pc-header-content { position: relative; z-index: 1; }
-.pc-header-title { font-size: 14px; font-weight: 800; color: white; line-height: 1.2; }
-.pc-header-sub { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+.role-author { border-color: var(--blue-500); background: var(--blue-50); }
+.role-animator { border-color: var(--amber-500); background: var(--amber-50); }
+.role-participant { border-color: var(--teal-500); background: var(--teal-50); }
+.role-observer { border-color: var(--gray-400); background: var(--gray-50); }
 
-.pc-header-blue    { background: linear-gradient(135deg, #1e40af, #3b82f6); }
-.pc-header-amber   { background: linear-gradient(135deg, #92400e, #f59e0b); }
-.pc-header-red     { background: linear-gradient(135deg, #991b1b, #ef4444); }
-.pc-header-teal    { background: linear-gradient(135deg, #115e59, #14b8a6); }
-.pc-header-indigo  { background: linear-gradient(135deg, #312e81, #6366f1); }
-.pc-header-purple  { background: linear-gradient(135deg, #581c87, #a855f7); }
+.decision-end-actions { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
 
-/* Card Body */
-.pc-body { flex: 1; }
-.pc-body.pc-chips { padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; min-height: 80px; }
+/* Stats cards sans rings */
+.stat-number-simple { font-size: 32px; font-weight: 900; color: white; font-family: var(--font-display); margin: 6px 0; line-height: 1; }
 
-/* Empty State */
-.pc-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 16px; gap: 10px; }
-.pc-empty-img { height: 44px; opacity: 0.18; }
-.pc-empty span { font-size: 12px; color: #94a3b8; text-align: center; }
-
-/* Group separator */
-.group-header { background: #f8fafc; padding: 6px 16px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; }
-
-/* Ticket items */
-.ticket-item {
-  display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
-  border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s;
-}
-.ticket-item:last-child { border-bottom: none; }
-.ticket-item:hover { background: #f8fafc; }
-.ticket-role {
-  width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0; border: 1.5px solid transparent;
-}
-.ticket-role.role-author    { background: #eff6ff; border-color: #bfdbfe; }
-.ticket-role.role-animator  { background: #fffbeb; border-color: #fde68a; }
-.ticket-role.role-participant { background: #f0fdfa; border-color: #99f6e4; }
-.ticket-role.role-observer  { background: #f9fafb; border-color: #e5e7eb; }
-.ticket-content { flex: 1; overflow: hidden; }
-.ticket-circle { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
-.ticket-title { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ticket-msg { font-size: 11px; color: #64748b; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ticket-msg-author { font-weight: 600; font-style: normal; color: #475569; }
-.ticket-indicator { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; flex-shrink: 0; }
-.alert-dot { width: 10px; height: 10px; border-radius: 50%; }
-.dot-red   { background: #ef4444; box-shadow: 0 0 0 3px #fee2e2; }
-.dot-green { background: #14b8a6; box-shadow: 0 0 0 3px #ccfbf1; }
-.alert-text { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
-.alert-text-red   { color: #ef4444; }
-.alert-text-green { color: #14b8a6; }
+.ticket-msg { font-size: 12px; color: var(--gray-500); line-height: 1.4; font-style: italic; margin-top: 2px; }
+.ticket-msg-author { font-weight: 600; color: var(--gray-700); }
 
 /* Chips */
 .chip {
@@ -527,4 +480,43 @@ const getMyRoleLabel = (decision) => {
 .chip-blue:hover { background: #dbeafe; }
 .chip-purple { background: #faf5ff; color: #7c3aed; border-color: #ddd6fe; }
 .chip-purple:hover { background: #ede9fe; }
+
+/* États vides premium */
+.pc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  position: relative;
+  text-align: center;
+  min-height: 180px;
+}
+.pc-empty-img {
+  width: 180px;
+  height: 180px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.pc-empty span {
+  position: absolute;
+  width: 90%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 15px;
+  font-weight: 800;
+  color: #000;
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+}
 </style>
