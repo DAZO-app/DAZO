@@ -82,6 +82,11 @@ class DashboardController extends Controller
         // 5. STATS (all circle decisions visible to user)
         $allVisible = Decision::whereHas('circle.members', function ($q) use ($user) {
             $q->where('user_id', $user->id);
+        })->where(function ($q) use ($user) {
+            $q->where('status', '!=', DecisionStatus::DRAFT->value)
+              ->orWhereHas('participants', function ($q2) use ($user) {
+                  $q2->where('user_id', $user->id)->whereIn('role', [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value]);
+              });
         })->get();
 
         $stats = [
@@ -94,6 +99,8 @@ class DashboardController extends Controller
             'abandoned'    => $allVisible->whereIn('status', ['abandoned','deserted','lapsed'])->count(),
         ];
 
+        $categories = \App\Models\Category::all();
+
         return response()->json([
             'my_decisions'     => $myDecisionsGrouped,
             'my_animated'      => $myAnimatedGrouped,
@@ -101,6 +108,7 @@ class DashboardController extends Controller
             'my_clarifications'=> $clarifications,
             'my_objections'    => $objections,
             'stats'            => $stats,
+            'categories'       => $categories,
         ]);
     }
 }

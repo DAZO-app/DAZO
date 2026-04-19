@@ -2,7 +2,7 @@
   <div class="login-wrapper">
     <div class="card login-card">
       <div class="card-header justify-center" style="border:none;flex-direction:column;gap:8px;align-items:center;">
-        <img src="/images/dazo-logo.svg" alt="DAZO" class="login-logo">
+        <img src="/DAZO-logo-carre-noir.svg" alt="DAZO" class="login-logo">
         <div class="login-tagline">Decision At Zero Objection</div>
       </div>
       <div class="card-body">

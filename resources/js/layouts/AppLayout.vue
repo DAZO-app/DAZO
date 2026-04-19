@@ -5,7 +5,7 @@
     <!-- ============ TOPBAR MOBILE ============ -->
     <header class="topbar">
       <div class="topbar-left">
-        <img src="/images/dazo-logo.svg" alt="DAZO" class="topbar-logo" />
+        <img src="/DAZO-logo-carre-blanc.svg" alt="DAZO" class="topbar-logo" />
       </div>
       <div class="topbar-right">
         <button class="btn-new-mobile" @click="$router.push({ name: 'DecisionCreate' })" title="Nouvelle décision">
@@ -46,7 +46,7 @@
       <aside class="sidebar">
         <!-- Logo & Brand -->
         <div class="sidebar-logo">
-          <img src="/images/dazo-logo.svg" alt="DAZO" class="sidebar-logo-img" />
+          <img src="/DAZO-logo-carre-blanc.svg" alt="DAZO" class="sidebar-logo-img" />
           <div class="sidebar-logo-sub">Decision At Zero Objection</div>
         </div>
 
@@ -186,7 +186,6 @@ const logout = async () => {
 
 .topbar-logo {
   height: 28px; width: auto;
-  filter: brightness(0) invert(1);
 }
 
 .topbar-brand {
@@ -271,7 +270,7 @@ const logout = async () => {
 }
 .sidebar-logo-img {
   width: 140px; height: auto;
-  filter: brightness(0) invert(1); margin-bottom: 4px;
+  margin-bottom: 4px;
 }
 .sidebar-logo-sub {
   font-size: 8px; color: rgba(255,255,255,0.35);

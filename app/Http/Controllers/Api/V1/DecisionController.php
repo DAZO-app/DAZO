@@ -28,9 +28,11 @@ class DecisionController extends Controller
         $decisions = Decision::whereHas('circle.members', function ($query) {
             $query->where('user_id', auth()->id());
         })
-            ->with(['circle', 'currentVersion', 'author.user', 'decisionModel', 'participants.user'])
+            ->with(['circle', 'category', 'currentVersion', 'author.user', 'decisionModel', 'participants.user'])
             ->latest()
             ->get();
+
+        $this->attachParticipationStats($decisions);
 
         return response()->json(['decisions' => $decisions]);
     }
@@ -41,8 +43,10 @@ class DecisionController extends Controller
         $this->authorize('view', $circle);
 
         $decisions = Decision::where('circle_id', $circle->id)
-            ->with(['circle', 'currentVersion', 'author.user', 'decisionModel', 'participants.user'])
+            ->with(['circle', 'category', 'currentVersion', 'author.user', 'decisionModel', 'participants.user'])
             ->get();
+
+        $this->attachParticipationStats($decisions);
 
         return response()->json(['decisions' => $decisions]);
     }
@@ -306,5 +310,70 @@ class DecisionController extends Controller
             'message'  => 'Animateur mis à jour.',
             'decision' => $decision->fresh(['participants.user']),
         ]);
+    }
+
+    private function attachParticipationStats($decisions)
+    {
+        if ($decisions->isEmpty()) return;
+
+        $decisions->loadMissing(['circle.members', 'currentVersion.feedbacks', 'currentVersion.consents']);
+        
+        foreach ($decisions as $decision) {
+            $circle = $decision->circle;
+            if (!$circle) continue;
+            
+            $totalMembers = $circle->members->where('role', '!=', CircleMemberRole::OBSERVER->value)->pluck('user_id')->toArray();
+            $excludedOrManaging = $decision->participants
+                ->whereIn('role', [
+                    DecisionParticipantRole::EXCLUDED->value,
+                    DecisionParticipantRole::AUTHOR->value,
+                    DecisionParticipantRole::ANIMATOR->value
+                ])->pluck('user_id')->toArray();
+            
+            $eligible = array_diff($totalMembers, $excludedOrManaging);
+            $v = $decision->currentVersion;
+            $participated = 0;
+            $status = $decision->status->value;
+
+            if ($v && in_array($status, [DecisionStatus::CLARIFICATION->value, DecisionStatus::REACTION->value, DecisionStatus::OBJECTION->value], true)) {
+                $phaseFeedbackTypes = [];
+                $phaseConsentSignals = [];
+
+                if ($status === DecisionStatus::CLARIFICATION->value) {
+                    $phaseFeedbackTypes = [FeedbackType::CLARIFICATION->value];
+                    $phaseConsentSignals = [ConsentSignal::NO_QUESTIONS->value];
+                } elseif ($status === DecisionStatus::REACTION->value) {
+                    $phaseFeedbackTypes = [FeedbackType::REACTION->value];
+                    $phaseConsentSignals = [ConsentSignal::NO_REACTION->value];
+                } elseif ($status === DecisionStatus::OBJECTION->value) {
+                    $phaseFeedbackTypes = [FeedbackType::OBJECTION->value, FeedbackType::SUGGESTION->value];
+                    $phaseConsentSignals = [ConsentSignal::NO_OBJECTION->value, ConsentSignal::ABSTENTION->value];
+                }
+
+                $feedbackAuthors = [];
+                foreach ($v->feedbacks as $fb) {
+                    $typeVal = is_object($fb->type) ? $fb->type->value : $fb->type;
+                    if (in_array($typeVal, $phaseFeedbackTypes)) {
+                        $feedbackAuthors[] = $fb->author_id;
+                    }
+                }
+
+                $consentAuthors = [];
+                foreach ($v->consents as $cs) {
+                    $signalVal = is_object($cs->signal) ? $cs->signal->value : $cs->signal;
+                    if (in_array($signalVal, $phaseConsentSignals)) {
+                        $consentAuthors[] = $cs->user_id;
+                    }
+                }
+                
+                $allParticipants = array_unique(array_merge($feedbackAuthors, $consentAuthors));
+                $participated = count(array_intersect($eligible, $allParticipants));
+            }
+
+            $decision->setAttribute('participation_stats', [
+                'eligible'     => count($eligible),
+                'participated' => $participated,
+            ]);
+        }
     }
 }

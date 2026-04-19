@@ -90,7 +90,7 @@ const getMyRole = (decision) => {
 };
 
 const getRolePicto = (role) => {
-    const map = { author: '💡', animator: '🎭', participant: '👥', observer: '👁️' };
+    const map = { author: '📣', animator: '🎭', participant: '👥', observer: '👁️' };
     return map[role] || '👥';
 };
 </script>

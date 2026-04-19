@@ -22,36 +22,42 @@
         <div
           v-for="item in items"
           :key="item.id"
-          class="pending-row"
+          class="decision-item"
           @click="$router.push({ name: 'DecisionDetail', params: { id: item.decision_id } })"
         >
-          <!-- Indicateur couleur -->
-          <div class="pending-bar" :class="props.type === 'clarifications' ? 'bar-amber' : props.type === 'reactions' ? 'bar-blue' : 'bar-red'"></div>
-
-          <!-- Pictogramme de rôle -->
-          <div class="pending-role">
-            <div class="role-bg-mini" :class="'role-' + item.my_role" :title="item.my_role">
-              {{ getRolePicto(item.my_role) }}
+          <div class="role-bg-mini" :class="'role-' + item.my_role" :title="item.my_role">
+            {{ getRolePicto(item.my_role) }}
+          </div>
+          
+          <div class="decision-item-main">
+            <div class="decision-title">
+              <span class="version-pill" v-if="item.version_number">v{{ item.version_number }}</span>
+              {{ item.decision_title }}
+            </div>
+            
+            <div class="decision-people">
+              <div v-if="item.last_message">
+                <span class="text-author">{{ item.last_message_author }} :</span>
+                <span class="text-animator"> "{{ item.last_message }}"</span>
+              </div>
+              <div v-else class="text-animator">Aucun retour pour le moment.</div>
+            </div>
+            
+            <div class="decision-tags" style="margin-top: 8px;">
+               <div style="display:flex; align-items:center; gap: 6px;">
+                 <span v-if="item.needs_reply" class="status-dot dot-red"></span>
+                 <span v-else class="status-dot dot-green"></span>
+                 <span v-if="item.needs_reply" class="text-xs text-red-600 font-semibold">Action requise</span>
+                 <span v-else class="text-xs text-teal-600 font-semibold">En attente des autres</span>
+                 <span class="badge ml-8" :class="props.type === 'clarifications' ? 'badge-amber' : props.type === 'reactions' ? 'badge-blue' : 'badge-red'">{{ typeLabel }}</span>
+               </div>
             </div>
           </div>
 
-          <div class="pending-content">
-            <div class="pending-circle">◎ {{ item.circle_name }}</div>
-            <div class="pending-title">{{ item.decision_title }}</div>
-            <div class="pending-meta">
-              <span class="text-xs text-muted">Version {{ item.version_number }}</span>
-              <span class="pill pill-gray ml-8">{{ typeLabel }}</span>
-            </div>
-            <div v-if="item.last_message" class="pending-last-msg">
-              <span class="font-semibold">{{ item.last_message_author }}:</span>
-              "{{ item.last_message }}"
-            </div>
-          </div>
-
-          <div class="pending-action">
-            <span v-if="item.needs_reply" class="status-dot dot-red" title="Réponse requise"></span>
-            <span v-else class="status-dot dot-amber" title="Participation requise"></span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted ml-8"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div class="decision-end-actions">
+            <button class="action-badge-btn circle-btn" @click.stop="$router.push({ name: 'CircleDetail', params: { id: 1 /* FIXME later if circleId is returned */ } })">{{ item.circle_name || 'Général' }}</button>
+            <button class="btn btn-primary btn-sm" v-if="item.needs_reply" style="margin-top: auto;">Agir</button>
+            <button class="btn btn-outline btn-sm" v-else style="margin-top: auto;">Voir</button>
           </div>
         </div>
       </div>
@@ -117,7 +123,7 @@ const fetchItems = async () => {
 };
 
 const getRolePicto = (role) => {
-  const map = { author: '💡', animator: '🎭', participant: '👥', observer: '👁️' };
+  const map = { author: '📣', animator: '🎭', participant: '👥', observer: '👁️' };
   return map[role] || '👥';
 };
 
@@ -128,48 +134,41 @@ watch(() => props.type, () => fetchItems());
 <style scoped>
 .p-24 { padding: 24px; }
 
-.pending-list { display: flex; flex-direction: column; gap: 0; }
+.pending-list { display: flex; flex-direction: column; gap: 0; background: white; border: 1px solid var(--gray-200); border-radius: var(--radius-md); overflow: hidden; }
 
-.pending-row {
-  display: flex; align-items: stretch; gap: 0;
-  background: white; border: 1px solid var(--gray-200); border-radius: var(--radius-md);
-  margin-bottom: 10px; cursor: pointer; overflow: hidden; transition: box-shadow 0.15s;
-}
-.pending-row:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+.decision-item { padding: 14px 18px; border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.1s; display: flex; align-items: flex-start; gap: 12px; }
+.decision-item:last-child { border-bottom: none; }
+.decision-item:hover { background: var(--gray-50); }
+.decision-item-main { flex: 1; min-width: 0; }
+.decision-title { font-size: 13px; font-weight: 500; color: var(--gray-900); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.decision-people { font-size: 12px; color: var(--gray-600); margin-bottom: 6px; font-weight: 500; }
+.text-author { color: var(--gray-700); }
+.text-animator { color: var(--gray-500); }
+.decision-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
 
-.pending-bar { width: 4px; flex-shrink: 0; }
-.bar-amber { background: var(--amber-400); }
-.bar-blue { background: var(--blue-500); }
-.bar-red { background: var(--red-500); }
+.version-pill { display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; background: var(--gray-100); color: var(--gray-600); padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid var(--gray-200); position: relative; top: -1px; }
 
-.pending-content { flex: 1; padding: 14px 16px; }
-.pending-circle { font-size: 11px; color: var(--blue-600); font-weight: 600; margin-bottom: 4px; }
-.pending-title { font-size: 14px; font-weight: 600; color: var(--gray-900); margin-bottom: 6px; }
-.pending-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
-.pending-last-msg { font-size: 12px; color: var(--gray-600); font-style: italic; }
-
-.pending-role { display: flex; align-items: center; padding-left: 14px; }
 .role-bg-mini {
-  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1.5px solid transparent;
-  flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1.5px solid transparent;
+  flex-shrink: 0; margin-top: 4px; border-color: var(--gray-200);
 }
 .role-author { border-color: var(--blue-500); background: var(--blue-50); }
 .role-animator { border-color: var(--amber-500); background: var(--amber-50); }
 .role-participant { border-color: var(--teal-500); background: var(--teal-50); }
 .role-observer { border-color: var(--gray-400); background: var(--gray-50); }
 
-.pending-action {
-  display: flex; align-items: center; padding: 0 16px;
-  color: var(--gray-400);
+.decision-end-actions {
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-end; height: 100%; min-height: 50px;
 }
-
-.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
-.pill-gray { background: var(--gray-100); color: var(--gray-600); }
-.ml-8 { margin-left: 8px; }
-.mt-4 { margin-top: 4px; }
+.action-badge-btn {
+  font-size: 11px; font-weight: 500; cursor: pointer; border-radius: var(--radius-sm); padding: 4px 10px; border: 1px solid transparent; transition: all 0.15s; white-space: nowrap;
+}
+.circle-btn { color: var(--blue-700); background: var(--blue-50); border-color: var(--blue-200); }
+.circle-btn:hover { background: var(--blue-100); }
 
 .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink:0; }
 .dot-red { background: var(--red-500); box-shadow: 0 0 0 3px var(--red-100); }
-.dot-amber { background: var(--amber-400); box-shadow: 0 0 0 3px var(--amber-100); }
+.dot-green { background: var(--teal-500); box-shadow: 0 0 0 3px var(--teal-100); }
+.ml-8 { margin-left: 8px; }
 </style>

@@ -13,24 +13,59 @@
       
       <!-- STATS BLOCK -->
       <div class="stats-row mb-16" v-if="dashboard.stats">
-        <div class="stat-card clickable" @click="$router.push('/decisions?filter=all')">
-          <div class="stat-value">{{ dashboard.stats.total }}</div>
-          <div class="stat-label">Décisions de mes cercles</div>
+        <div class="stat-card v-total clickable" @click="$router.push('/decisions?filter=all')">
+          <div class="stat-icon-wrap">📊</div>
+          <div class="ring-wrap">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle class="ring-bg" cx="36" cy="36" r="28"/>
+              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" stroke-dashoffset="0" style="stroke: rgba(255,255,255,0.35);"/>
+            </svg>
+            <div class="ring-center">{{ dashboard.stats.total }}</div>
+          </div>
+          <div class="stat-label">Décisions</div>
         </div>
-        <div class="stat-card clickable" @click="$router.push('/decisions?filter=author')">
-          <div class="stat-value text-blue-600">{{ dashboard.stats.as_author }}</div>
-          <div class="stat-label">Mes Propositions</div>
+        <div class="stat-card v-proposals clickable" @click="$router.push('/decisions?filter=author')">
+          <div class="stat-icon-wrap">📣</div>
+          <div class="ring-wrap">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle class="ring-bg" cx="36" cy="36" r="28"/>
+              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.as_author, dashboard.stats.total)"/>
+            </svg>
+            <div class="ring-center">{{ dashboard.stats.as_author }}</div>
+          </div>
+          <div class="stat-label">Proposées</div>
         </div>
-        <div class="stat-card clickable" @click="$router.push('/decisions?filter=animator')">
-          <div class="stat-value text-amber-600">{{ dashboard.stats.as_animator }}</div>
+        <div class="stat-card v-anime clickable" @click="$router.push('/decisions?filter=animator')">
+          <div class="stat-icon-wrap">🎭</div>
+          <div class="ring-wrap">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle class="ring-bg" cx="36" cy="36" r="28"/>
+              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.as_animator, dashboard.stats.total)"/>
+            </svg>
+            <div class="ring-center">{{ dashboard.stats.as_animator }}</div>
+          </div>
           <div class="stat-label">J'Anime</div>
         </div>
-        <div class="stat-card clickable" @click="$router.push('/decisions?filter=active')">
-          <div class="stat-value text-orange-500">{{ dashboard.stats.in_progress }}</div>
+        <div class="stat-card v-active clickable" @click="$router.push('/decisions?filter=active')">
+          <div class="stat-icon-wrap">🔄</div>
+          <div class="ring-wrap">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle class="ring-bg" cx="36" cy="36" r="28"/>
+              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.in_progress, dashboard.stats.total)"/>
+            </svg>
+            <div class="ring-center">{{ dashboard.stats.in_progress }}</div>
+          </div>
           <div class="stat-label">En Cours</div>
         </div>
-        <div class="stat-card clickable" @click="$router.push('/decisions?filter=adopted')">
-          <div class="stat-value text-teal-600">{{ dashboard.stats.adopted }}</div>
+        <div class="stat-card v-adopted clickable" @click="$router.push('/decisions?filter=adopted')">
+          <div class="stat-icon-wrap">✅</div>
+          <div class="ring-wrap">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle class="ring-bg" cx="36" cy="36" r="28"/>
+              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.adopted, dashboard.stats.total)"/>
+            </svg>
+            <div class="ring-center">{{ dashboard.stats.adopted }}</div>
+          </div>
           <div class="stat-label">Adoptées</div>
         </div>
       </div>
@@ -39,62 +74,58 @@
       <div class="grid-2 mb-16" v-if="hasActiveTickets">
         
         <!-- Clarifications en cours -->
-        <div class="card phase-card phase-clarif" v-if="dashboard.my_clarifications?.length">
-          <div class="card-header phase-header-clarif">
-            <span class="phase-icon">💬</span>
-            <span class="card-title">Clarifications</span>
-            <span class="badge badge-amber badge-sm" style="margin-left:auto">{{ dashboard.my_clarifications.length }}</span>
+        <div class="premium-card" v-if="dashboard.my_clarifications?.length">
+          <div class="pc-header pc-header-amber">
+            <div class="pc-header-icon">💬</div>
+            <div class="pc-header-content">
+              <div class="pc-header-title">Clarifications actives</div>
+              <div class="pc-header-sub">{{ dashboard.my_clarifications.length }} fil(s) en cours</div>
+            </div>
           </div>
-          <div class="card-body" style="padding:0">
-            <div v-for="fb in dashboard.my_clarifications" :key="fb.id" class="ticket-row" @click="goToDecision(fb.version?.decision_id)">
-              <div class="role-bg-mini mr-12" :class="'role-' + getMyRole(fb.version?.decision)" :title="getMyRoleLabel(fb.version?.decision)">
-                  {{ getRolePicto(getMyRole(fb.version?.decision)) }}
-              </div>
-              <div class="ticket-info">
-                <div class="text-xs font-semibold">
-                  <span class="text-amber-700 mr-4">[{{ fb.version?.decision?.circle?.name }}]</span> 
-                  {{ fb.version?.decision?.title }}
-                </div>
-                <div class="text-xs text-muted truncate mt-4">
-                  <span class="font-semibold">{{ getLastMessageAuthor(fb) }}</span>
-                  <span class="font-normal text-gray-400 ml-4">({{ getLastMessageDate(fb) }})</span>: 
-                  "{{ getLastMessageContent(fb) }}"
+          <div class="pc-body">
+            <div v-for="fb in dashboard.my_clarifications" :key="fb.id" class="ticket-item" @click="goToDecision(fb.version?.decision_id)">
+              <div class="ticket-role" :class="'role-' + getMyRole(fb.version?.decision)">{{ getRolePicto(getMyRole(fb.version?.decision)) }}</div>
+              <div class="ticket-content">
+                <div class="ticket-circle">{{ fb.version?.decision?.circle?.name }}</div>
+                <div class="ticket-title">{{ fb.version?.decision?.title }}</div>
+                <div class="ticket-msg" v-if="getLastMessageContent(fb)">
+                  <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span> : "{{ getLastMessageContent(fb) }}"
                 </div>
               </div>
-              <div class="ticket-status">
-                <span v-if="needsMyAttention(fb)" class="status-dot dot-red" title="Réponse requise !"></span>
-                <span v-else class="status-dot dot-green" title="En attente de l'autre"></span>
+              <div class="ticket-indicator">
+                <span v-if="needsMyAttention(fb)" class="alert-dot dot-red"></span>
+                <span v-else class="alert-dot dot-green"></span>
+                <span v-if="needsMyAttention(fb)" class="alert-text alert-text-red">À vous</span>
+                <span v-else class="alert-text alert-text-green">En attente</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Objections en cours -->
-        <div class="card phase-card phase-objection" v-if="dashboard.my_objections?.length">
-          <div class="card-header phase-header-objection">
-            <span class="phase-icon">⚠️</span>
-            <span class="card-title">Objections</span>
-            <span class="badge badge-red badge-sm" style="margin-left:auto">{{ dashboard.my_objections.length }}</span>
+        <div class="premium-card" v-if="dashboard.my_objections?.length">
+          <div class="pc-header pc-header-red">
+            <div class="pc-header-icon">⚠️</div>
+            <div class="pc-header-content">
+              <div class="pc-header-title">Objections actives</div>
+              <div class="pc-header-sub">{{ dashboard.my_objections.length }} fil(s) en cours</div>
+            </div>
           </div>
-          <div class="card-body" style="padding:0">
-            <div v-for="fb in dashboard.my_objections" :key="fb.id" class="ticket-row" @click="goToDecision(fb.version?.decision_id)">
-              <div class="role-bg-mini mr-12" :class="'role-' + getMyRole(fb.version?.decision)" :title="getMyRoleLabel(fb.version?.decision)">
-                  {{ getRolePicto(getMyRole(fb.version?.decision)) }}
-              </div>
-              <div class="ticket-info">
-                <div class="text-xs font-semibold">
-                  <span class="text-red-700 mr-4">[{{ fb.version?.decision?.circle?.name }}]</span> 
-                  {{ fb.version?.decision?.title }}
-                </div>
-                <div class="text-xs text-muted truncate mt-4">
-                  <span class="font-semibold">{{ getLastMessageAuthor(fb) }}</span>
-                  <span class="font-normal text-gray-400 ml-4">({{ getLastMessageDate(fb) }})</span>: 
-                  "{{ getLastMessageContent(fb) }}"
+          <div class="pc-body">
+            <div v-for="fb in dashboard.my_objections" :key="fb.id" class="ticket-item" @click="goToDecision(fb.version?.decision_id)">
+              <div class="ticket-role" :class="'role-' + getMyRole(fb.version?.decision)">{{ getRolePicto(getMyRole(fb.version?.decision)) }}</div>
+              <div class="ticket-content">
+                <div class="ticket-circle">{{ fb.version?.decision?.circle?.name }}</div>
+                <div class="ticket-title">{{ fb.version?.decision?.title }}</div>
+                <div class="ticket-msg" v-if="getLastMessageContent(fb)">
+                  <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span> : "{{ getLastMessageContent(fb) }}"
                 </div>
               </div>
-              <div class="ticket-status">
-                <span v-if="needsMyAttention(fb)" class="status-dot dot-red" title="Réponse requise !"></span>
-                <span v-else class="status-dot dot-green" title="En attente de l'autre"></span>
+              <div class="ticket-indicator">
+                <span v-if="needsMyAttention(fb)" class="alert-dot dot-red"></span>
+                <span v-else class="alert-dot dot-green"></span>
+                <span v-if="needsMyAttention(fb)" class="alert-text alert-text-red">À vous</span>
+                <span v-else class="alert-text alert-text-green">En attente</span>
               </div>
             </div>
           </div>
@@ -102,107 +133,127 @@
 
       </div>
 
-      <!-- LIGNE 2 : DÉCISIONS REQUISES QUELQUE PART -->
+      <!-- LIGNE 2 : DÉCISIONS -->
       <div class="grid-3 mb-16">
         
-        <!-- Mes décisions (Auteur/Porteur) -->
-        <div class="card mb-16">
-          <div class="card-header" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border-bottom: 1px solid var(--blue-200);">
-            <div class="role-bg-mini mr-8 role-author" title="Porteur">💡</div>
-            <span class="card-title text-blue-900">Mes propositions (pilotage)</span>
+        <!-- Mes propositions -->
+        <div class="premium-card">
+          <div class="pc-header pc-header-blue">
+            <div class="pc-header-icon">📣</div>
+            <div class="pc-header-content">
+              <div class="pc-header-title">Mes propositions</div>
+              <div class="pc-header-sub">Décisions dont je suis porteur</div>
+            </div>
           </div>
-          <div class="card-body" style="padding:0">
-            <div v-if="Object.keys(dashboard.my_decisions).length === 0" class="p-16 text-xs text-muted text-center">Vous ne pilotez aucune décision.</div>
-            
+          <div class="pc-body">
+            <div v-if="Object.keys(dashboard.my_decisions).length === 0" class="pc-empty">
+              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
+              <span>Vous ne pilotez aucune décision.</span>
+            </div>
             <div v-for="(decisions, circleName) in dashboard.my_decisions" :key="circleName">
               <div class="group-header">{{ circleName }}</div>
-              <div v-for="d in decisions" :key="d.id" class="decision-mini" :class="'status-' + d.status" @click="goToDecision(d.id)">
-                <div class="decision-status-strip" :class="'strip-' + d.status"></div>
-                <div class="decision-title">
-                  <span>{{ d.title }}</span>
-                  <div class="text-xs text-muted mt-2">
-                    <span class="font-semibold text-gray-700">Porteur:</span> {{ getPorteur(d) }} 
-                    <span v-if="getAnimateur(d)">· <span class="font-semibold text-gray-700">Animateur:</span> {{ getAnimateur(d) }}</span>
-                    <br>Version {{ d.current_version?.version_number }} · {{ getStepProgress(d.status) }}
-                    <br>Créée le {{ formatDateOnly(d.created_at) }} · Dernière intervention le {{ formatDateOnly(d.updated_at) }}
-                  </div>
-                </div>
-                <div class="badge text-xs" :class="getStatusBadgeClass(d.status)">{{ getStepLabel(d.status) }}</div>
-              </div>
+              <DecisionListItem
+                v-for="d in decisions" :key="d.id" :decision="d"
+                @click="goToDecision"
+                @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
+                @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
+              />
             </div>
           </div>
         </div>
 
-        <!-- Mes décisions (Animateur) -->
-        <div class="card mb-16">
-          <div class="card-header" style="background: linear-gradient(135deg, #fffbeb, #fef3c7); border-bottom: 1px solid var(--amber-200);">
-            <div class="role-bg-mini mr-8 role-animator" title="Animateur">🎭</div>
-            <span class="card-title text-amber-900">J'anime (Facilitation)</span>
+        <!-- J'anime -->
+        <div class="premium-card">
+          <div class="pc-header pc-header-amber">
+            <div class="pc-header-icon">🎭</div>
+            <div class="pc-header-content">
+              <div class="pc-header-title">J'anime</div>
+              <div class="pc-header-sub">Décisions dont je suis facilitateur</div>
+            </div>
           </div>
-          <div class="card-body" style="padding:0">
-            <div v-if="Object.keys(dashboard.my_animated || {}).length === 0" class="p-16 text-xs text-muted text-center">Vous n'animez aucune décision en cours.</div>
-            
+          <div class="pc-body">
+            <div v-if="Object.keys(dashboard.my_animated || {}).length === 0" class="pc-empty">
+              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
+              <span>Vous n'animez aucune décision en cours.</span>
+            </div>
             <div v-for="(decisions, circleName) in dashboard.my_animated" :key="circleName">
               <div class="group-header">{{ circleName }}</div>
-              <div v-for="d in decisions" :key="d.id" class="decision-mini" :class="'status-' + d.status" @click="goToDecision(d.id)">
-                <div class="decision-status-strip" :class="'strip-' + d.status"></div>
-                <div class="decision-title">
-                  <span>{{ d.title }}</span>
-                  <div class="text-xs text-muted mt-2">
-                    <span class="font-semibold text-gray-700">Porteur:</span> {{ getPorteur(d) }} 
-                    <br>Version {{ d.current_version?.version_number }} · {{ getStepProgress(d.status) }}
-                    <br>Dernière intervention le {{ formatDateOnly(d.updated_at) }}
-                  </div>
-                </div>
-                <div class="badge text-xs" :class="getStatusBadgeClass(d.status)">{{ getStepLabel(d.status) }}</div>
-              </div>
+              <DecisionListItem
+                v-for="d in decisions" :key="d.id" :decision="d"
+                @click="goToDecision"
+                @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
+                @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
+              />
             </div>
           </div>
         </div>
 
-        <!-- Décisions de mes cercles -->
-        <div class="card mb-16">
-          <div class="card-header" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-bottom: 1px solid var(--teal-200);">
-            <div class="role-bg-mini mr-8 role-participant" title="Cercle">👥</div>
-            <span class="card-title text-teal-900">À surveiller (Mes Cercles)</span>
+        <!-- Mes cercles à surveiller -->
+        <div class="premium-card">
+          <div class="pc-header pc-header-teal">
+            <div class="pc-header-icon">👥</div>
+            <div class="pc-header-content">
+              <div class="pc-header-title">À surveiller</div>
+              <div class="pc-header-sub">Décisions actives dans mes cercles</div>
+            </div>
           </div>
-          <div class="card-body" style="padding:0">
-            <div v-if="Object.keys(dashboard.circle_decisions).length === 0" class="p-16 text-xs text-muted text-center">Rien à signaler dans vos cercles.</div>
-            
+          <div class="pc-body">
+            <div v-if="Object.keys(dashboard.circle_decisions).length === 0" class="pc-empty">
+              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
+              <span>Rien à signaler dans vos cercles.</span>
+            </div>
             <div v-for="(decisions, circleName) in dashboard.circle_decisions" :key="circleName">
               <div class="group-header">{{ circleName }}</div>
-              <div v-for="d in decisions" :key="d.id" class="decision-mini" :class="'status-' + d.status" @click="goToDecision(d.id)">
-                <div class="decision-status-strip" :class="'strip-' + d.status"></div>
-                <div class="decision-title">
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <span class="role-bg-mini" :class="'role-' + getMyRole(d)" :title="getMyRoleLabel(d)">{{ getRolePicto(getMyRole(d)) }}</span>
-                    <span>{{ d.title }}</span>
-                  </div>
-                  <div class="text-xs text-muted mt-2">
-                    <span class="font-semibold text-gray-700">Porteur:</span> {{ getPorteur(d) }} 
-                    <span v-if="getAnimateur(d)">· <span class="font-semibold text-gray-700">Animateur:</span> {{ getAnimateur(d) }}</span>
-                    <br>Version {{ d.current_version?.version_number }} · {{ getStepProgress(d.status) }}
-                    <br>Créée le {{ formatDateOnly(d.created_at) }} · Dernière intervention le {{ formatDateOnly(d.updated_at) }}
-                  </div>
-                </div>
-                <div class="badge text-xs" :class="getStatusBadgeClass(d.status)">{{ getStepLabel(d.status) }}</div>
-              </div>
+              <DecisionListItem
+                v-for="d in decisions" :key="d.id" :decision="d"
+                @click="goToDecision"
+                @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
+                @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
+              />
             </div>
           </div>
         </div>
 
       </div>
 
-      <!-- LIGNE 3 : MES CERCLES RACCOURCIS -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Accès rapide: Mes cercles</span>
+      <!-- LIGNE 3 : MES CERCLES & CATÉGORIES -->
+      <div class="grid-2">
+        <div class="premium-card">
+          <div class="pc-header pc-header-indigo">
+            <div class="pc-header-icon">◎</div>
+            <div class="pc-header-content">
+              <div class="pc-header-title">Mes cercles</div>
+              <div class="pc-header-sub">{{ circleStore.circles.length }} cercle(s) rejoint(s)</div>
+            </div>
+          </div>
+          <div class="pc-body pc-chips">
+            <div v-if="circleStore.circles.length === 0" class="pc-empty">
+              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
+              <span>Aucun cercle rejoint.</span>
+            </div>
+            <button v-for="c in circleStore.circles" :key="c.id" class="chip chip-blue" @click="$router.push({ name: 'CircleDetail', params: { id: c.id } })">
+              ◎ {{ c.name }}
+            </button>
+          </div>
         </div>
-        <div class="card-body" style="display:flex; gap:16px; flex-wrap:wrap; padding:12px;">
-          <div v-if="circleStore.circles.length === 0" class="text-xs text-muted">Aucun cercle rejoint.</div>
-          <button v-for="c in circleStore.circles" :key="c.id" class="btn btn-outline btn-sm" @click="$router.push({ name: 'CircleDetail', params: { id: c.id } })">
-            ◎ {{ c.name }}
-          </button>
+
+        <div class="premium-card">
+          <div class="pc-header pc-header-purple">
+            <div class="pc-header-icon">🗂️</div>
+            <div class="pc-header-content">
+              <div class="pc-header-title">Catégories</div>
+              <div class="pc-header-sub">{{ (dashboard.categories || []).length }} catégorie(s) disponible(s)</div>
+            </div>
+          </div>
+          <div class="pc-body pc-chips">
+            <div v-if="!dashboard.categories || dashboard.categories.length === 0" class="pc-empty">
+              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
+              <span>Aucune catégorie.</span>
+            </div>
+            <button v-for="c in dashboard.categories" :key="c.id" class="chip chip-purple" @click="$router.push({ name: 'DecisionList', query: { category: c.id } })">
+              {{ c.name }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -217,6 +268,7 @@ import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useCircleStore } from '../stores/circle';
+import DecisionListItem from '../components/DecisionListItem.vue';
 import axios from 'axios';
 
 const router = useRouter();
@@ -224,9 +276,14 @@ const authStore = useAuthStore();
 const circleStore = useCircleStore();
 
 const loading = ref(true);
-const dashboard = ref({ my_decisions: {}, my_animated: {}, circle_decisions: {}, my_clarifications: [], my_objections: [], stats: null });
+const dashboard = ref({ my_decisions: {}, my_animated: {}, circle_decisions: {}, my_clarifications: [], my_objections: [], stats: null, categories: [] });
 
 const hasActiveTickets = computed(() => dashboard.value.my_clarifications?.length > 0 || dashboard.value.my_objections?.length > 0);
+
+const ringOffset = (value, total) => {
+    const pct = total > 0 ? Math.min(1, Math.max(0, value / total)) : 0;
+    return 175.9 * (1 - pct);
+};
 
 onMounted(async () => {
     circleStore.fetchCircles();
@@ -338,7 +395,7 @@ const getMyRole = (decision) => {
 };
 
 const getRolePicto = (role) => {
-    const icons = { author: '💡', animator: '🎭', participant: '👥', observer: '👁️' };
+    const icons = { author: '📣', animator: '🎭', participant: '👥', observer: '👁️' };
     return icons[role] || '👥';
 };
 
@@ -358,85 +415,116 @@ const getMyRoleLabel = (decision) => {
 }
 
 /* Stats Block */
-.stats-row { 
-  display: flex; gap: 16px; flex-wrap: wrap; 
-}
+.stats-row { display: flex; gap: 14px; flex-wrap: wrap; }
 .stat-card {
-  flex: 1; min-width: 140px; background: white; padding: 20px 16px;
-  border-radius: var(--radius-lg); border: 1px solid var(--gray-200);
-  box-shadow: var(--shadow-sm); transition: all 0.2s;
-  text-align: center; position: relative;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; min-width: 130px; border-radius: 14px; padding: 18px 14px 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12); transition: all 0.2s;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
 }
-.stat-card.clickable { cursor: pointer; }
-.stat-card.clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--blue-200); }
-.stat-value { font-size: 28px; font-weight: 800; color: var(--gray-800); font-family: var(--font-display); line-height: 1; margin-bottom: 4px; z-index: 1;}
-.stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--gray-500); z-index: 1; }
+.stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(0,0,0,0.18); }
+.stat-card.v-total    { background: linear-gradient(135deg, #1e3a8a, #3b82f6); }
+.stat-card.v-proposals { background: linear-gradient(135deg, #1d4ed8, #60a5fa); }
+.stat-card.v-anime    { background: linear-gradient(135deg, #92400e, #f59e0b); }
+.stat-card.v-active   { background: linear-gradient(135deg, #9a3412, #f97316); }
+.stat-card.v-adopted  { background: linear-gradient(135deg, #115e59, #14b8a6); }
+.stat-card::after { content: ''; position: absolute; right: -24px; bottom: -24px; width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,0.07); }
+.stat-icon-wrap { font-size: 16px; padding: 7px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; align-self: flex-end; position: relative; z-index: 1; }
+.ring-wrap { position: relative; width: 72px; height: 72px; }
+.ring-wrap svg { transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 7; }
+.ring-fg { fill: none; stroke: rgba(255,255,255,0.85); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1); }
+.ring-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; color: white; font-family: var(--font-display); }
+.stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.7); }
 .mb-16 { margin-bottom: 16px; }
 
-/* Groupes de cercles */
-.group-header {
-  background: var(--gray-50); padding: 6px 12px; font-size: 11px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; border-bottom: 1px solid var(--gray-100); border-top: 1px solid var(--gray-100);
+/* ===== PREMIUM CARDS ===== */
+.premium-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  border: 1px solid rgba(255,255,255,0.8);
+  display: flex; flex-direction: column;
+  margin-bottom: 0;
 }
 
-.decision-mini {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px;
-  cursor: pointer; transition: background 0.1s; border-bottom: 1px solid var(--gray-100);
+/* Card Header */
+.pc-header {
+  display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+  position: relative; overflow: hidden;
 }
-.decision-mini:last-child { border-bottom: none; }
-.decision-mini:hover { background: var(--blue-50); }
-.decision-title { font-size: 13px; font-weight: 500; color: var(--gray-800); }
-
-/* Tickets */
-.ticket-row {
-  display: flex; align-items: center; justify-content: space-between; padding: 12px 16px;
-  border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.1s;
+.pc-header::after {
+  content: ''; position: absolute;
+  right: -30px; top: -30px; width: 100px; height: 100px;
+  border-radius: 50%; background: rgba(255,255,255,0.08);
 }
-.ticket-row:last-child { border-bottom: none; }
-.ticket-row:hover { background: var(--gray-50); }
-.ticket-info { flex: 1; overflow: hidden; }
-.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
-
-.status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.dot-red { background-color: var(--red-500); box-shadow: 0 0 0 4px var(--red-100); }
-.dot-green { background-color: var(--teal-500); box-shadow: 0 0 0 4px var(--teal-100); }
-.dot-gray { background-color: var(--gray-300); }
-
-/* Phase card headers */
-.phase-card { overflow: hidden; }
-.phase-header-clarif { 
-  background: linear-gradient(135deg, #fffbeb, #fef3c7);
-  border-bottom: 2px solid #f59e0b;
+.pc-header-icon {
+  font-size: 22px; width: 46px; height: 46px; border-radius: 12px;
+  background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.35);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; z-index: 1;
 }
-.phase-header-objection { 
-  background: linear-gradient(135deg, #fff1f2, #ffe4e6);
-  border-bottom: 2px solid #ef4444;
-}
-.phase-icon { font-size: 16px; margin-right: 8px; }
+.pc-header-content { position: relative; z-index: 1; }
+.pc-header-title { font-size: 14px; font-weight: 800; color: white; line-height: 1.2; }
+.pc-header-sub { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
 
-/* Phase accent strips on decision cards */
-.decision-mini { position: relative; padding-left: 18px; }
-.decision-status-strip {
-  position: absolute; left: 0; top: 0; bottom: 0;
-  width: 4px; flex-shrink: 0;
-}
-.strip-draft        { background: var(--gray-300); }
-.strip-clarification { background: var(--amber-400); }
-.strip-reaction     { background: var(--blue-400); }
-.strip-objection    { background: var(--red-500); }
-.strip-revision     { background: var(--orange-400); }
-.strip-adopted      { background: var(--teal-500); }
+.pc-header-blue    { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+.pc-header-amber   { background: linear-gradient(135deg, #92400e, #f59e0b); }
+.pc-header-red     { background: linear-gradient(135deg, #991b1b, #ef4444); }
+.pc-header-teal    { background: linear-gradient(135deg, #115e59, #14b8a6); }
+.pc-header-indigo  { background: linear-gradient(135deg, #312e81, #6366f1); }
+.pc-header-purple  { background: linear-gradient(135deg, #581c87, #a855f7); }
 
-/* Role Mini Pictos */
-.role-bg-mini {
-  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1.5px solid transparent;
-  flex-shrink: 0;
-}
-.role-author { border-color: var(--blue-500); background: var(--blue-50); }
-.role-animator { border-color: var(--amber-500); background: var(--amber-50); }
-.role-participant { border-color: var(--teal-500); background: var(--teal-50); }
-.role-observer { border-color: var(--gray-400); background: var(--gray-50); }
+/* Card Body */
+.pc-body { flex: 1; }
+.pc-body.pc-chips { padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; min-height: 80px; }
 
-.ticket-status { display: flex; align-items: center; gap: 12px; }
+/* Empty State */
+.pc-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 16px; gap: 10px; }
+.pc-empty-img { height: 44px; opacity: 0.18; }
+.pc-empty span { font-size: 12px; color: #94a3b8; text-align: center; }
+
+/* Group separator */
+.group-header { background: #f8fafc; padding: 6px 16px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; }
+
+/* Ticket items */
+.ticket-item {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s;
+}
+.ticket-item:last-child { border-bottom: none; }
+.ticket-item:hover { background: #f8fafc; }
+.ticket-role {
+  width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0; border: 1.5px solid transparent;
+}
+.ticket-role.role-author    { background: #eff6ff; border-color: #bfdbfe; }
+.ticket-role.role-animator  { background: #fffbeb; border-color: #fde68a; }
+.ticket-role.role-participant { background: #f0fdfa; border-color: #99f6e4; }
+.ticket-role.role-observer  { background: #f9fafb; border-color: #e5e7eb; }
+.ticket-content { flex: 1; overflow: hidden; }
+.ticket-circle { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+.ticket-title { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticket-msg { font-size: 11px; color: #64748b; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticket-msg-author { font-weight: 600; font-style: normal; color: #475569; }
+.ticket-indicator { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; flex-shrink: 0; }
+.alert-dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot-red   { background: #ef4444; box-shadow: 0 0 0 3px #fee2e2; }
+.dot-green { background: #14b8a6; box-shadow: 0 0 0 3px #ccfbf1; }
+.alert-text { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.alert-text-red   { color: #ef4444; }
+.alert-text-green { color: #14b8a6; }
+
+/* Chips */
+.chip {
+  font-size: 12px; font-weight: 600; border-radius: 8px; padding: 6px 14px;
+  border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.chip:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.chip-blue   { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.chip-blue:hover { background: #dbeafe; }
+.chip-purple { background: #faf5ff; color: #7c3aed; border-color: #ddd6fe; }
+.chip-purple:hover { background: #ede9fe; }
 </style>

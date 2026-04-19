@@ -2,6 +2,29 @@
 
 Bienvenue sur le dépôt principal de **DAZO**, la plateforme moderne permettant aux communautés et organisations de gérer de manière fluide leurs cycles de décision, du brouillon jusqu'à l'adoption finale, en intégrant des mécanismes structurés de débat et de consentement.
 
+---
+
+## 🕊️ Philosophie & Concepts : La Décision à Zéro Objection
+
+DAZO n'est pas qu'un outil de gestion de tâches, c'est une implémentation numérique des principes de la **Sociocratie** et de la **Gouvernance Partagée**. 
+
+### 1. Le Consentement plutôt que le Consensus
+Contrairement au consensus — où tout le monde doit dire "oui" — DAZO repose sur le **consentement** : personne n'a d'objection qui pourrait nuire à l'organisation ou au cercle. Cela évite les blocages interminables et permet d'avancer dès qu'une proposition est "suffisamment bonne pour maintenant, et assez sûre pour être essayée".
+
+### 2. L'Objection est un Cadeau
+Dans DAZO, une objection n'est pas un "non" définitif ou un droit de veto. C'est un signal précieux indiquant que la proposition actuelle comporte un risque ou peut être améliorée. Le processus DAZO transforme l'objection en moteur d'itération : on ne rejette pas, on amende la proposition jusqu'à ce que l'objection soit levée.
+
+### 3. Structure en Cercles
+L'application organise les membres en **Cercles** (équipes, départements, projets). Chaque cercle est souverain sur son périmètre. Cette décentralisation de l'autorité permet de garder de l'agilité tout en maintenant une transparence totale sur les décisions prises.
+
+### 4. Rôles et Workflow
+Pour garantir la fluidité, DAZO définit des rôles clairs lors d'une décision :
+- **📣 Porteur** : Initie la proposition et la "pilote" jusqu'à sa validation.
+- **🎭 Animateur** : Facilite le débat, s'assure que chacun est entendu et que le processus est respecté.
+- **👥 Participant** : Membre du cercle qui apporte sa sagesse, clarifie et exprime ses éventuelles objections.
+
+---
+
 ## 📚 Documentation & Références
 
 Le projet est documenté en profondeur :

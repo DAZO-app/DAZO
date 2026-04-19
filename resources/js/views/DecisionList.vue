@@ -12,7 +12,42 @@
 
     <!-- Filter Bar -->
     <div class="filter-bar">
-      <button v-for="f in filters" :key="f.key" class="filter-chip" :class="{ active: activeFilter === f.key }" @click="activeFilter = f.key">{{ f.label }}</button>
+      <button class="filter-chip" :class="{ active: isAllActive }" @click="resetFilters">Toutes</button>
+      
+      <select v-model="filters.state" class="filter-chip select-chip">
+        <option value="all">Tous états</option>
+        <option value="draft">Brouillon</option>
+        <option value="active">En cours (Tous)</option>
+        <option value="clarification">En clarification</option>
+        <option value="reaction">En réaction</option>
+        <option value="objection">En objection</option>
+        <option value="revision">En révision</option>
+        <option value="adopted">Adoptées</option>
+        <option value="abandoned">Abandonnées</option>
+      </select>
+
+      <select v-model="filters.my_role" class="filter-chip select-chip">
+        <option value="all">Tous mes rôles</option>
+        <option value="author">Mes propositions</option>
+        <option value="animator">J'anime</option>
+        <option value="participant">Je participe</option>
+        <option value="observer">J'observe</option>
+      </select>
+
+      <select v-model="filters.circle" class="filter-chip select-chip">
+        <option value="all">Tous cercles</option>
+        <option v-for="c in uniqueCircles" :key="c.id" :value="c.id">{{ c.name }}</option>
+      </select>
+
+      <select v-model="filters.category" class="filter-chip select-chip">
+        <option value="all">Toutes catégories</option>
+        <option v-for="c in uniqueCategories" :key="c.id" :value="c.id">{{ c.name }}</option>
+      </select>
+
+      <select v-model="filters.author" class="filter-chip select-chip">
+        <option value="all">Tous auteurs</option>
+        <option v-for="a in uniqueAuthors" :key="a.id" :value="a.id">{{ a.name }}</option>
+      </select>
     </div>
 
     <div class="page-body">
@@ -25,24 +60,15 @@
           Aucune décision trouvée.
         </div>
         
-        <div v-else v-for="desc in filtered" :key="desc.id" class="decision-item" @click="goToDetail(desc.id)">
-          <div class="role-bg-mini" :class="'role-' + getMyRole(desc)" :title="getMyRole(desc)">
-            {{ getRolePicto(getMyRole(desc)) }}
-          </div>
-          <div class="decision-item-main">
-            <div class="decision-title">{{ desc.title }}</div>
-            <div class="decision-meta">
-              <span>Cercle : {{ desc.circle?.name || 'Général' }}</span>
-              <span>· Créée le : {{ formatDateOnly(desc.created_at) }}</span>
-              <span>· Dernière modif : {{ formatDateOnly(desc.updated_at) }}</span>
-            </div>
-            <div class="decision-tags">
-              <span class="badge" :class="statusClass(desc.status)">{{ desc.status?.toUpperCase() }}</span>
-              <span class="version-pill" v-if="desc.current_version">v{{ desc.current_version.version_number }}</span>
-            </div>
-          </div>
-          <button class="btn btn-ghost btn-sm">Ouvrir</button>
-        </div>
+        <DecisionListItem
+          v-else
+          v-for="desc in filtered"
+          :key="desc.id"
+          :decision="desc"
+          @click="goToDetail"
+          @filter-circle="filters.circle = $event"
+          @filter-category="filters.category = $event"
+        />
       </div>
     </div>
 
@@ -55,101 +81,107 @@ import { onMounted, computed, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useDecisionStore } from '../stores/decision';
 import { useAuthStore } from '../stores/auth';
+import DecisionListItem from '../components/DecisionListItem.vue';
 
 const store = useDecisionStore();
 const router = useRouter();
 const route = useRoute();
-const activeFilter = ref('all');
+const filters = ref({
+  state: 'all',
+  my_role: 'all',
+  circle: 'all',
+  category: 'all',
+  author: 'all'
+});
 
-const filters = [
-  { key: 'all', label: 'Toutes' },
-  { key: 'draft', label: 'Brouillon' },
-  { key: 'active', label: 'En cours' },
-  { key: 'clarification', label: 'Clarification' },
-  { key: 'reaction', label: 'Réaction' },
-  { key: 'objection', label: 'Objection' },
-  { key: 'author', label: 'Mes propositions' },
-  { key: 'animator', label: 'J\'anime' },
-  { key: 'adopted', label: 'Adoptées' },
-  { key: 'abandoned', label: 'Abandonnées' },
-];
+const isAllActive = computed(() => {
+  return filters.value.state === 'all' && 
+         filters.value.my_role === 'all' && 
+         filters.value.circle === 'all' && 
+         filters.value.category === 'all' && 
+         filters.value.author === 'all';
+});
+
+const resetFilters = () => {
+  filters.value = { state: 'all', my_role: 'all', circle: 'all', category: 'all', author: 'all' };
+};
+
+const uniqueCircles = computed(() => {
+  const map = new Map();
+  decisions.value.forEach(d => { if (d.circle) map.set(d.circle.id, d.circle); });
+  return Array.from(map.values());
+});
+
+const uniqueCategories = computed(() => {
+  const map = new Map();
+  decisions.value.forEach(d => { if (d.category) map.set(d.category.id, d.category); });
+  return Array.from(map.values());
+});
+
+const uniqueAuthors = computed(() => {
+  const map = new Map();
+  decisions.value.forEach(d => {
+    const authorP = d.participants?.find(p => p.role === 'author');
+    if (authorP?.user) map.set(authorP.user.id, authorP.user);
+  });
+  return Array.from(map.values());
+});
 
 const decisions = computed(() => store.decisions);
 const loading = computed(() => store.loading);
 const error = computed(() => store.error);
 
 const filtered = computed(() => {
-  if (activeFilter.value === 'all') return decisions.value;
-  if (activeFilter.value === 'active') return decisions.value.filter(d => ['clarification','reaction','objection','revision'].includes(d.status));
-  if (activeFilter.value === 'adopted') return decisions.value.filter(d => ['adopted','adopted_override'].includes(d.status));
-  if (activeFilter.value === 'abandoned') return decisions.value.filter(d => ['abandoned', 'deserted', 'lapsed'].includes(d.status));
-  if (activeFilter.value === 'author') return decisions.value.filter(d => getMyRole(d) === 'author');
-  if (activeFilter.value === 'animator') return decisions.value.filter(d => getMyRole(d) === 'animator');
-  return decisions.value.filter(d => d.status === activeFilter.value);
+  return decisions.value.filter(d => {
+    if (filters.value.state !== 'all') {
+      const s = filters.value.state;
+      if (s === 'active' && !['clarification','reaction','objection','revision'].includes(d.status)) return false;
+      if (s === 'adopted' && !['adopted','adopted_override'].includes(d.status)) return false;
+      if (s === 'abandoned' && !['abandoned', 'deserted', 'lapsed'].includes(d.status)) return false;
+      if (['draft', 'clarification', 'reaction', 'objection', 'revision'].includes(s) && d.status !== s) return false;
+    }
+    if (filters.value.circle !== 'all' && d.circle_id !== filters.value.circle) return false;
+    if (filters.value.category !== 'all' && d.category_id !== filters.value.category) return false;
+    if (filters.value.author !== 'all') {
+      const authorId = d.participants?.find(p => p.role === 'author')?.user_id;
+      if (authorId !== filters.value.author) return false;
+    }
+    if (filters.value.my_role !== 'all') {
+      if (getMyRole(d) !== filters.value.my_role) return false;
+    }
+    return true;
+  });
 });
 
 onMounted(() => {
     store.fetchDecisions();
     if (route.query.filter) {
-        activeFilter.value = route.query.filter;
+        filters.value.state = route.query.filter;
     }
 });
 
 watch(() => route.query.filter, (newFilter) => {
     if (newFilter) {
-        activeFilter.value = newFilter;
+        filters.value.state = newFilter;
     }
 });
 
 const goToDetail = (id) => router.push({ name: 'DecisionDetail', params: { id } });
 
-const statusClass = (status) => {
-  const map = { draft: 'badge-gray', clarification: 'badge-blue', reaction: 'badge-blue', objection: 'badge-amber', revision: 'badge-amber', adopted: 'badge-teal', adopted_override: 'badge-teal', deserted: 'badge-gray', lapsed: 'badge-red' };
-  return map[status] || 'badge-gray';
-};
-
-const formatDateOnly = (isoString) => {
-    if(!isoString) return '';
-    return new Intl.DateTimeFormat('fr-FR', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
-    }).format(new Date(isoString));
-};
-
-const authStore = useAuthStore();
 const getMyRole = (decision) => {
     if (!authStore.user || !decision.participants) return 'participant';
     const p = decision.participants.find(p => p.user_id === authStore.user.id);
     return p ? p.role : 'participant';
 };
-
-const getRolePicto = (role) => {
-    const map = { author: '💡', animator: '🎭', participant: '👥', observer: '👁️' };
-    return map[role] || '👥';
-};
 </script>
 
 <style scoped>
 .py-24 { padding: 24px 0; }
-.decision-item { padding: 14px 18px; border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.1s; display: flex; align-items: flex-start; gap: 12px; }
-.decision-item:last-child { border-bottom: none; }
-.decision-item:hover { background: var(--gray-50); }
-.decision-item-main { flex: 1; min-width: 0; }
-.decision-title { font-size: 13px; font-weight: 500; color: var(--gray-900); margin-bottom: 4px; }
-.decision-meta { font-size: 11px; color: var(--gray-400); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.decision-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
 .filter-bar { display: flex; align-items: center; gap: 8px; padding: 10px 18px; background: white; border-bottom: 1px solid var(--gray-200); flex-wrap: wrap; }
-.filter-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--radius-full); font-size: 12px; font-weight: 500; border: 1px solid var(--gray-300); background: white; color: var(--gray-600); cursor: pointer; transition: all 0.12s; }
-.filter-chip:hover { border-color: var(--blue-400); color: var(--blue-700); }
-.filter-chip.active { background: var(--blue-800); color: white; border-color: var(--blue-800); }
-.version-pill { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 11px; background: var(--gray-100); color: var(--gray-600); padding: 2px 8px; border-radius: var(--radius-sm); border: 1px solid var(--gray-200); }
+.filter-chip { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); cursor: pointer; transition: all 0.12s; }
+.filter-chip:hover { border-color: var(--blue-400); background: var(--gray-50); }
+.filter-chip.active { background: var(--blue-50); color: var(--blue-700); border-color: var(--blue-300); }
 
-.role-bg-mini {
-  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1.5px solid transparent;
-  flex-shrink: 0;
-}
-.role-author { border-color: var(--blue-500); background: var(--blue-50); }
-.role-animator { border-color: var(--amber-500); background: var(--amber-50); }
-.role-participant { border-color: var(--teal-500); background: var(--teal-50); }
-.role-observer { border-color: var(--gray-400); background: var(--gray-50); }
+.select-chip { appearance: auto; padding-right: 8px; cursor: pointer; }
+.select-chip:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 2px var(--blue-100); }
 </style>
