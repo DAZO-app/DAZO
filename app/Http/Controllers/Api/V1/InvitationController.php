@@ -12,6 +12,25 @@ use Illuminate\Support\Str;
 
 class InvitationController extends Controller
 {
+    public function show(string $token): JsonResponse
+    {
+        $invitation = Invitation::where('token', $token)->firstOrFail();
+
+        if ($invitation->expires_at->isPast()) {
+            return response()->json(['message' => 'Invitation expirée.'], 400);
+        }
+
+        if ($invitation->used_by !== null) {
+            return response()->json(['message' => 'Invitation déjà utilisée.'], 400);
+        }
+
+        return response()->json([
+            'email' => $invitation->email,
+            'circle' => $invitation->circle->only(['id', 'name']),
+            'role' => $invitation->role
+        ]);
+    }
+
     public function store(CreateInvitationRequest $request): JsonResponse
     {
         $invitation = Invitation::create([
@@ -57,7 +76,7 @@ class InvitationController extends Controller
         if (! $circle->members()->where('user_id', $user->id)->exists()) {
             $circle->members()->create([
                 'user_id' => $user->id,
-                'role' => $invitation->role,
+                'role' => \App\Enums\CircleMemberRole::from($invitation->role->value),
             ]);
         }
 

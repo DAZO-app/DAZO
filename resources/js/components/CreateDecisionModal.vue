@@ -3,7 +3,7 @@
     <div class="modal-card">
       <div class="modal-header">
         <span class="modal-title">Nouvelle décision</span>
-        <button class="btn btn-ghost btn-icon" @click="close">✕</button>
+        <button class="btn btn-ghost btn-icon" @click="close"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
         <form @submit.prevent="submit">
@@ -46,8 +46,8 @@
               </div>
             </div>
             <div v-if="selectedExternalUser" class="mt-8 text-xs" style="background:var(--blue-50); border:1px solid var(--blue-200); padding:6px 10px; border-radius:6px;">
-              ✅ Animateur externe sélectionné : <strong>{{ selectedExternalUser.name }}</strong>
-              <button type="button" class="btn-ghost btn-xs" style="margin-left:8px;" @click="clearExternal">✕</button>
+              <i class="fa-solid fa-circle-check" style="color:var(--teal-600)"></i> Animateur externe sélectionné : <strong>{{ selectedExternalUser.name }}</strong>
+              <button type="button" class="btn-ghost btn-xs" style="margin-left:8px;" @click="clearExternal"><i class="fa-solid fa-xmark"></i></button>
             </div>
           </div>
 

@@ -15,7 +15,9 @@ use App\Models\DecisionVersion;
 use App\Models\Feedback;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
+use App\Mail\DecisionNotificationMail;
 
 class DecisionService
 {
@@ -251,5 +253,35 @@ class DecisionService
             'participated' => $participated,
             'pending'      => max(0, count($eligible) - $participated)
         ];
+    }
+
+    /**
+     * Notifie les participants du cercle par email.
+     */
+    public function notifyParticipants(Decision $decision, User $sender): void
+    {
+        // On recharge les relations nécessaires pour l'email
+        $decision->load(['circle.members.user', 'currentVersion.attachments']);
+        
+        $circle = $decision->circle;
+        if (!$circle) return;
+
+        $excludedIds = $decision->participants()
+            ->where('role', \App\Enums\DecisionParticipantRole::EXCLUDED->value)
+            ->pluck('user_id')
+            ->toArray();
+
+        foreach ($circle->members as $member) {
+            $user = $member->user;
+            
+            // Skip observer, excluded, sender, or inactive users
+            if ($member->role === CircleMemberRole::OBSERVER->value) continue;
+            if (in_array($user->id, $excludedIds)) continue;
+            if ($user->id === $sender->id) continue;
+            if (!$user->is_active || !$user->email) continue;
+
+            Mail::to($user->email)
+                ->queue(new DecisionNotificationMail($decision, $decision->currentVersion));
+        }
     }
 }

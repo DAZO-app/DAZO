@@ -5,54 +5,56 @@
 
   <main class="main" v-else-if="error">
     <div class="p-24 text-center text-red-500">
-      <div style="font-size: 24px; margin-bottom: 8px;">😕</div>
+      <div style="font-size: 24px; margin-bottom: 8px;"><i class="fa-solid fa-face-frown"></i></div>
       <div>{{ error }}</div>
       <button class="btn btn-secondary mt-16" @click="$router.push('/decisions')">Retour aux décisions</button>
     </div>
   </main>
 
   <main class="main" v-else-if="decision">
-    <div class="page-header">
-      <div class="page-role-indicator" v-if="myRoleInfo">
-        <div class="role-circle" :class="myRoleInfo.className" :title="myRoleInfo.label">
-          {{ myRoleInfo.icon }}
+    <div class="hero-card">
+      <div class="hero-flex">
+        <div class="flex items-center gap-20">
+          <div class="page-role-indicator" v-if="myRoleInfo">
+            <div class="role-circle" :class="myRoleInfo.className" :title="myRoleInfo.label">
+              <i :class="myRoleInfo.icon"></i>
+            </div>
+          </div>
+          <div>
+            <div class="hero-title">{{ decision.title }}</div>
+            <div class="hero-subtitle">
+              {{ decision.circle?.name }} · Version {{ currentVersion?.version_number || 1 }} ·
+              Porteur: <strong>{{ authorName }}</strong>
+            </div>
+          </div>
         </div>
-        <div class="text-xs font-semibold text-gray-500 mt-4">{{ myRoleInfo.label }}</div>
+        <div class="hero-action flex items-center gap-12">
+          <span class="badge" :class="statusClass" style="font-size: 14px; padding: 6px 16px;">{{ statusLabel }}</span>
+          
+          <div class="header-nav">
+             <template v-if="isRevision && isAuthorOrAnimator">
+               <button class="btn btn-secondary" :disabled="savingDraft || publishing" @click="saveRevision">
+                 {{ savingDraft ? 'Enregistrer' : 'Enregistrer' }}
+               </button>
+               <button class="btn btn-primary" :disabled="savingDraft || publishing" @click="publishRevision">
+                 {{ publishing ? 'Publier...' : 'Publier' }}
+               </button>
+             </template>
+             <template v-else>
+               <button class="btn btn-white btn-icon" :disabled="!previousDecisionId" @click="goToDecision(previousDecisionId)">
+                 <i class="fa-solid fa-chevron-left"></i>
+               </button>
+               <button class="btn btn-white btn-icon" :disabled="!nextDecisionId" @click="goToDecision(nextDecisionId)">
+                 <i class="fa-solid fa-chevron-right"></i>
+               </button>
+             </template>
+          </div>
+        </div>
       </div>
-
-      <div class="header-text-block">
-        <div class="page-title">{{ decision.title }}</div>
-        <div class="page-subtitle">
-          Cercle: {{ decision.circle?.name }} · Version: {{ currentVersion?.version_number || 1 }}
-        </div>
-        <div class="header-meta">
-          <span><strong>Porteur:</strong> {{ authorName }}</span>
-          <span>Créée le {{ formatDateOnly(decision.created_at) }}</span>
-          <span>Dernière activité le {{ formatDateOnly(decision.updated_at) }}</span>
-        </div>
-        <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="refreshDecision" />
-      </div>
-
-      <div class="page-actions">
-        <span class="badge" :class="statusClass">{{ statusLabel }}</span>
-        <div class="header-nav">
-          <template v-if="isRevision && isAuthorOrAnimator">
-            <button class="btn btn-secondary" :disabled="savingDraft || publishing" @click="saveRevision">
-              {{ savingDraft ? 'Enregistrement...' : 'Enregistrer' }}
-            </button>
-            <button class="btn btn-primary" :disabled="savingDraft || publishing" @click="publishRevision">
-              {{ publishing ? 'Publication...' : 'Publier' }}
-            </button>
-          </template>
-          <template v-else>
-            <button class="btn btn-secondary btn-icon" :disabled="!previousDecisionId" @click="goToDecision(previousDecisionId)">
-              &lt;
-            </button>
-            <button class="btn btn-secondary btn-icon" :disabled="!nextDecisionId" @click="goToDecision(nextDecisionId)">
-              &gt;
-            </button>
-          </template>
-        </div>
+      <div class="hero-footer-meta mt-16 flex items-center gap-16 text-xs" style="opacity: 0.8;">
+        <span><i class="fa-solid fa-calendar-plus mr-4"></i> Créée le {{ formatDateOnly(decision.created_at) }}</span>
+        <span><i class="fa-solid fa-clock mr-4"></i> Actue le {{ formatDateOnly(decision.updated_at) }}</span>
+        <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="refreshDecision" style="margin-left: auto;" />
       </div>
     </div>
 
@@ -74,7 +76,7 @@
         </div>
         <div class="step-sep"></div>
         <div class="step" :class="getStepClass('adopted')">
-          <div class="step-num">✓</div>
+          <div class="step-num"><i class="fa-solid fa-check"></i></div>
           <span class="step-label hidden-mobile-text">Adopté</span>
         </div>
       </div>
@@ -98,7 +100,7 @@
         <div class="col-main">
           <div v-if="isDraft" class="premium-card mb-16">
             <div class="pc-header pc-header-amber">
-              <div class="pc-header-icon">📝</div>
+              <div class="pc-header-icon"><i class="fa-solid fa-file-pen"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Mode brouillon</div>
                 <div class="pc-header-sub">Édition active</div>
@@ -173,7 +175,7 @@
 
           <div v-if="isRevision && isAuthorOrAnimator" class="premium-card mb-16">
             <div class="pc-header pc-header-amber">
-              <div class="pc-header-icon">✍️</div>
+              <div class="pc-header-icon"><i class="fa-solid fa-pen-to-square"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Révision de la proposition</div>
                 <div class="pc-header-sub">Préparez la nouvelle version suite aux retours</div>
@@ -186,6 +188,28 @@
                   v-model="draftForm.content"
                   placeholder="Appliquez les modifications nécessaires ici..."
                 />
+              </div>
+
+              <!-- Sélection des pièces jointes précédentes -->
+              <div v-if="currentVersion?.attachments?.length > 0" class="mb-16 p-12 bg-gray-50 border-radius-sm">
+                <div class="flex items-center justify-between mb-8">
+                  <label class="label mb-0" style="font-size: 13px;">Conserver des pièces jointes de la version précédente</label>
+                  <button type="button" class="btn btn-link btn-sm" @click="toggleAllPreviousAttachments" style="font-size: 12px;">
+                    {{ (currentVersion?.attachments || []).every(a => isAttachmentReused(a.id)) ? 'Tout décocher' : 'Tout cocher' }}
+                  </button>
+                </div>
+                <div class="flex flex-wrap gap-12">
+                  <div v-for="att in currentVersion.attachments" :key="att.id" class="flex items-center gap-8">
+                    <input 
+                      type="checkbox" 
+                      :id="'prev-att-' + att.id"
+                      :checked="isAttachmentReused(att.id)"
+                      @change="toggleAttachmentReuse(att)"
+                      class="checkbox-sm"
+                    >
+                    <label :for="'prev-att-' + att.id" class="text-sm cursor-pointer" style="margin-bottom: 0;">{{ att.filename }}</label>
+                  </div>
+                </div>
               </div>
 
               <div class="mb-16">
@@ -211,7 +235,7 @@
 
           <div v-if="!isRevision && !isDraft" class="premium-card mb-16">
             <div class="pc-header pc-header-blue">
-              <div class="pc-header-icon">{{ viewingVersionId ? '🕰' : '📄' }}</div>
+              <div class="pc-header-icon"><i :class="viewingVersionId ? 'fa-solid fa-clock-rotate-left' : 'fa-solid fa-file-lines'"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">{{ viewingVersionId ? 'Version ' + historicalVersionData.version_number : 'Contenu de la décision' }}</div>
                 <div class="pc-header-sub">{{ viewingVersionId ? 'Version historique' : 'Version actuelle de la proposition' }}</div>
@@ -223,7 +247,7 @@
             </div>
           </div>
 
-          <div v-if="shouldShowAttachments" class="mb-16">
+          <div class="mb-16">
             <AttachmentPanel
               :attachments="displayAttachments"
               :editable="false"
@@ -233,7 +257,7 @@
           
           <div v-if="isRevision && !isDraft" class="premium-card mb-16">
             <div class="pc-header pc-header-blue" style="opacity: 0.9;">
-              <div class="pc-header-icon">🕰</div>
+              <div class="pc-header-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">{{ isAuthorOrAnimator ? 'Proposition à réviser' : 'Proposition actuelle' }}</div>
                 <div class="pc-header-sub">Version {{ currentVersion?.version_number }} en cours de révision</div>
@@ -247,7 +271,7 @@
 
           <div v-if="showParticipationCard && !hasAlreadyParticipated" class="premium-card mb-16">
             <div class="pc-header" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-amber'">
-              <div class="pc-header-icon">💬</div>
+              <div class="pc-header-icon"><i class="fa-solid fa-comments"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">{{ participationCardTitle }}</div>
                 <div class="pc-header-sub">{{ hasAlreadyParticipated ? 'Participation enregistrée' : 'Action requise de votre part' }}</div>
@@ -256,7 +280,7 @@
 
             <div class="card-body">
               <div v-if="hasAlreadyParticipated" class="consent-done-block">
-                <div class="consent-done-icon">{{ consentIcon(myConsent?.signal) }}</div>
+                <div class="consent-done-icon"><i :class="consentIcon(myConsent?.signal)"></i></div>
                 <div class="consent-done-label">{{ consentLabel(myConsent?.signal) }}</div>
                 <p class="text-xs text-muted mt-8">Votre participation est déjà enregistrée pour cette phase.</p>
               </div>
@@ -264,31 +288,31 @@
               <template v-else>
                 <div class="grid-2 gap-12">
                   <button class="btn btn-secondary" @click="openReactionModal" style="padding: 12px 8px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
-                    <span class="text-xl">💬</span>
+                    <span class="text-xl"><i class="fa-solid fa-comments"></i></span>
                     <span>{{ modalActionLabelShort }}</span>
                   </button>
 
                   <div v-if="decision.status === 'clarification'">
                     <button class="vote-btn vote-ok" @click="submitConsent('no_questions')" style="width: 100%; height: 100%;">
-                      <span class="vote-icon">👌</span>
+                      <span class="vote-icon"><i class="fa-solid fa-circle-check"></i></span>
                       C'est clair
                     </button>
                   </div>
 
                   <div v-if="decision.status === 'reaction'">
                     <button class="vote-btn vote-ok" @click="submitConsent('no_reaction')" style="width: 100%; height: 100%;">
-                      <span class="vote-icon">👍</span>
+                      <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
                       RAS
                     </button>
                   </div>
 
                   <div v-if="decision.status === 'objection'" class="grid-1 gap-8">
                     <button class="vote-btn vote-ok" @click="submitConsent('no_objection')" style="width: 100%;">
-                      <span class="vote-icon">👍</span>
+                      <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
                       Sans objection
                     </button>
                     <button class="vote-btn vote-abs" @click="submitConsent('abstention')" style="width: 100%;">
-                      <span class="vote-icon">👀</span>
+                      <span class="vote-icon"><i class="fa-solid fa-eye"></i></span>
                       Abstention
                     </button>
                   </div>
@@ -313,7 +337,7 @@
           <!-- Cartes de Rôle / Participation -->
           <div v-if="myRole === 'author'" class="premium-card mb-16">
             <div class="pc-header pc-header-blue" style="padding: 12px;">
-              <div class="pc-header-icon" style="font-size: 1.2rem;">📣</div>
+              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-bullhorn"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title" style="font-size: 14px;">Porteur</div>
                 <div class="pc-header-sub" style="font-size: 12px;">Vous pilotez cette décision.</div>
@@ -322,7 +346,7 @@
           </div>
           <div v-else-if="myRole === 'animator'" class="premium-card mb-16">
             <div class="pc-header pc-header-amber" style="padding: 12px;">
-              <div class="pc-header-icon" style="font-size: 1.2rem;">🎭</div>
+              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-user-tie"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title" style="font-size: 14px;">Animateur</div>
                 <div class="pc-header-sub" style="font-size: 12px;">Vous facilitez ce processus.</div>
@@ -331,7 +355,7 @@
           </div>
           <div v-else-if="hasAlreadyParticipated" class="premium-card mb-16">
             <div class="pc-header pc-header-teal" style="padding: 12px;">
-              <div class="pc-header-icon" style="font-size: 1.2rem;">✅</div>
+              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-check"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title" style="font-size: 14px;">Participation validée</div>
                 <div class="pc-header-sub" style="font-size: 12px;">Vous avez agi pour cette phase.</div>
@@ -339,15 +363,10 @@
             </div>
           </div>
 
-          <ParticipantPhasePanel
-            :decision="viewingVersionId ? historicalVersionDecision : decision"
-            :phase-participation-map="viewingVersionId ? historicalPhaseParticipationMap : phaseParticipationMap"
-          />
-
           <!-- Navigation entre versions -->
           <div v-if="allVersions.length > 1" class="premium-card mb-16">
             <div class="pc-header pc-header-indigo" style="padding: 12px;">
-              <div class="pc-header-icon" style="font-size: 1.2rem;">📚</div>
+              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-clock-rotate-left"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title" style="font-size: 14px;">Versions précédentes</div>
                 <div class="pc-header-sub" style="font-size: 12px;">Consulter l'historique</div>
@@ -366,10 +385,15 @@
                 class="btn btn-secondary btn-sm w-full" 
                 @click="resetToCurrentVersion"
               >
-                ⬅ Retour à la version en cours
+                <i class="fa-solid fa-arrow-left"></i> Retour à la version en cours
               </button>
             </div>
           </div>
+
+          <ParticipantPhasePanel
+            :decision="viewingVersionId ? historicalVersionDecision : decision"
+            :phase-participation-map="viewingVersionId ? historicalPhaseParticipationMap : phaseParticipationMap"
+          />
         </div>
       </div>
     </div>
@@ -378,7 +402,7 @@
       <div class="modal-card">
         <div class="modal-header">
           <span class="modal-title">{{ modalTitle }}</span>
-          <button class="btn btn-ghost btn-icon" @click="showReactionModal = false">✕</button>
+          <button class="btn btn-ghost btn-icon" @click="showReactionModal = false"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <div class="modal-body">
@@ -406,6 +430,12 @@
         </div>
       </div>
     </div>
+
+    <NotificationPromptModal 
+      :visible="showNotificationPrompt" 
+      @confirm="handlePublishConfirm" 
+      @cancel="showNotificationPrompt = false" 
+    />
   </main>
 </template>
 
@@ -418,6 +448,7 @@ import AttachmentPanel from '../components/AttachmentPanel.vue';
 import FeedbackEngine from '../components/FeedbackEngine.vue';
 import ParticipantPhasePanel from '../components/ParticipantPhasePanel.vue';
 import RichTextEditor from '../components/RichTextEditor.vue';
+import NotificationPromptModal from '../components/NotificationPromptModal.vue';
 import { useAuthStore } from '../stores/auth';
 import { useDecisionStore } from '../stores/decision';
 import { usePendingStore } from '../stores/pending';
@@ -506,6 +537,8 @@ const publishing = ref(false);
 const transitioning = ref(false);
 const submittingReaction = ref(false);
 const showReactionModal = ref(false);
+const showNotificationPrompt = ref(false);
+const pendingPublishType = ref(null);
 const revisionAttachments = ref([]);
 
 // Navigation Historique
@@ -526,11 +559,11 @@ const reactionText = ref('');
 const reactionType = ref('objection');
 
 const roleMeta = {
-  author: { label: 'Porteur', icon: '📣', className: 'role-author' },
-  animator: { label: 'Animateur', icon: '🎭', className: 'role-animator' },
-  participant: { label: 'Participant', icon: '👥', className: 'role-participant' },
-  excluded: { label: 'Exclu', icon: '🚫', className: 'role-excluded' },
-  observer: { label: 'Observateur', icon: '👁', className: 'role-observer' },
+  author: { label: 'Porteur', icon: 'fa-solid fa-bullhorn', className: 'role-author' },
+  animator: { label: 'Animateur', icon: 'fa-solid fa-user-tie', className: 'role-animator' },
+  participant: { label: 'Participant', icon: 'fa-solid fa-user-group', className: 'role-participant' },
+  excluded: { label: 'Exclu', icon: 'fa-solid fa-ban', className: 'role-excluded' },
+  observer: { label: 'Observateur', icon: 'fa-solid fa-eye', className: 'role-observer' },
 };
 
 const currentCircleMember = computed(() => {
@@ -549,8 +582,15 @@ const myRole = computed(() => {
 
 const myRoleInfo = computed(() => roleMeta[myRole.value] || roleMeta.participant);
 
-const isDraft = computed(() => decision.value?.status === 'draft');
-const isRevision = computed(() => currentStatus.value === 'revision');
+const isDraft = computed(() => {
+  const s = decision.value?.status;
+  const val = (typeof s === 'object' && s !== null) ? s.value : s;
+  return val === 'draft';
+});
+const isRevision = computed(() => {
+  const s = currentStatus.value;
+  return s === 'revision';
+});
 
 const isAuthorOrAnimator = computed(() => ['author', 'animator'].includes(myRole.value));
 
@@ -739,8 +779,17 @@ const updateDraftForm = () => {
   };
 
   // Hydrate revision attachments if any
-  if (status === 'revision' && value.revision_attachment_ids) {
-    revisionAttachments.value = value.current_version?.attachments?.filter(a => value.revision_attachment_ids.includes(a.id)) || [];
+  if (status === 'revision') {
+    // Priority 1: Use full attachment objects from the API (includes draft new uploads)
+    if (value.revision_attachments) {
+      revisionAttachments.value = [...value.revision_attachments];
+    } 
+    // Priority 2: Fallback to filtering current version attachments (backward compatibility/safety)
+    else if (value.revision_attachment_ids && value.current_version?.attachments) {
+      revisionAttachments.value = value.current_version.attachments.filter(a => value.revision_attachment_ids.includes(a.id));
+    } else {
+      revisionAttachments.value = [];
+    }
   } else {
     revisionAttachments.value = [];
   }
@@ -817,15 +866,20 @@ const deleteDraft = async () => {
 
 const publishDecision = async () => {
   if (!decision.value) return;
+  pendingPublishType.value = 'draft';
+  showNotificationPrompt.value = true;
+};
 
+const executePublishDecision = async (notify = false) => {
   publishing.value = true;
-
   try {
     const saved = await saveDraft();
-    if (!saved) {
-      return;
-    }
-    await axios.post(`/api/v1/decisions/${decision.value.id}/transition`, { to: 'clarification' });
+    if (!saved) return;
+    
+    await axios.post(`/api/v1/decisions/${decision.value.id}/transition`, { 
+      to: 'clarification',
+      notify: notify 
+    });
     await refreshDecision();
   } catch (error) {
     window.alert(error.response?.data?.message || 'Erreur lors de la publication.');
@@ -840,6 +894,37 @@ const handleRevisionFileUpload = (attachment) => {
 
 const handleRevisionFileRemove = (attachmentId) => {
   revisionAttachments.value = revisionAttachments.value.filter(a => a.id !== attachmentId);
+};
+
+const isAttachmentReused = (attachmentId) => {
+  return revisionAttachments.value.some(a => a.id === attachmentId);
+};
+
+const toggleAttachmentReuse = (attachment) => {
+  if (isAttachmentReused(attachment.id)) {
+    handleRevisionFileRemove(attachment.id);
+  } else {
+    revisionAttachments.value.push(attachment);
+  }
+};
+
+const toggleAllPreviousAttachments = () => {
+  if (!currentVersion.value?.attachments) return;
+  
+  const allReused = currentVersion.value.attachments.every(a => isAttachmentReused(a.id));
+  
+  if (allReused) {
+    // Deselect all that belong to the current version
+    const previousIds = currentVersion.value.attachments.map(a => a.id);
+    revisionAttachments.value = revisionAttachments.value.filter(a => !previousIds.includes(a.id));
+  } else {
+    // Select all from current version (don't duplicate)
+    currentVersion.value.attachments.forEach(a => {
+      if (!isAttachmentReused(a.id)) {
+        revisionAttachments.value.push(a);
+      }
+    });
+  }
 };
 
 const saveRevision = async () => {
@@ -861,21 +946,26 @@ const saveRevision = async () => {
 
 const publishRevision = async () => {
   if (!decision.value) return;
-  if (!window.confirm('Publier cette nouvelle version ? Un nouveau cycle de clarification va commencer.')) return;
+  pendingPublishType.value = 'revision';
+  showNotificationPrompt.value = true;
+};
 
+const executePublishRevision = async (notify = false) => {
   publishing.value = true;
   try {
     // D'abord on sauve le brouillon actuel
     const payload = {
       ...draftForm.value,
       revision_attachment_ids: revisionAttachments.value.map(a => a.id),
+      notify: notify,
     };
     await axios.put(`/api/v1/decisions/${decision.value.id}`, payload);
 
     // Puis on publie une nouvelle version
     await axios.post(`/api/v1/decisions/${decision.value.id}/versions`, {
       content: draftForm.value.content,
-      attachment_ids: revisionAttachments.value.map(a => a.id)
+      attachment_ids: revisionAttachments.value.map(a => a.id),
+      notify: notify,
     });
     
     await refreshDecision();
@@ -885,6 +975,15 @@ const publishRevision = async () => {
     window.alert(error.response?.data?.message || 'Erreur lors de la publication de la révision.');
   } finally {
     publishing.value = false;
+  }
+};
+
+const handlePublishConfirm = (notify) => {
+  showNotificationPrompt.value = false;
+  if (pendingPublishType.value === 'draft') {
+    executePublishDecision(notify);
+  } else if (pendingPublishType.value === 'revision') {
+    executePublishRevision(notify);
   }
 };
 
@@ -1030,13 +1129,13 @@ const consentLabel = (signal) => {
 const consentIcon = (signal) => {
   const normalized = signal?.value || signal;
   const icons = {
-    no_questions: '👌',
-    no_reaction: '👍',
-    no_objection: '✅',
-    abstention: '👀',
+    no_questions: 'fa-solid fa-circle-check',
+    no_reaction: 'fa-solid fa-thumbs-up',
+    no_objection: 'fa-solid fa-check',
+    abstention: 'fa-solid fa-eye',
   };
 
-  return icons[normalized] || '✅';
+  return icons[normalized] || 'fa-solid fa-check';
 };
 
 // Removed redundant watch since it's already handled above with async/await
@@ -1414,5 +1513,33 @@ onMounted(async () => {
   .hidden-mobile-text {
     display: none;
   }
+}
+
+/* Styles additionnels pour la sélection des pièces jointes */
+.bg-gray-50 { background-color: var(--gray-50); }
+.p-12 { padding: 12px; }
+.border-radius-sm { border-radius: var(--radius-sm); }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.cursor-pointer { cursor: pointer; }
+.checkbox-sm {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--indigo-600);
+  padding: 0;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.btn-link:hover {
+  color: var(--indigo-700);
 }
 </style>

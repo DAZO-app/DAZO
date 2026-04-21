@@ -12,11 +12,11 @@ class TransitionDecisionRequest extends FormRequest
     {
         return true; // Authorisation is checked inside the Service
     }
-
     public function rules(): array
     {
         return [
             'to' => ['required', Rule::enum(DecisionStatus::class)],
+            'notify' => ['nullable', 'boolean'],
         ];
     }
 }

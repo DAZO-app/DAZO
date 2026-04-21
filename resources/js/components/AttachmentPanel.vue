@@ -1,7 +1,7 @@
 <template>
-  <div v-if="editable || displayAttachments.length" class="premium-card">
+  <div class="premium-card">
     <div class="pc-header pc-header-blue">
-      <div class="pc-header-icon">📎</div>
+      <div class="pc-header-icon"><i class="fa-solid fa-paperclip"></i></div>
       <div class="pc-header-content">
         <div class="pc-header-title">Pièces jointes</div>
         <div class="pc-header-sub">{{ displayAttachments.length }} fichier(s) associé(s)</div>
@@ -29,21 +29,29 @@
         @dragleave.prevent="dragActive = false"
         @drop.prevent="handleDrop"
       >
-        <div class="drop-zone-icon">📎</div>
+        <div class="drop-zone-icon"><i class="fa-solid fa-paperclip"></i></div>
         <div class="drop-zone-title">Glissez-déposez vos fichiers ici</div>
         <div class="drop-zone-subtitle">ou utilisez le bouton Ajouter pour joindre un document</div>
       </div>
 
       <div v-if="displayAttachments.length" class="attachments-grid" :class="{ 'mt-16': editable }">
-        <article v-for="attachment in displayAttachments" :key="attachment.localKey" class="attachment-card">
-          <div class="attachment-preview">
+        <article v-for="(attachment, index) in displayAttachments" :key="attachment.localKey" class="attachment-card">
+          <div 
+            class="attachment-preview" 
+            :data-url="attachment.url"
+            :data-pswp-src="attachment.url"
+            data-pswp-width="1200"
+            data-pswp-height="800"
+            @click="runLightbox(index)"
+            style="cursor: pointer; display: flex;"
+          >
             <img
               v-if="isImage(attachment.mime_type) && attachment.url"
               :src="attachment.url"
               :alt="attachment.filename"
               class="attachment-image"
             >
-            <div v-else class="attachment-icon">{{ fileGlyph(attachment.mime_type) }}</div>
+            <div v-else class="attachment-icon"><i :class="fileGlyph(attachment.mime_type)"></i></div>
           </div>
 
           <div class="attachment-content">
@@ -60,20 +68,21 @@
             <div v-else class="attachment-actions">
               <a
                 v-if="attachment.url"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-secondary btn-sm"
                 :href="attachment.url"
                 target="_blank"
                 rel="noopener noreferrer"
+                @click.prevent="runLightbox(index)"
               >
-                Ouvrir
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Ouvrir
               </a>
               <a
                 v-if="attachment.url"
-                class="btn btn-ghost btn-sm"
+                class="btn btn-secondary btn-sm"
                 :href="attachment.url"
                 :download="attachment.filename"
               >
-                Télécharger
+                <i class="fa-solid fa-download"></i> Télécharger
               </a>
               <button
                 v-if="editable && attachment.id"
@@ -96,8 +105,11 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import axios from 'axios';
+import PhotoSwipeLightbox from 'photoswipe/lightbox';
+import PhotoSwipe from 'photoswipe';
+import 'photoswipe/dist/photoswipe.css';
 
 const props = defineProps({
   attachments: {
@@ -235,14 +247,85 @@ const formatSize = (bytes) => {
   return `${(bytes / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
-const isImage = (mimeType) => typeof mimeType === 'string' && mimeType.startsWith('image/');
+const isImage = (mimeType) => {
+  const mime = (typeof mimeType === 'object' && mimeType !== null) ? mimeType.value : mimeType;
+  return typeof mime === 'string' && mime.startsWith('image/');
+};
 
 const fileGlyph = (mimeType) => {
-  if (isImage(mimeType)) return '🖼';
-  if (mimeType === 'application/pdf') return '📕';
-  if (typeof mimeType === 'string' && mimeType.includes('spreadsheet')) return '📊';
-  if (typeof mimeType === 'string' && mimeType.includes('word')) return '📝';
-  return '📄';
+  const mime = (typeof mimeType === 'object' && mimeType !== null) ? mimeType.value : mimeType;
+  if (isImage(mime)) return 'fa-solid fa-file-image';
+  if (mime === 'application/pdf') return 'fa-solid fa-file-pdf';
+  if (typeof mime === 'string' && mime.includes('spreadsheet')) return 'fa-solid fa-file-excel';
+  if (typeof mime === 'string' && (mime.includes('word') || mime.includes('officedocument.wordprocessingml'))) return 'fa-solid fa-file-word';
+  return 'fa-solid fa-file';
+};
+
+let lightbox = null;
+
+onMounted(() => {
+  console.log('📦 [DAZO] AttachmentPanel Mounted. Attachments:', props.attachments);
+  lightbox = new PhotoSwipeLightbox({
+    pswpModule: PhotoSwipe,
+    bgOpacity: 0.9,
+    showHideAnimationType: 'fade',
+  });
+  lightbox.init();
+});
+
+onBeforeUnmount(() => {
+  if (lightbox) {
+    lightbox.destroy();
+    lightbox = null;
+  }
+});
+
+const runLightbox = (index) => {
+  if (!lightbox) return;
+
+  const items = displayAttachments.value.map(a => {
+    const isImg = isImage(a.mime_type);
+    const url = a.url || '';
+    
+    if (isImg && url) {
+      return {
+        src: url,
+        type: 'image',
+        width: 1200, 
+        height: 800,
+        alt: a.filename
+      };
+    } else if (a.mime_type === 'application/pdf' && url) {
+      return {
+        html: `
+          <div class="pswp__pdf-container">
+            <iframe src="${url}#view=FitH" class="pswp__pdf-iframe"></iframe>
+            <div class="pswp__pdf-fallback">
+              <a href="${url}" target="_blank" class="pswp__doc-btn">Ouvrir le PDF en plein écran</a>
+            </div>
+          </div>
+        `
+      };
+    } else {
+      const icon = fileGlyph(a.mime_type);
+      return {
+        html: `
+          <div class="pswp__doc-slide">
+            <div class="pswp__doc-icon"><i class="${icon}"></i></div>
+            <div class="pswp__doc-name">${a.filename || 'Document'}</div>
+            <a href="${url}" target="_blank" class="pswp__doc-btn" onclick="event.stopPropagation()">Ouvrir le document</a>
+          </div>
+        `
+      };
+    }
+  });
+
+  try {
+    lightbox.options.dataSource = items;
+    lightbox.loadAndOpen(index);
+  } catch (err) {
+    console.error('PhotoSwipe Error:', err);
+  }
 };
 </script>
 
@@ -368,5 +451,41 @@ const fileGlyph = (mimeType) => {
 
 .mt-16 {
   margin-top: 16px;
+}
+</style>
+
+<style>
+/* Global styles for PhotoSwipe document slides */
+.pswp__doc-slide {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+.pswp__doc-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+}
+.pswp__doc-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  max-width: 400px;
+}
+.pswp__doc-btn {
+  background: white;
+  color: black;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.pswp__doc-btn:hover {
+  opacity: 0.9;
 }
 </style>

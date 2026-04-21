@@ -1,7 +1,7 @@
 <template>
   <div class="premium-card">
     <div class="pc-header pc-header-indigo">
-      <div class="pc-header-icon">👥</div>
+      <div class="pc-header-icon"><i class="fa-solid fa-user-group"></i></div>
       <div class="pc-header-content">
         <div class="pc-header-title">Utilisateurs concernés</div>
         <div class="pc-header-sub">{{ participants.length }} membre(s) impliqué(s)</div>
@@ -19,7 +19,7 @@
       <div v-if="participants.length" class="participant-list">
         <div v-for="participant in participants" :key="participant.id" class="participant-row">
           <div class="participant-meta">
-            <span class="participant-icon" :class="participant.roleClass">{{ participant.icon }}</span>
+            <span class="participant-icon" :class="participant.roleClass"><i :class="participant.icon"></i></span>
             <div class="participant-text">
               <div class="participant-name">{{ participant.name }}</div>
               <div class="participant-role">{{ participant.roleLabel }}</div>
@@ -65,11 +65,11 @@ const phases = [
 ];
 
 const roleMeta = {
-  author: { label: 'Porteur', icon: '📣', className: 'role-author' },
-  animator: { label: 'Animateur', icon: '🎭', className: 'role-animator' },
-  participant: { label: 'Participant', icon: '👥', className: 'role-participant' },
-  excluded: { label: 'Exclu', icon: '🚫', className: 'role-excluded' },
-  observer: { label: 'Observateur', icon: '👁', className: 'role-observer' },
+  author: { label: 'Porteur', icon: 'fa-solid fa-bullhorn', className: 'role-author' },
+  animator: { label: 'Animateur', icon: 'fa-solid fa-user-tie', className: 'role-animator' },
+  participant: { label: 'Participant', icon: 'fa-solid fa-user-group', className: 'role-participant' },
+  excluded: { label: 'Exclu', icon: 'fa-solid fa-ban', className: 'role-excluded' },
+  observer: { label: 'Observateur', icon: 'fa-solid fa-eye', className: 'role-observer' },
 };
 
 const currentPhaseIndex = computed(() => {

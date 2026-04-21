@@ -1,22 +1,30 @@
 <template>
-  <div v-if="isImpersonating" class="impersonation-banner">
+  <div v-if="isVisible" class="impersonation-banner" :class="{ 'banner-admin': !isImpersonating }">
     <div class="impersonation-content">
-      <span class="impersonation-icon">🎭</span>
+      <span class="impersonation-icon">
+        <i v-if="isImpersonating" class="fa-solid fa-user-secret"></i>
+        <i v-else class="fa-solid fa-bolt"></i>
+      </span>
       <span class="impersonation-text">
-        <strong>Mode Impersonation.</strong> Vous naviguez en tant que <strong>{{ user?.name ?? 'un utilisateur' }}</strong>.
+        <template v-if="isImpersonating">
+          <strong>Mode Impersonation.</strong> Vous naviguez en tant que <strong>{{ user?.name ?? 'un utilisateur' }}</strong>.
+        </template>
+        <template v-else>
+          <strong>Administration Rapide :</strong> Sélectionnez un utilisateur pour simuler son compte.
+        </template>
       </span>
     </div>
     
     <div class="impersonation-actions">
       <select v-model="selectedUser" @change="switchImpersonation" class="impersonation-select" :disabled="isLoading">
-        <option value="" disabled>Changer d'utilisateur...</option>
-        <option v-for="u in usersList" :key="u.id" :value="u.id" :disabled="u.id === user?.id">
+        <option value="" disabled>{{ isImpersonating ? "Changer d'utilisateur..." : "Simuler un utilisateur..." }}</option>
+        <option v-for="u in sortedUsers" :key="u.id" :value="u.id" :disabled="u.id === user?.id">
           {{ u.name }}
         </option>
       </select>
 
-      <button @click="stopImpersonating" class="btn btn-sm impersonation-btn" :disabled="isLoading">
-        {{ isLoading ? '...' : 'Revenir à l\'administration' }}
+      <button v-if="isImpersonating" @click="stopImpersonating" class="btn btn-sm impersonation-btn" :disabled="isLoading">
+        {{ isLoading ? '...' : 'Revenir à mon compte' }}
       </button>
     </div>
   </div>
@@ -32,30 +40,40 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 const isImpersonating = computed(() => authStore.isImpersonating);
+const isSuperAdmin = computed(() => authStore.isSuperAdmin);
+const isVisible = computed(() => isImpersonating.value || isSuperAdmin.value);
+
 const user = computed(() => authStore.user);
 const isLoading = ref(false);
 
 const usersList = ref([]);
 const selectedUser = ref('');
 
+const sortedUsers = computed(() => {
+  return [...usersList.value].sort((a, b) => a.name.localeCompare(b.name));
+});
+
 const loadUsersList = async () => {
-  if (authStore.originalToken) {
-    try {
-      const { data } = await axios.get('/api/v1/admin/users', {
-        headers: { Authorization: `Bearer ${authStore.originalToken}` }
-      });
-      usersList.value = data.users.filter(u => u.is_active);
-    } catch (e) {
-      console.error("Erreur chargement utilisateurs (Impersonation):", e);
-    }
+  // We need a token to load users. 
+  // If impersonating, use originalToken. If not, the current token (SuperAdmin) works automatically.
+  const headers = {};
+  if (isImpersonating.value && authStore.originalToken) {
+    headers.Authorization = `Bearer ${authStore.originalToken}`;
+  }
+
+  try {
+    const { data } = await axios.get('/api/v1/admin/users', { headers });
+    usersList.value = data.users.filter(u => u.is_active);
+  } catch (e) {
+    console.error("Erreur chargement utilisateurs (Banner):", e);
   }
 };
 
 onMounted(() => {
-  if (isImpersonating.value) loadUsersList();
+  if (isVisible.value) loadUsersList();
 });
 
-watch(isImpersonating, (newVal) => {
+watch(isVisible, (newVal) => {
   if (newVal) loadUsersList();
 });
 
@@ -66,20 +84,14 @@ const switchImpersonation = async () => {
   
   isLoading.value = true;
   try {
-    // Stop gives back admin token
-    await authStore.stopImpersonating();
-    // Impersonate uses admin token
+    // Direct switch using authStore.impersonate (now handles switching correctly)
     await authStore.impersonate(targetId);
-    // Force route to dashboard to reset view state
     router.push({ name: 'Dashboard' });
   } catch (e) {
     console.error(e);
-    alert('Erreur lors du changement. Token expiré ?');
-    await authStore.stopImpersonating();
+    alert('Erreur lors du changement.');
   } finally {
-    if(document.querySelector('.impersonation-banner')) {
-        isLoading.value = false;
-    }
+    isLoading.value = false;
   }
 };
 
@@ -89,9 +101,7 @@ const stopImpersonating = async () => {
     await authStore.stopImpersonating();
     router.push({ name: 'AdminUsers' });
   } finally {
-    if(document.querySelector('.impersonation-banner')) {
-        isLoading.value = false;
-    }
+    isLoading.value = false;
   }
 };
 </script>
@@ -106,15 +116,24 @@ const stopImpersonating = async () => {
     45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.05) 10px, rgba(0, 0, 0, 0.05) 20px
   );
   color: white;
-  padding: 8px 16px;
+  padding: 6px 16px;
   position: sticky;
   top: 0;
   z-index: 1000;
   width: 100%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
+
+.banner-admin {
+  background-color: var(--blue-800);
+  background-image: none;
+  padding: 4px 16px; /* Slightly thinner when idle */
+}
+
 .impersonation-content { display: flex; align-items: center; gap: 12px; }
-.impersonation-icon { font-size: 20px; }
-.impersonation-text { font-size: 13px; }
+.impersonation-icon { font-size: 18px; opacity: 0.9; }
+.impersonation-text { font-size: 12px; }
 
 .impersonation-actions {
   display: flex;
@@ -123,8 +142,8 @@ const stopImpersonating = async () => {
 }
 
 .impersonation-select {
-  font-size: 13px;
-  padding: 4px 8px;
+  font-size: 12px;
+  padding: 3px 8px;
   border-radius: 4px;
   border: none;
   background: rgba(255, 255, 255, 0.9);
@@ -132,7 +151,7 @@ const stopImpersonating = async () => {
   outline: none;
   font-family: inherit;
   cursor: pointer;
-  max-width: 200px;
+  min-width: 180px;
 }
 .impersonation-select:hover {
   background: white;
@@ -143,6 +162,13 @@ const stopImpersonating = async () => {
   color: var(--gray-900);
   border: none;
   font-weight: 600;
+  font-size: 11px;
+  padding: 4px 10px;
 }
 .impersonation-btn:hover { background: var(--gray-100); }
+
+@media (max-width: 768px) {
+  .impersonation-banner { flex-direction: column; gap: 8px; padding: 10px; }
+  .impersonation-select { width: 100%; min-width: unset; }
+}
 </style>

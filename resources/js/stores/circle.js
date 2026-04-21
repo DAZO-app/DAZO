@@ -47,5 +47,10 @@ export const useCircleStore = defineStore('circle', {
             await axios.post(`/api/v1/circles/${id}/leave`);
             await this.fetchCircles();
         },
+        
+        async addMembersToCircle(circleId, userIds) {
+            await axios.post(`/api/v1/circles/${circleId}/members`, { user_ids: userIds });
+            await this.fetchCircles(); // Refresh data with members
+        },
     }
 });

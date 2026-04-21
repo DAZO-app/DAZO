@@ -42,4 +42,9 @@ class Circle extends Model
     {
         return $this->hasMany(Decision::class);
     }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(Invitation::class);
+    }
 }

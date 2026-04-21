@@ -103,10 +103,10 @@ class DashboardController extends Controller
             'total'        => $allVisible->count(),
             'as_author'    => $authorDecisions->count(),
             'as_animator'  => $animatorDecisions->count(),
-            'draft'        => $allVisible->where('status', 'draft')->count(),
-            'in_progress'  => $allVisible->whereIn('status', ['clarification','reaction','objection','revision'])->count(),
-            'adopted'      => $allVisible->where('status', 'adopted')->count(),
-            'abandoned'    => $allVisible->whereIn('status', ['abandoned','deserted','lapsed'])->count(),
+            'draft'        => $allVisible->filter(fn($d) => $d->status->value === 'draft')->count(),
+            'in_progress'  => $allVisible->filter(fn($d) => in_array($d->status->value, ['clarification','reaction','objection']))->count(),
+            'adopted'      => $allVisible->filter(fn($d) => in_array($d->status->value, ['adopted','adopted_override']))->count(),
+            'abandoned'    => $allVisible->filter(fn($d) => in_array($d->status->value, ['abandoned','deserted','lapsed']))->count(),
         ];
 
         $categories = \App\Models\Category::all();

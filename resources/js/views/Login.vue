@@ -23,6 +23,10 @@
           <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading">
             {{ loading ? 'Connexion en cours...' : 'Se connecter' }}
           </button>
+          
+          <div style="text-align: center; margin-top: 16px;">
+            <router-link to="/forgot-password" style="font-size: 13px; color: var(--blue-600); text-decoration: none;">Mot de passe oublié ?</router-link>
+          </div>
         </form>
       </div>
     </div>
@@ -62,6 +66,7 @@ const handleLogin = async () => {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  width: 100%;
   padding: 20px;
   background: var(--blue-50);
 }

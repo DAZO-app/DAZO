@@ -14,6 +14,7 @@ export const useAuthStore = defineStore('auth', {
     getters: {
         isAuthenticated: (state) => !!state.user,
         isImpersonating: (state) => !!state.originalToken,
+        isSuperAdmin: (state) => state.user?.role === 'superadmin',
     },
     
     actions: {
@@ -41,9 +42,9 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async impersonate(userId) {
-            // Store the current token as original
+            // Store the current token as original ONLY IF NOT ALREADY IMPERSONATING
             const currentToken = localStorage.getItem('dazo_token');
-            if (currentToken) {
+            if (currentToken && !this.originalToken) {
                 this.originalToken = currentToken;
                 localStorage.setItem('dazo_original_token', currentToken);
             }

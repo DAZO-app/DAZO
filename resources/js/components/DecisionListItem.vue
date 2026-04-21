@@ -1,7 +1,7 @@
 <template>
   <div class="decision-item" @click="emit('click', decision.id)">
     <div class="role-bg-mini" :class="'role-' + getMyRole(decision)" :title="getMyRole(decision)">
-      {{ getRolePicto(getMyRole(decision)) }}
+      <i :class="getRoleIcon(getMyRole(decision))"></i>
       <!-- Voyant d'état -->
       <span v-if="decision.user_status?.needs_action" class="alert-dot dot-red"></span>
       <span v-else-if="['clarification', 'reaction', 'objection'].includes(decision.status)" class="alert-dot dot-green"></span>
@@ -9,7 +9,7 @@
     <div class="decision-item-main">
       <div class="decision-title">
         <span class="version-pill" v-if="decision.current_version" style="margin-right: 6px">v{{ decision.current_version.version_number }}</span>
-        <span v-if="decision.current_version?.attachments?.length > 0" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;">📎</span>
+        <span v-if="decision.current_version?.attachments?.length > 0" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;"><i class="fa-solid fa-paperclip"></i></span>
         {{ decision.title }}
       </div>
       <div class="decision-people">
@@ -51,13 +51,22 @@ const authStore = useAuthStore();
 
 const getMyRole = (decision) => {
     if (!authStore.user || !decision.participants) return 'participant';
-    const p = decision.participants.find(p => p.user_id === authStore.user.id);
-    return p ? p.role : 'participant';
+    const myRoles = decision.participants.filter(p => p.user_id === authStore.user.id).map(p => p.role);
+    if (myRoles.includes('author')) return 'author';
+    if (myRoles.includes('animator')) return 'animator';
+    if (myRoles.includes('participant')) return 'participant';
+    if (myRoles.includes('observer')) return 'observer';
+    return 'participant';
 };
 
-const getRolePicto = (role) => {
-    const map = { author: '📣', animator: '🎭', participant: '👥', observer: '👁️' };
-    return map[role] || '👥';
+const getRoleIcon = (role) => {
+    const map = { 
+        author: 'fa-solid fa-bullhorn', 
+        animator: 'fa-solid fa-user-tie', 
+        participant: 'fa-solid fa-user-group', 
+        observer: 'fa-solid fa-eye' 
+    };
+    return map[role] || 'fa-solid fa-user-group';
 };
 
 const getParticipantName = (decision, role) => {
@@ -80,9 +89,8 @@ const formatDateOnly = (isoString) => {
 </script>
 
 <style scoped>
-.decision-item { padding: 14px 18px; border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.1s; display: flex; align-items: flex-start; gap: 12px; }
-.decision-item:last-child { border-bottom: none; }
-.decision-item:hover { background: var(--gray-50); }
+.decision-item { padding: 16px 20px; cursor: pointer; transition: background 0.1s; display: flex; align-items: flex-start; gap: 14px; }
+.decision-item:hover { background: rgba(0,0,0,0.01); }
 .decision-item-main { flex: 1; min-width: 0; }
 .decision-title { font-size: 13px; font-weight: 500; color: var(--gray-900); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
 .decision-people { font-size: 12px; color: var(--gray-600); margin-bottom: 6px; font-weight: 500; }

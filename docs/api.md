@@ -146,8 +146,12 @@
 
 | Méthode | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/v1/invitations` | Envoyer une invitation |
-| `POST` | `/api/v1/invitations/{token}/accept` | Accepter une invitation |
+| `POST` | `/api/v1/invitations` | Envoyer une invitation (un seul email) |
+| `POST` | `/api/v1/invitations/batch` | Envoyer des invitations groupées (emails séparés par `;`) |
+| `PUT` | `/api/v1/invitations/{token}/resend` | Renvoyer un email d'invitation |
+| `DELETE` | `/api/v1/invitations/{token}` | Supprimer/Annuler une invitation pendante |
+| `GET` | `/api/v1/invitations/{token}` | Valider un token et obtenir les détails (Public) |
+| `POST` | `/api/v1/invitations/{token}/accept` | Accepter une invitation (Nécessite authentification) |
 
 ---
 

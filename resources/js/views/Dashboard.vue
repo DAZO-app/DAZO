@@ -1,54 +1,86 @@
 <template>
   <main class="main">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Bonjour {{ authStore.user?.name }} 👋</div>
-        <div class="page-subtitle">Tableau de bord</div>
-      </div>
-    </div>
 
     <div v-if="loading" class="p-24 text-center">Chargement...</div>
 
     <div class="page-body" v-else>
+      <div class="hero-card">
+        <div class="hero-flex">
+          <div>
+            <div class="hero-title">Bonjour {{ authStore.user?.name }} <i class="fa-solid fa-face-smile"></i></div>
+            <div class="hero-subtitle">{{ new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</div>
+          </div>
+          <div class="hero-action">
+             <button class="btn btn-secondary" @click="$router.push('/decisions/create')">
+               <i class="fa-solid fa-plus"></i> Nouvelle décision
+             </button>
+          </div>
+        </div>
+      </div>
+
       
       <!-- STATS BLOCK -->
       <div class="stats-row mb-16" v-if="dashboard.stats">
-        <div class="stat-card v-total clickable" @click="$router.push('/decisions?filter=all')">
-          <div class="stat-icon-wrap">📊</div>
-          <div class="ring-wrap">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle class="ring-bg" cx="36" cy="36" r="28"/>
-              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" stroke-dashoffset="0" style="stroke: rgba(255,255,255,0.35);"/>
-            </svg>
-            <div class="ring-center">{{ dashboard.stats.total }}</div>
+        <div class="stat-card v-total clickable" @click="$router.push('/decisions')">
+          <div class="stat-icon-part">
+            <div class="stat-icon-wrap"><i class="fa-solid fa-chart-pie"></i></div>
           </div>
-          <div class="stat-label">Décisions</div>
-        </div>
-        <div class="stat-card v-proposals clickable" @click="$router.push('/decisions?filter=author')">
-          <div class="stat-icon-wrap">📣</div>
-          <div class="stat-number-simple">{{ dashboard.stats.as_author }}</div>
-          <div class="stat-label">Proposées</div>
-        </div>
-        <div class="stat-card v-anime clickable" @click="$router.push('/decisions?filter=animator')">
-          <div class="stat-icon-wrap">🎭</div>
-          <div class="stat-number-simple">{{ dashboard.stats.as_animator }}</div>
-          <div class="stat-label">J'Anime</div>
-        </div>
-        <div class="stat-card v-active clickable" @click="$router.push('/decisions?filter=active')">
-          <div class="stat-icon-wrap">🔄</div>
-          <div class="stat-number-simple">{{ dashboard.stats.in_progress }}</div>
-          <div class="stat-label">En Cours</div>
-        </div>
-        <div class="stat-card v-adopted clickable" @click="$router.push('/decisions?filter=adopted')">
-          <div class="stat-icon-wrap">✅</div>
-          <div class="ring-wrap">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle class="ring-bg" cx="36" cy="36" r="28"/>
-              <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.adopted, dashboard.stats.total)"/>
-            </svg>
-            <div class="ring-center">{{ dashboard.stats.adopted }}</div>
+          <div class="stat-info-part">
+            <div class="ring-wrap">
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle class="ring-bg" cx="36" cy="36" r="28"/>
+                <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" stroke-dashoffset="0" style="stroke: rgba(255,255,255,0.35);"/>
+              </svg>
+              <div class="ring-center">{{ dashboard.stats.total }}</div>
+            </div>
+            <div class="stat-label">Décisions</div>
           </div>
-          <div class="stat-label">Adoptées</div>
+        </div>
+
+        <div class="stat-card v-proposals clickable" @click="$router.push({ path: '/decisions', query: { role: 'author' } })">
+          <div class="stat-icon-part">
+            <div class="stat-icon-wrap"><i class="fa-solid fa-bullhorn"></i></div>
+          </div>
+          <div class="stat-info-part">
+            <div class="stat-number-simple">{{ dashboard.stats.as_author }}</div>
+            <div class="stat-label">Proposées</div>
+          </div>
+        </div>
+
+        <div class="stat-card v-anime clickable" @click="$router.push({ path: '/decisions', query: { role: 'animator' } })">
+          <div class="stat-icon-part">
+            <div class="stat-icon-wrap"><i class="fa-solid fa-user-tie"></i></div>
+          </div>
+          <div class="stat-info-part">
+            <div class="stat-number-simple">{{ dashboard.stats.as_animator }}</div>
+            <div class="stat-label">J'Anime</div>
+          </div>
+        </div>
+
+        <div class="stat-card v-active clickable" @click="$router.push({ path: '/decisions', query: { state: 'active' } })">
+          <div class="stat-icon-part">
+            <div class="stat-icon-wrap"><i class="fa-solid fa-spinner fa-spin"></i></div>
+          </div>
+          <div class="stat-info-part">
+            <div class="stat-number-simple">{{ dashboard.stats.in_progress }}</div>
+            <div class="stat-label">En Cours</div>
+          </div>
+        </div>
+
+        <div class="stat-card v-adopted clickable" @click="$router.push({ path: '/decisions', query: { state: 'adopted' } })">
+          <div class="stat-icon-part">
+            <div class="stat-icon-wrap"><i class="fa-solid fa-check"></i></div>
+          </div>
+          <div class="stat-info-part">
+            <div class="ring-wrap">
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle class="ring-bg" cx="36" cy="36" r="28"/>
+                <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.adopted, dashboard.stats.total)"/>
+              </svg>
+              <div class="ring-center">{{ dashboard.stats.adopted }}</div>
+            </div>
+            <div class="stat-label">Adoptées</div>
+          </div>
         </div>
       </div>
       
@@ -58,25 +90,22 @@
         <!-- Clarifications en cours -->
         <div class="premium-card">
           <div class="pc-header pc-header-amber">
-            <div class="pc-header-icon">💬</div>
+            <div class="pc-header-icon"><i class="fa-solid fa-comments"></i></div>
             <div class="pc-header-content">
               <div class="pc-header-title">Clarifications actives</div>
               <div class="pc-header-sub">Tickets en attente de réponse</div>
             </div>
           </div>
           <div class="pc-body">
-            <div v-if="!dashboard.my_clarifications?.length" class="pc-empty">
-              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
-              <span>Aucune clarification en cours.</span>
-            </div>
+            <EmptyState v-if="!dashboard.my_clarifications?.length" message="Aucune clarification en cours." />
             <div v-for="fb in dashboard.my_clarifications" :key="fb.id" class="decision-item" @click="goToDecision(fb.version?.decision_id)">
               <div class="role-bg-mini" :class="'role-' + getMyRole(fb.version?.decision)">
-                {{ getRolePicto(getMyRole(fb.version?.decision)) }}
+                <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
               </div>
               <div class="decision-item-main">
                 <div class="decision-title">
                   <span class="version-pill" v-if="fb.version">v{{ fb.version.version_number }}</span>
-                  <span v-if="fb.version?.decision?.current_version?.attachments?.length" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;">📎</span>
+                  <span v-if="fb.version?.decision?.current_version?.attachments?.length" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;"><i class="fa-solid fa-paperclip"></i></span>
                   {{ fb.version?.decision?.title }}
                 </div>
                 <div class="decision-people">
@@ -99,25 +128,22 @@
         <!-- Objections en cours -->
         <div class="premium-card">
           <div class="pc-header pc-header-red">
-            <div class="pc-header-icon">⚠️</div>
+            <div class="pc-header-icon"><i class="fa-solid fa-scale-balanced"></i></div>
             <div class="pc-header-content">
               <div class="pc-header-title">Objections actives</div>
               <div class="pc-header-sub">Tickets en attente de réponse</div>
             </div>
           </div>
           <div class="pc-body">
-            <div v-if="!dashboard.my_objections?.length" class="pc-empty">
-              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
-              <span>Aucune objection en cours.</span>
-            </div>
+            <EmptyState v-if="!dashboard.my_objections?.length" message="Aucune objection en cours." />
             <div v-for="fb in dashboard.my_objections" :key="fb.id" class="decision-item" @click="goToDecision(fb.version?.decision_id)">
               <div class="role-bg-mini" :class="'role-' + getMyRole(fb.version?.decision)">
-                {{ getRolePicto(getMyRole(fb.version?.decision)) }}
+                <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
               </div>
               <div class="decision-item-main">
                 <div class="decision-title">
                   <span class="version-pill" v-if="fb.version">v{{ fb.version.version_number }}</span>
-                  <span v-if="fb.version?.decision?.current_version?.attachments?.length" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;">📎</span>
+                  <span v-if="fb.version?.decision?.current_version?.attachments?.length" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;"><i class="fa-solid fa-paperclip"></i></span>
                   {{ fb.version?.decision?.title }}
                 </div>
                 <div class="decision-people">
@@ -145,17 +171,14 @@
         <!-- Mes propositions -->
         <div class="premium-card">
           <div class="pc-header pc-header-blue">
-            <div class="pc-header-icon">📣</div>
+            <div class="pc-header-icon"><i class="fa-solid fa-bullhorn"></i></div>
             <div class="pc-header-content">
               <div class="pc-header-title">Mes propositions</div>
               <div class="pc-header-sub">Décisions dont je suis porteur</div>
             </div>
           </div>
           <div class="pc-body">
-            <div v-if="Object.keys(dashboard.my_decisions).length === 0" class="pc-empty">
-              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
-              <span>Vous ne pilotez aucune décision.</span>
-            </div>
+            <EmptyState v-if="Object.keys(dashboard.my_decisions).length === 0" message="Vous ne pilotez aucune décision." />
             <template v-for="(decisions, circleName) in dashboard.my_decisions" :key="circleName">
               <DecisionListItem
                 v-for="d in decisions" :key="d.id" :decision="d"
@@ -170,17 +193,14 @@
         <!-- J'anime -->
         <div class="premium-card">
           <div class="pc-header pc-header-amber">
-            <div class="pc-header-icon">🎭</div>
+            <div class="pc-header-icon"><i class="fa-solid fa-user-tie"></i></div>
             <div class="pc-header-content">
               <div class="pc-header-title">J'anime</div>
               <div class="pc-header-sub">Décisions dont je suis facilitateur</div>
             </div>
           </div>
           <div class="pc-body">
-            <div v-if="Object.keys(dashboard.my_animated || {}).length === 0" class="pc-empty">
-              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
-              <span>Vous n'animez aucune décision en cours.</span>
-            </div>
+            <EmptyState v-if="Object.keys(dashboard.my_animated || {}).length === 0" message="Vous n'animez aucune décision." />
             <template v-for="(decisions, circleName) in dashboard.my_animated" :key="circleName">
               <DecisionListItem
                 v-for="d in decisions" :key="d.id" :decision="d"
@@ -195,17 +215,14 @@
         <!-- Mes cercles à surveiller -->
         <div class="premium-card">
           <div class="pc-header pc-header-teal">
-            <div class="pc-header-icon">👥</div>
+            <div class="pc-header-icon"><i class="fa-solid fa-user-group"></i></div>
             <div class="pc-header-content">
               <div class="pc-header-title">À surveiller</div>
               <div class="pc-header-sub">Décisions actives dans mes cercles</div>
             </div>
           </div>
           <div class="pc-body">
-            <div v-if="Object.keys(dashboard.circle_decisions).length === 0" class="pc-empty">
-              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
-              <span>Rien à signaler dans vos cercles.</span>
-            </div>
+            <EmptyState v-if="Object.keys(dashboard.circle_decisions).length === 0" message="Rien à signaler dans vos cercles." />
             <template v-for="(decisions, circleName) in dashboard.circle_decisions" :key="circleName">
               <DecisionListItem
                 v-for="d in decisions" :key="d.id" :decision="d"
@@ -223,36 +240,30 @@
       <div class="grid-2">
         <div class="premium-card">
           <div class="pc-header pc-header-indigo">
-            <div class="pc-header-icon">◎</div>
+            <div class="pc-header-icon"><i class="fa-solid fa-circle-nodes"></i></div>
             <div class="pc-header-content">
               <div class="pc-header-title">Mes cercles</div>
               <div class="pc-header-sub">{{ circleStore.circles.length }} cercle(s) rejoint(s)</div>
             </div>
           </div>
           <div class="pc-body pc-chips">
-            <div v-if="circleStore.circles.length === 0" class="pc-empty">
-              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
-              <span>Aucun cercle rejoint.</span>
-            </div>
+            <EmptyState v-if="circleStore.circles.length === 0" message="Aucun cercle rejoint." />
             <button v-for="c in circleStore.circles" :key="c.id" class="chip chip-blue" @click="$router.push({ name: 'CircleDetail', params: { id: c.id } })">
-              ◎ {{ c.name }}
+              <i class="fa-solid fa-circle-nodes" style="margin-right: 4px;"></i> {{ c.name }}
             </button>
           </div>
         </div>
 
         <div class="premium-card">
           <div class="pc-header pc-header-purple">
-            <div class="pc-header-icon">🗂️</div>
+            <div class="pc-header-icon"><i class="fa-solid fa-folder-tree"></i></div>
             <div class="pc-header-content">
               <div class="pc-header-title">Catégories</div>
               <div class="pc-header-sub">{{ (dashboard.categories || []).length }} catégorie(s) disponible(s)</div>
             </div>
           </div>
           <div class="pc-body pc-chips">
-            <div v-if="!dashboard.categories || dashboard.categories.length === 0" class="pc-empty">
-              <img src="/DAZO-picto-carre-gris.svg" class="pc-empty-img">
-              <span>Aucune catégorie.</span>
-            </div>
+            <EmptyState v-if="!dashboard.categories || dashboard.categories.length === 0" message="Aucune catégorie." />
             <button v-for="c in dashboard.categories" :key="c.id" class="chip chip-purple" @click="$router.push({ name: 'DecisionList', query: { category: c.id } })">
               {{ c.name }}
             </button>
@@ -272,6 +283,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useCircleStore } from '../stores/circle';
 import DecisionListItem from '../components/DecisionListItem.vue';
+import EmptyState from '../components/EmptyState.vue';
 import axios from 'axios';
 
 const router = useRouter();
@@ -397,9 +409,14 @@ const getMyRole = (decision) => {
     return p?.role || 'participant';
 };
 
-const getRolePicto = (role) => {
-    const icons = { author: '📣', animator: '🎭', participant: '👥', observer: '👁️' };
-    return icons[role] || '👥';
+const getRoleIcon = (role) => {
+    const icons = { 
+        author: 'fa-solid fa-bullhorn', 
+        animator: 'fa-solid fa-user-tie', 
+        participant: 'fa-solid fa-user-group', 
+        observer: 'fa-solid fa-eye' 
+    };
+    return icons[role] || 'fa-solid fa-user-group';
 };
 
 const getMyRoleLabel = (decision) => {
@@ -420,10 +437,10 @@ const getMyRoleLabel = (decision) => {
 /* Stats Block */
 .stats-row { display: flex; gap: 14px; flex-wrap: wrap; }
 .stat-card {
-  flex: 1; min-width: 130px; border-radius: 14px; padding: 18px 14px 14px;
+  flex: 1; min-width: 200px; border-radius: 14px; padding: 20px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.12); transition: all 0.2s;
   position: relative; overflow: hidden;
-  display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+  display: flex; flex-direction: row; align-items: center; cursor: pointer;
 }
 .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(0,0,0,0.18); }
 .stat-card.v-total    { background: linear-gradient(135deg, #1e3a8a, #3b82f6); }
@@ -432,13 +449,28 @@ const getMyRoleLabel = (decision) => {
 .stat-card.v-active   { background: linear-gradient(135deg, #9a3412, #f97316); }
 .stat-card.v-adopted  { background: linear-gradient(135deg, #115e59, #14b8a6); }
 .stat-card::after { content: ''; position: absolute; right: -24px; bottom: -24px; width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,0.07); }
-.stat-icon-wrap { font-size: 16px; padding: 7px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; align-self: flex-end; position: relative; z-index: 1; }
+
+.stat-icon-part { flex: 1; display: flex; justify-content: center; align-items: center; }
+.stat-info-part { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+.stat-icon-wrap { 
+    font-size: 32px; width: 72px; height: 72px; border-radius: 50%; 
+    background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.3); 
+    display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; 
+}
+
 .ring-wrap { position: relative; width: 72px; height: 72px; }
 .ring-wrap svg { transform: rotate(-90deg); }
 .ring-bg { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 7; }
 .ring-fg { fill: none; stroke: rgba(255,255,255,0.85); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1); }
 .ring-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; color: white; font-family: var(--font-display); }
-.stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.7); }
+.stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.8); }
+
+@media (max-width: 800px) {
+    .stat-card { flex-direction: column; min-width: 150px; padding-top: 100px; }
+    .stat-icon-part { position: absolute; top: 16px; left: 16px; }
+    .stat-info-part { width: 100%; justify-content: center; }
+}
 .mb-16 { margin-bottom: 16px; }
 
 /* Styles DecisionListItem (dupliqués pour cohérence dashboard) */
@@ -483,34 +515,9 @@ const getMyRoleLabel = (decision) => {
 
 /* États vides premium */
 .pc-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  position: relative;
-  text-align: center;
-  min-height: 180px;
+  width: 100%;
 }
-.pc-empty-img {
-  width: 180px;
-  height: 180px;
-  opacity: 0.6;
-  pointer-events: none;
-}
-.pc-empty span {
-  position: absolute;
-  width: 90%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 15px;
-  font-weight: 800;
-  color: #000;
-  line-height: 1.5;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
+
 
 .pc-chips {
   display: flex;

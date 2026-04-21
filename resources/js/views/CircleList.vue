@@ -1,28 +1,56 @@
 <template>
   <main class="main">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Cercles</div>
-        <div class="page-subtitle">Rejoignez et gérez vos communautés de décision</div>
-      </div>
-    </div>
-
     <div class="page-body">
+      <!-- HERO HEADER -->
+      <div class="hero-card">
+        <div class="hero-title">Participez à la décision digitale</div>
+        <div class="hero-subtitle">Rejoignez vos cercles de confiance et gérez vos communautés.</div>
+      </div>
+
       <div v-if="loading" class="text-center text-muted py-24">Chargement...</div>
-      <div v-else-if="error" class="alert alert-error">{{ error }}</div>
+      <div v-else-if="error" class="alert alert-error mb-16">{{ error }}</div>
 
       <div v-else class="circles-grid">
-        <div v-for="circle in circles" :key="circle.id" class="circle-card" @click="goTo(circle.id)">
-          <div class="circle-icon">◎</div>
-          <div class="circle-info">
-            <div class="circle-name">{{ circle.name }}</div>
-            <div class="circle-desc">{{ circle.description || 'Aucune description' }}</div>
-            <div class="circle-meta">
-              <span class="badge" :class="typeBadge(circle.type)">{{ circle.type }}</span>
+        <div v-for="circle in circles" :key="circle.id" class="premium-card clickable-card" @click="goTo(circle.id)">
+            <div class="pc-header pc-header-light-blue">
+                <div class="pc-header-icon"><i class="fa-solid fa-circle-nodes"></i></div>
+                <div class="pc-header-content">
+                    <div class="pc-header-title">{{ circle.name }} <span class="text-xs opacity-60 font-normal">({{ circle.members_count || 0 }} membres)</span></div>
+                    <div class="pc-header-sub">{{ circle.description || 'Cercle de décision' }}</div>
+                </div>
+                <div class="pc-badge-wrap">
+                  <span class="badge" :class="typeBadge(circle.type)">{{ circle.type }}</span>
+                </div>
             </div>
-          </div>
-          <div class="circle-arrow">›</div>
+            
+            <div class="pc-body card-padding">
+                <div class="flex justify-between items-center">
+                    <div class="member-stack-wrap">
+                        <div class="text-strong text-xs mb-8" style="color:var(--gray-500)">MEMBRES</div>
+                        <div class="member-stack">
+                            <div 
+                                v-for="m in (circle.members || []).slice(0, 5)" 
+                                :key="m.id" 
+                                class="stack-avatar"
+                                :title="m.user?.name"
+                            >
+                                {{ m.user?.name?.[0].toUpperCase() }}
+                            </div>
+                            <div v-if="circle.members_count > 5" class="stack-more">
+                                +{{ (circle.members_count || 0) - (circle.members || []).slice(0,5).length }}
+                            </div>
+                            <div v-if="circle.members_count === 0" class="text-xs text-muted">
+                                Aucun membre
+                            </div>
+                        </div>
+                    </div>
+                    <div class="circle-enter">
+                        <span>Explorer</span> <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+            </div>
         </div>
+
         <div v-if="circles.length === 0" class="text-center text-muted py-24">
           Vous n'êtes membre d'aucun cercle.
         </div>
@@ -55,17 +83,40 @@ const typeBadge = (type) => {
 
 <style scoped>
 .py-24 { padding: 24px 0; }
-.circles-grid { display: flex; flex-direction: column; gap: 8px; }
-.circle-card {
-  display: flex; align-items: center; gap: 14px; padding: 16px 20px;
-  background: white; border-radius: var(--radius-md); border: 1px solid var(--gray-200);
-  cursor: pointer; transition: all 0.12s;
+.circles-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 900px) {
+  .circles-grid { grid-template-columns: 1fr 1fr; }
 }
-.circle-card:hover { border-color: var(--blue-400); box-shadow: var(--shadow-sm); }
-.circle-icon { font-size: 24px; color: var(--blue-600); flex-shrink: 0; }
-.circle-info { flex: 1; min-width: 0; }
-.circle-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
-.circle-desc { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
-.circle-meta { margin-top: 6px; }
-.circle-arrow { font-size: 20px; color: var(--gray-300); font-weight: 300; }
+
+.clickable-card { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+.clickable-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+.card-padding { padding: 20px; }
+
+.pc-badge-wrap { margin-left: auto; z-index: 2; }
+
+.member-stack { display: flex; align-items: center; }
+.stack-avatar {
+  width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid white;
+  background: var(--blue-100); color: var(--blue-800);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; margin-left: -10px;
+  box-shadow: var(--shadow-sm);
+}
+.stack-avatar:first-child { margin-left: 0; }
+.stack-more {
+  width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid white;
+  background: var(--gray-100); color: var(--gray-600);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; margin-left: -10px;
+}
+
+.circle-enter {
+  display: flex; align-items: center; gap: 8px; color: var(--blue-600);
+  font-weight: 600; font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .hide-mobile { display: none; }
+}
 </style>

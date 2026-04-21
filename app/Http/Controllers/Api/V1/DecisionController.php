@@ -29,8 +29,13 @@ class DecisionController extends Controller
 
     public function mine(): JsonResponse
     {
-        $decisions = Decision::whereHas('circle.members', function ($query) {
-            $query->where('user_id', auth()->id());
+        $userId = auth()->id();
+        $decisions = Decision::where(function ($query) use ($userId) {
+            $query->whereHas('circle.members', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })->orWhereHas('participants', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            });
         })
             ->with(['circle', 'category', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user'])
             ->latest()
@@ -167,6 +172,10 @@ class DecisionController extends Controller
                     $phaseParticipationMap['objection'][$consent->user_id] = true;
                 }
             }
+        }
+
+        if ($decision->status->value === DecisionStatus::REVISION->value && !empty($decision->revision_attachment_ids)) {
+            $decision->setAttribute('revision_attachments', \App\Models\Attachment::whereIn('id', $decision->revision_attachment_ids)->get());
         }
 
         return response()->json([

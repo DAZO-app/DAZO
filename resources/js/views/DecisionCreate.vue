@@ -1,15 +1,17 @@
 <template>
   <main class="main">
-    <div class="page-header justify-between">
-      <div>
-        <div class="page-title">Nouvelle proposition</div>
-        <div class="page-subtitle">Remplissez les détails pour lancer un nouveau cycle de décision</div>
-      </div>
-      <div class="page-actions">
-        <button class="btn btn-ghost" @click="$router.back()">Annuler</button>
-        <button class="btn btn-primary" @click="submit" :disabled="submitting">
-          {{ submitting ? 'Création...' : 'Créer la décision' }}
-        </button>
+    <div class="hero-card">
+      <div class="hero-flex">
+        <div>
+          <div class="hero-title">Nouvelle proposition</div>
+          <div class="hero-subtitle">Remplissez les détails pour lancer un nouveau cycle de décision</div>
+        </div>
+        <div class="hero-action gap-12 flex">
+          <button class="btn btn-white" @click="$router.back()">Annuler</button>
+          <button class="btn btn-secondary" @click="submit" :disabled="submitting">
+            <i class="fa-solid fa-paper-plane mr-8"></i> {{ submitting ? 'Création...' : 'Créer la décision' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -46,7 +48,7 @@
                 :class="{ active: dragActive }"
               >
                 <div class="drop-zone-content">
-                  <span class="text-2xl mb-8">📁</span>
+                  <i class="fa-solid fa-folder-open text-2xl mb-8"></i>
                   <p>Glissez-déposez vos fichiers ici ou <label class="text-blue-600 cursor-pointer">parcourez<input type="file" multiple class="hidden" @change="handleFileSelect"></label></p>
                   <p class="text-xs text-muted mt-4">Images, PDF, Documents (Max 10Mo par fichier)</p>
                 </div>
@@ -54,15 +56,26 @@
 
                 <div v-if="attachments.length" class="attachments-list mt-16">
                     <div v-for="(a, idx) in attachments" :key="idx" class="attachment-mini">
-                        <span class="text-lg">📄</span>
-                        <div class="attachment-info">
+                        <div
+                           class="attachment-preview-mini" 
+                           :data-url="a.url"
+                           :data-pswp-src="a.url"
+                           data-pswp-width="1200"
+                           data-pswp-height="800"
+                           @click.stop="runLightbox(idx)" 
+                           style="cursor: pointer; display: flex;"
+                        >
+                           <img v-if="isImage(a.mime_type) && a.url" :src="a.url" class="mini-img" />
+                           <i v-else :class="fileGlyph(a.mime_type)" class="text-lg"></i>
+                        </div>
+                        <div class="attachment-info" @click.stop.prevent="runLightbox(idx)" style="cursor: pointer;">
                             <div class="attachment-name">{{ a.filename }}</div>
                             <div class="attachment-size">{{ formatSize(a.size_bytes) }}</div>
                         </div>
                         <div v-if="a.uploading" class="upload-progress-bar">
                              <div class="progress" :style="{ width: a.progress + '%' }"></div>
                         </div>
-                        <button v-else class="btn btn-ghost btn-icon btn-sm" @click="removeAttachment(idx)">✕</button>
+                        <button v-else class="btn btn-ghost btn-icon btn-sm" @click.stop="removeAttachment(idx)"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                 </div>
             </div>
@@ -115,9 +128,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
-import { useRouter, useRoute } from 'vue-router';
+import PhotoSwipeLightbox from 'photoswipe/lightbox';
+import PhotoSwipe from 'photoswipe';
+import 'photoswipe/dist/photoswipe.css';
 
 const router = useRouter();
 const route = useRoute();
@@ -211,6 +227,8 @@ const uploadFiles = (files) => {
         }).then(res => {
             item.uploading = false;
             item.id = res.data.attachment.id;
+            item.url = res.data.url;
+            item.mime_type = res.data.attachment.mime_type;
         }).catch(() => {
             item.uploading = false;
             item.filename += " (Erreur)";
@@ -276,6 +294,89 @@ const submit = async () => {
         submitting.value = false;
     }
 };
+
+const isImage = (mimeType) => typeof mimeType === 'string' && mimeType.startsWith('image/');
+
+const fileGlyph = (mimeType) => {
+  if (isImage(mimeType)) return 'fa-solid fa-file-image';
+  if (mimeType === 'application/pdf') return 'fa-solid fa-file-pdf';
+  if (typeof mimeType === 'string' && mimeType.includes('spreadsheet')) return 'fa-solid fa-file-excel';
+  if (typeof mimeType === 'string' && (mimeType.includes('word') || mimeType.includes('officedocument.wordprocessingml'))) return 'fa-solid fa-file-word';
+  return 'fa-solid fa-file';
+};
+
+let lightbox = null;
+
+onMounted(() => {
+  lightbox = new PhotoSwipeLightbox({
+    pswpModule: PhotoSwipe,
+    bgOpacity: 0.9,
+    showHideAnimationType: 'fade',
+  });
+  lightbox.init();
+});
+
+onBeforeUnmount(() => {
+  if (lightbox) {
+    lightbox.destroy();
+    lightbox = null;
+  }
+});
+
+const runLightbox = (index) => {
+  if (attachments.value[index].uploading || !lightbox) {
+    console.warn('LightBox not ready or file uploading');
+    return;
+  }
+  
+  console.log('Opening PhotoSwipe in DecisionCreate at index:', index);
+
+  try {
+    const items = attachments.value.filter(a => !a.uploading && a.id).map(a => {
+      const isImg = isImage(a.mime_type);
+      const url = a.url || '';
+
+      if (isImg && url) {
+        return {
+          src: url,
+          type: 'image',
+          width: 1200,
+          height: 800,
+          alt: a.filename
+        };
+      } else if (a.mime_type === 'application/pdf' && url) {
+        return {
+          html: `
+            <div class="pswp__pdf-container">
+              <iframe src="${url}#view=FitH" class="pswp__pdf-iframe"></iframe>
+              <div class="pswp__pdf-fallback">
+                <a href="${url}" target="_blank" class="pswp__doc-btn">Ouvrir le PDF en plein écran</a>
+              </div>
+            </div>
+          `
+        };
+      } else {
+        const icon = fileGlyph(a.mime_type);
+        return {
+          html: `
+            <div class="pswp__doc-slide">
+              <div class="pswp__doc-icon"><i class="${icon}"></i></div>
+              <div class="pswp__doc-name">${a.filename || 'Document'}</div>
+              <a href="${url}" target="_blank" class="pswp__doc-btn" onclick="event.stopPropagation()">Ouvrir le document</a>
+            </div>
+          `
+        };
+      }
+    });
+
+    const filteredIndex = attachments.value.slice(0, index).filter(a => !a.uploading && a.id).length;
+
+    lightbox.options.dataSource = items;
+    lightbox.loadAndOpen(filteredIndex);
+  } catch (err) {
+    console.error('PhotoSwipe loadAndOpen error:', err);
+  }
+};
 </script>
 
 <style scoped>
@@ -306,4 +407,46 @@ const submit = async () => {
 
 .upload-progress-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--gray-100); overflow: hidden; }
 .progress { height: 100%; background: var(--blue-600); transition: width 0.2s; }
+
+.attachment-preview-mini {
+    width: 32px; height: 32px; border-radius: 4px; background: var(--gray-50);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.mini-img { width: 100%; height: 100%; object-fit: cover; }
+</style>
+
+<style>
+/* Global styles for PhotoSwipe document slides */
+.pswp__doc-slide {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+.pswp__doc-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+}
+.pswp__doc-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  max-width: 400px;
+}
+.pswp__doc-btn {
+  background: white;
+  color: black;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.pswp__doc-btn:hover {
+  opacity: 0.9;
+}
 </style>

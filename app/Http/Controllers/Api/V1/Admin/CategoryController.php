@@ -10,9 +10,17 @@ use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(['categories' => Category::orderBy('name')->get()]);
+        $query = Category::query();
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $categories = $query->orderBy('name')->get();
+
+        return response()->json(['categories' => $categories]);
     }
 
     public function store(Request $request): JsonResponse

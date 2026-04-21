@@ -1,7 +1,7 @@
 <template>
   <div class="premium-card">
     <div class="pc-header" :class="headerClass">
-      <div class="pc-header-icon">{{ headerIcon }}</div>
+      <div class="pc-header-icon"><i :class="headerIcon"></i></div>
       <div class="pc-header-content">
         <div class="pc-header-title">Échanges</div>
         <div class="pc-header-sub">{{ feedbacks.length }} message(s)</div>
@@ -37,7 +37,7 @@
               <span class="badge" :class="typeBadge(fb.type)">{{ getVal(fb.type).toUpperCase() }}</span>
               <span style="font-size:13px; font-weight:600">{{ fb.author?.name }}</span>
               <span class="badge badge-gray text-xs" style="margin-left:auto">{{ statusLabel(fb.status) }}</span>
-              <span class="text-xs text-muted ml-8">{{ isExpanded(fb.id) ? '▼' : '▶' }}</span>
+              <span class="text-xs text-muted ml-8"><i :class="isExpanded(fb.id) ? 'fa-solid fa-caret-down' : 'fa-solid fa-caret-right'"></i></span>
             </div>
             <div v-if="isExpanded(fb.id)" class="feedback-card-body">
               <div class="ticket-content mb-16" :class="'feedback-' + (getVal(fb.type) === 'clarification' ? 'sug' : 'obj')">
@@ -58,11 +58,11 @@
               </form>
               <div v-if="!isHistorical && !isClosed(fb)" class="mt-16 pt-16 border-t" style="display:flex; justify-content:space-between; align-items:center;">
                 <button v-if="getVal(fb.type) !== 'clarification'" class="join-btn" @click="joinFeedback(fb.id)" :class="{ joined: isJoined(fb) }">
-                  {{ isJoined(fb) ? '✓ Soutenu' : '💪 Rejoindre l\'objection' }} ({{ fb.joins?.length || 0 }})
+                  <i :class="isJoined(fb) ? 'fa-solid fa-check' : 'fa-solid fa-hand-fist'"></i> {{ isJoined(fb) ? 'Soutenu' : 'Rejoindre l\'objection' }} ({{ fb.joins?.length || 0 }})
                 </button>
                 <div v-if="isMe(fb.author_id)">
-                   <button v-if="getVal(fb.type) === 'clarification'" class="btn btn-sm" style="background:var(--teal-50); color:var(--teal-700); border:1px solid var(--teal-200);" @click="closeFeedback(fb, 'acknowledged')">✓ C'est clair</button>
-                   <button v-else-if="getVal(fb.type) === 'objection'" class="btn btn-sm" style="background:var(--teal-50); color:var(--teal-700); border:1px solid var(--teal-200);" @click="closeFeedback(fb, 'withdrawn')">✓ Plus d'objection</button>
+                   <button v-if="getVal(fb.type) === 'clarification'" class="btn btn-sm" style="background:var(--teal-50); color:var(--teal-700); border:1px solid var(--teal-200);" @click="closeFeedback(fb, 'acknowledged')"><i class="fa-solid fa-check"></i> C'est clair</button>
+                   <button v-else-if="getVal(fb.type) === 'objection'" class="btn btn-sm" style="background:var(--teal-50); color:var(--teal-700); border:1px solid var(--teal-200);" @click="closeFeedback(fb, 'withdrawn')"><i class="fa-solid fa-check"></i> Plus d'objection</button>
                 </div>
               </div>
             </div>
@@ -92,7 +92,7 @@
               <span class="badge" :class="typeBadge(fb.type)">{{ getVal(fb.type).toUpperCase() }}</span>
               <span style="font-size:13px; font-weight:600">{{ fb.author?.name }}</span>
               <span class="badge badge-gray text-xs" style="margin-left:auto">{{ statusLabel(fb.status) }}</span>
-              <span class="text-xs text-muted ml-8">{{ isExpanded(fb.id) ? '▼' : '▶' }}</span>
+              <span class="text-xs text-muted ml-8"><i :class="isExpanded(fb.id) ? 'fa-solid fa-caret-down' : 'fa-solid fa-caret-right'"></i></span>
             </div>
             <div v-if="isExpanded(fb.id)" class="feedback-card-body">
               <div class="ticket-content mb-16 feedback-rea">
@@ -150,7 +150,7 @@
               <span class="badge" :class="typeBadge(fb.type)">{{ getVal(fb.type).toUpperCase() }}</span>
               <span style="font-size:13px; font-weight:600">{{ fb.author?.name }}</span>
               <span class="badge badge-gray text-xs" style="margin-left:auto">{{ statusLabel(fb.status) }}</span>
-              <span class="text-xs text-muted ml-8">{{ isExpanded(fb.id) ? '▼' : '▶' }}</span>
+              <span class="text-xs text-muted ml-8"><i :class="isExpanded(fb.id) ? 'fa-solid fa-caret-down' : 'fa-solid fa-caret-right'"></i></span>
             </div>
             <div v-if="isExpanded(fb.id)" class="feedback-card-body">
               <div class="ticket-content mb-16 feedback-obj">
@@ -171,10 +171,10 @@
               </form>
               <div v-if="!isHistorical && !isClosed(fb)" class="mt-16 pt-16 border-t" style="display:flex; justify-content:space-between; align-items:center;">
                 <button class="join-btn" @click="joinFeedback(fb.id)" :class="{ joined: isJoined(fb) }">
-                  {{ isJoined(fb) ? '✓ Soutenu' : '💪 Rejoindre l\'objection' }} ({{ fb.joins?.length || 0 }})
+                  <i :class="isJoined(fb) ? 'fa-solid fa-check' : 'fa-solid fa-hand-fist'"></i> {{ isJoined(fb) ? 'Soutenu' : 'Rejoindre l\'objection' }} ({{ fb.joins?.length || 0 }})
                 </button>
                 <div v-if="isMe(fb.author_id)">
-                   <button class="btn btn-sm" style="background:var(--teal-50); color:var(--teal-700); border:1px solid var(--teal-200);" @click="closeFeedback(fb, 'withdrawn')">✓ Plus d'objection</button>
+                   <button class="btn btn-sm" style="background:var(--teal-50); color:var(--teal-700); border:1px solid var(--teal-200);" @click="closeFeedback(fb, 'withdrawn')"><i class="fa-solid fa-check"></i> Plus d'objection</button>
                 </div>
               </div>
             </div>
@@ -249,10 +249,10 @@ const headerClass = computed(() => {
 });
 
 const headerIcon = computed(() => {
-    if (isClarificationPhase.value) return '💬';
-    if (isReactionPhase.value) return '😊';
-    if (isObjectionPhase.value) return '🛑';
-    return '⚡';
+    if (isClarificationPhase.value) return 'fa-solid fa-comments';
+    if (isReactionPhase.value) return 'fa-solid fa-face-smile';
+    if (isObjectionPhase.value) return 'fa-solid fa-hand';
+    return 'fa-solid fa-bolt';
 });
 
 const toggleExpand = (id) => {

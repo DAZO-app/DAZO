@@ -8,6 +8,26 @@ const routes = [
         component: () => import('../views/Login.vue')
     },
     {
+        path: '/forgot-password',
+        name: 'ForgotPassword',
+        component: () => import('../views/ForgotPassword.vue')
+    },
+    {
+        path: '/register',
+        name: 'Register',
+        component: () => import('../views/Register.vue')
+    },
+    {
+        path: '/invitations/:token',
+        name: 'InvitationAccept',
+        component: () => import('../views/InvitationAccept.vue')
+    },
+    {
+        path: '/reset-password',
+        name: 'ResetPassword',
+        component: () => import('../views/ResetPassword.vue')
+    },
+    {
         path: '/',
         component: () => import('../layouts/AppLayout.vue'),
         meta: { requiresAuth: true },
@@ -16,6 +36,11 @@ const routes = [
                 path: '',
                 name: 'Dashboard',
                 component: () => import('../views/Dashboard.vue')
+            },
+            {
+                path: 'settings',
+                name: 'Settings',
+                component: () => import('../views/Settings.vue')
             },
             {
                 path: 'decisions',
@@ -27,24 +52,7 @@ const routes = [
                 name: 'DecisionCreate',
                 component: () => import('../views/DecisionCreate.vue')
             },
-            {
-                path: 'decisions/clarifications',
-                name: 'PendingClarifications',
-                component: () => import('../views/PendingList.vue'),
-                props: { type: 'clarifications' }
-            },
-            {
-                path: 'decisions/reactions',
-                name: 'PendingReactions',
-                component: () => import('../views/PendingList.vue'),
-                props: { type: 'reactions' }
-            },
-            {
-                path: 'decisions/objections',
-                name: 'PendingObjections',
-                component: () => import('../views/PendingList.vue'),
-                props: { type: 'objections' }
-            },
+
             {
                 path: 'decisions/:id',
                 name: 'DecisionDetail',
@@ -85,6 +93,16 @@ const routes = [
                 path: 'admin/config',
                 name: 'AdminConfig',
                 component: () => import('../views/admin/AdminConfig.vue')
+            },
+            {
+                path: 'admin/database',
+                name: 'AdminDatabase',
+                component: () => import('../views/admin/AdminDatabase.vue')
+            },
+            {
+                path: 'admin/server',
+                name: 'AdminServer',
+                component: () => import('../views/admin/AdminServer.vue')
             },
         ]
     }

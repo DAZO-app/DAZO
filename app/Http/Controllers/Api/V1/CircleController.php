@@ -23,7 +23,12 @@ class CircleController extends Controller
 
         $circles = Circle::whereHas('members', function ($q) use ($user) {
             $q->where('user_id', $user->id);
-        })->get();
+        })
+        ->with(['members.user' => function($q) {
+            $q->limit(10); // Limite pour l'affichage de la pile d'avatars
+        }])
+        ->withCount('members')
+        ->get();
 
         return response()->json(['circles' => $circles]);
     }

@@ -21,24 +21,41 @@
       <!-- Menu déroulant mobile -->
       <transition name="slide-down">
         <nav v-if="mobileMenuOpen" class="mobile-menu" @click="mobileMenuOpen = false">
-          <router-link to="/" class="mobile-menu-item" exact-active-class="active">⊞ Tableau de bord</router-link>
-          <router-link to="/decisions" class="mobile-menu-item" active-class="active" exact>◎ Décisions</router-link>
-          <router-link to="/decisions/clarifications" class="mobile-menu-item mobile-menu-sub" active-class="active">
-            <span class="sub-dot dot-amber"></span> Clarifications
-            <span v-if="pending.counts.clarifications > 0" class="m-badge">{{ pending.counts.clarifications }}</span>
+          <router-link to="/" class="mobile-menu-item" exact-active-class="active"><i class="fa-solid fa-house" style="margin-right: 8px;"></i> Tableau de bord</router-link>
+          <router-link to="/decisions" class="mobile-menu-item" :class="{ active: $route.path === '/decisions' && Object.keys($route.query).length === 0 }"><i class="fa-solid fa-list" style="margin-right: 8px;"></i> Décisions</router-link>
+          <router-link :to="{ name: 'CircleList' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-circle-nodes" style="margin-right: 8px;"></i> Cercles</router-link>
+          
+          <div v-if="hasMyProposals || hasMyAnimations || pendingTotal > 0" class="mobile-menu-divider"></div>
+          <router-link v-if="hasMyProposals" :to="{ path: '/decisions', query: { role: 'author' } }" class="mobile-menu-item mobile-menu-sub" :class="{ active: $route.path === '/decisions' && $route.query.role === 'author' }">
+            <span class="sub-dot" style="background: var(--blue-300)"></span> Mes propositions
           </router-link>
-          <router-link to="/decisions/reactions" class="mobile-menu-item mobile-menu-sub" active-class="active">
-            <span class="sub-dot dot-blue"></span> Réactions
-            <span v-if="pending.counts.reactions > 0" class="m-badge">{{ pending.counts.reactions }}</span>
+          <router-link v-if="hasMyAnimations" :to="{ path: '/decisions', query: { role: 'animator' } }" class="mobile-menu-item mobile-menu-sub" :class="{ active: $route.path === '/decisions' && $route.query.role === 'animator' }">
+            <span class="sub-dot" style="background: var(--teal-400)"></span> Décisions que j'anime
           </router-link>
-          <router-link to="/decisions/objections" class="mobile-menu-item mobile-menu-sub" active-class="active">
-            <span class="sub-dot dot-red"></span> Objections
-            <span v-if="pending.counts.objections > 0" class="m-badge badge-red">{{ pending.counts.objections }}</span>
+          <router-link v-if="pendingTotal > 0" :to="{ path: '/decisions', query: { action: 'pending' } }" class="mobile-menu-item mobile-menu-sub" :class="{ active: $route.path === '/decisions' && $route.query.action === 'pending' }">
+            <span class="sub-dot dot-amber"></span> Réactions attendues
           </router-link>
-          <router-link to="/circles" class="mobile-menu-item" active-class="active">⊛ Cercles</router-link>
-          <router-link v-if="isAdmin && !isImpersonating" to="/admin" class="mobile-menu-item" active-class="active">⚙ Administration</router-link>
+
+          <template v-if="isAdmin && !isImpersonating">
+            <div class="mobile-menu-divider"></div>
+            <div class="sidebar-section" style="padding-left:20px; color:rgba(255,255,255,0.4)">Administration</div>
+            <router-link :to="{ name: 'AdminUsers' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-users" style="margin-right: 8px;"></i> Utilisateurs</router-link>
+            <router-link :to="{ name: 'AdminCircles' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-circle-nodes" style="margin-right: 8px;"></i> Cercles Admin</router-link>
+            <router-link :to="{ name: 'AdminCategories' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-tags" style="margin-right: 8px;"></i> Catégories</router-link>
+            
+            <template v-if="isSuperAdmin">
+              <div class="mobile-menu-divider"></div>
+              <div class="sidebar-section" style="padding-left:20px; color:rgba(255,255,255,0.4)">Système</div>
+              <router-link :to="{ name: 'Admin' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gauge-high" style="margin-right: 8px;"></i> Dashboard Admin</router-link>
+              <router-link :to="{ name: 'AdminConfig' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gears" style="margin-right: 8px;"></i> Configuration</router-link>
+              <router-link :to="{ name: 'AdminDatabase' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-database" style="margin-right: 8px;"></i> BDD</router-link>
+              <router-link :to="{ name: 'AdminServer' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-server" style="margin-right: 8px;"></i> Serveur</router-link>
+            </template>
+          </template>
+
           <div class="mobile-menu-divider"></div>
-          <a class="mobile-menu-item text-red-500" @click.prevent="logout">⏻ Déconnexion</a>
+          <router-link to="/settings" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-sliders" style="margin-right: 8px;"></i> Paramètres</router-link>
+          <a class="mobile-menu-item text-red-500" @click.prevent="logout"><i class="fa-solid fa-power-off" style="margin-right: 8px;"></i> Déconnexion</a>
         </nav>
       </transition>
     </header>
@@ -63,39 +80,63 @@
         <!-- Navigation -->
         <div class="sidebar-section">Navigation</div>
         <router-link to="/" class="sidebar-item" exact-active-class="active">
-          <span>⊞</span> Tableau de bord
+          <span><i class="fa-solid fa-house"></i></span> Tableau de bord
         </router-link>
-        <router-link to="/decisions" class="sidebar-item" active-class="active" exact>
-          <span>◎</span> Décisions
+        <router-link to="/decisions" class="sidebar-item" :class="{ active: $route.path === '/decisions' && Object.keys($route.query).length === 0 }">
+          <span><i class="fa-solid fa-list"></i></span> Décisions
         </router-link>
-
-        <!-- Sous-navigation -->
-        <router-link to="/decisions/clarifications" class="sidebar-subitem" active-class="active">
-          <span class="sub-dot dot-amber"></span>
-          Clarifications
-          <span v-if="pending.counts.clarifications > 0" class="sidebar-badge">{{ pending.counts.clarifications }}</span>
-        </router-link>
-        <router-link to="/decisions/reactions" class="sidebar-subitem" active-class="active">
-          <span class="sub-dot dot-blue"></span>
-          Réactions
-          <span v-if="pending.counts.reactions > 0" class="sidebar-badge">{{ pending.counts.reactions }}</span>
-        </router-link>
-        <router-link to="/decisions/objections" class="sidebar-subitem" active-class="active">
-          <span class="sub-dot dot-red"></span>
-          Objections
-          <span v-if="pending.counts.objections > 0" class="sidebar-badge badge-red">{{ pending.counts.objections }}</span>
+        <router-link :to="{ name: 'CircleList' }" class="sidebar-item" active-class="active">
+          <span><i class="fa-solid fa-circle-nodes"></i></span> Cercles
         </router-link>
 
-        <router-link to="/circles" class="sidebar-item" active-class="active">
-          <span>⊛</span> Cercles
-        </router-link>
+        <!-- Sous-navigation: Mes filtres -->
+        <template v-if="hasMyProposals || hasMyAnimations || pendingTotal > 0">
+          <div class="sidebar-section" style="margin-top: 8px;">Mes Vues</div>
+          <router-link v-if="hasMyProposals" :to="{ path: '/decisions', query: { role: 'author' } }" class="sidebar-subitem" :class="{ active: $route.path === '/decisions' && $route.query.role === 'author' }">
+            <span class="sub-dot" style="background: var(--blue-300)"></span> Mes propositions
+          </router-link>
+          <router-link v-if="hasMyAnimations" :to="{ path: '/decisions', query: { role: 'animator' } }" class="sidebar-subitem" :class="{ active: $route.path === '/decisions' && $route.query.role === 'animator' }">
+            <span class="sub-dot" style="background: var(--teal-400)"></span> Décisions que j'anime
+          </router-link>
+          <router-link v-if="pendingTotal > 0" :to="{ path: '/decisions', query: { action: 'pending' } }" class="sidebar-subitem" :class="{ active: $route.path === '/decisions' && $route.query.action === 'pending' }">
+            <span class="sub-dot dot-amber"></span> Réactions attendues
+            <span v-if="pendingTotal > 0" class="sidebar-badge badge-red">{{ pendingTotal }}</span>
+          </router-link>
+        </template>
 
         <template v-if="isAdmin && !isImpersonating">
           <div class="sidebar-section">Administration</div>
-          <router-link to="/admin" class="sidebar-item" active-class="active">
-            <span>⚙</span> Administration
+          <router-link :to="{ name: 'AdminUsers' }" class="sidebar-item" active-class="active">
+            <span><i class="fa-solid fa-users"></i></span> Utilisateurs
           </router-link>
+          <router-link :to="{ name: 'AdminCircles' }" class="sidebar-item" active-class="active">
+            <span><i class="fa-solid fa-circle-nodes"></i></span> Cercles Admin
+          </router-link>
+          <router-link :to="{ name: 'AdminCategories' }" class="sidebar-item" active-class="active">
+            <span><i class="fa-solid fa-tags"></i></span> Catégories
+          </router-link>
+
+          <template v-if="isSuperAdmin">
+             <div class="sidebar-section">Système</div>
+            <router-link :to="{ name: 'Admin' }" class="sidebar-item" active-class="active">
+              <span><i class="fa-solid fa-gauge-high"></i></span> Dashboard Admin
+            </router-link>
+            <router-link :to="{ name: 'AdminConfig' }" class="sidebar-item" active-class="active">
+              <span><i class="fa-solid fa-gears"></i></span> Configuration
+            </router-link>
+            <router-link :to="{ name: 'AdminDatabase' }" class="sidebar-item" active-class="active">
+              <span><i class="fa-solid fa-database"></i></span> BDD
+            </router-link>
+            <router-link :to="{ name: 'AdminServer' }" class="sidebar-item" active-class="active">
+              <span><i class="fa-solid fa-server"></i></span> Serveur
+            </router-link>
+          </template>
         </template>
+
+        <div style="height: 16px;"></div>
+        <router-link to="/settings" class="sidebar-item" active-class="active">
+          <span><i class="fa-solid fa-sliders"></i></span> Paramètres
+        </router-link>
 
         <!-- Pied de barre -->
         <div class="sidebar-footer">
@@ -105,7 +146,7 @@
               <div class="sidebar-user-name truncate">{{ user?.name || 'Utilisateur' }}</div>
               <div class="sidebar-user-role">{{ user?.role || 'Actif' }}</div>
             </div>
-            <button @click="logout" class="btn btn-ghost btn-icon" style="color:rgba(255,255,255,0.4)" title="Déconnexion">⏻</button>
+            <button @click="logout" class="btn btn-ghost btn-icon" style="color:rgba(255,255,255,0.4)" title="Déconnexion"><i class="fa-solid fa-power-off"></i></button>
           </div>
         </div>
       </aside>
@@ -120,17 +161,20 @@
 import { computed, onMounted, ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { usePendingStore } from '../stores/pending';
+import { useDecisionStore } from '../stores/decision';
 import { useRouter } from 'vue-router';
 import ImpersonationBanner from '../components/ImpersonationBanner.vue';
 
 const authStore = useAuthStore();
 const pending = usePendingStore();
+const decisionStore = useDecisionStore();
 const router = useRouter();
 
 const mobileMenuOpen = ref(false);
 
 const user = computed(() => authStore.user);
 const isAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
+const isSuperAdmin = computed(() => user.value?.role === 'superadmin');
 const isImpersonating = computed(() => authStore.isImpersonating);
 
 const userInitials = computed(() => {
@@ -144,9 +188,30 @@ const userInitials = computed(() => {
     .toUpperCase() || '?';
 });
 
+const pendingTotal = computed(() => {
+    return (pending.counts.clarifications || 0) + (pending.counts.reactions || 0) + (pending.counts.objections || 0);
+});
+
+const hasMyProposals = computed(() => {
+    return decisionStore.decisions.some(d => {
+        return d.participants?.some(p => p.user_id === user.value?.id && p.role === 'author');
+    });
+});
+
+const hasMyAnimations = computed(() => {
+    return decisionStore.decisions.some(d => {
+        return d.participants?.some(p => p.user_id === user.value?.id && p.role === 'animator');
+    });
+});
+
+const countClarification = computed(() => decisionStore.decisions.filter(d => d.status === 'clarification').length);
+const countReaction = computed(() => decisionStore.decisions.filter(d => d.status === 'reaction').length);
+const countObjection = computed(() => decisionStore.decisions.filter(d => d.status === 'objection').length);
+
 onMounted(() => {
   if (authStore.isAuthenticated) {
     pending.startPolling(); // auto-refresh every 60s
+    decisionStore.fetchDecisions();
   }
 });
 

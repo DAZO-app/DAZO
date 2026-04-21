@@ -2,14 +2,21 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\PasswordResetController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     // Authentification (Public)
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
+    
+    Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail']);
+    Route::post('/auth/reset-password', [PasswordResetController::class, 'reset']);
 
     Route::post('/auth/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
+
+    // Public Invitation check
+    Route::get('/invitations/{token}', [\App\Http\Controllers\Api\V1\InvitationController::class, 'show']);
 
     // Authentification (Protégé)
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
@@ -38,6 +45,7 @@ Route::prefix('v1')->group(function () {
 
         // Cercles Adhésion & Membres
         Route::get('/circles/{circle}/members', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'index']);
+        Route::post('/circles/{circle}/members', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'store']);
         Route::post('/circles/{circle}/join', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'join']);
         Route::post('/circles/{circle}/leave', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'leave']);
         Route::put('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\CircleMemberController::class, 'update']);
@@ -100,17 +108,29 @@ Route::prefix('v1')->group(function () {
         Route::prefix('admin')->middleware(['admin'])->group(function () {
             Route::get('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'index']);
             Route::put('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'update']);
+            Route::get('/stats', [\App\Http\Controllers\Api\V1\Admin\DashboardController::class, 'stats']);
             
             // Impersonation
             Route::post('/impersonate/{user}', [\App\Http\Controllers\Api\V1\Admin\ImpersonationController::class, 'impersonate']);
             
             // Users CRUD
             Route::apiResource('users', \App\Http\Controllers\Api\V1\Admin\UserController::class)
-                ->only(['index', 'update', 'destroy']);
+                ->only(['index', 'store', 'update', 'destroy']);
+            
+            Route::get('/users/{user}/circles', [\App\Http\Controllers\Api\V1\Admin\UserController::class, 'userCircles']);
                 
             // Categories CRUD
             Route::apiResource('categories', \App\Http\Controllers\Api\V1\Admin\CategoryController::class)
                 ->except(['show']);
+
+            // Circles CRUD
+            Route::apiResource('circles', \App\Http\Controllers\Api\V1\Admin\CircleController::class);
+            Route::post('/circles/{circle}/members', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'addMember']);
+            Route::post('/circles/{circle}/invitations/{invitation}/resend', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'resendInvitation']);
+            Route::delete('/circles/{circle}/invitations/{invitation}', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'removeInvitation']);
+
+            Route::delete('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'removeMember']);
+            Route::put('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'updateMemberRole']);
         });
     });
 });

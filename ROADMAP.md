@@ -1,46 +1,36 @@
 # ROADMAP
 
-## 🎯 V1 — MVP (Priority)
+## ✅ V1 — MVP (Completed)
 
 ### Core Features
-
-* Users & authentication
-* Circles & memberships
-* Decision creation
-* Decision lifecycle (basic)
-* Feedback system (objection/suggestion)
-* Voting system
-* Decision versioning & historical navigation
+- [x] Users & authentication (Sanctum)
+- [x] Circles & memberships (Animator, Member, Observer)
+- [x] Decision creation & rich editing (Quill)
+- [x] Full Decision lifecycle (Spatie State Machine)
+- [x] Feedback system (Clarifications, Objections, Suggestions)
+- [x] Consent system (No objection, Abstention)
+- [x] Decision versioning & historical navigation
+- [x] Participation tracking & progress bar
+- [x] Email invitations & Secure Onboarding (v2)
 
 ### Technical
-
-* Database schema (stable)
-* Service layer implementation
-* Basic API
-* Unit tests (core logic)
-
----
-
-## 🚀 V1.5
-
-* Decision participants (decision_user)
-* Notifications system
-* Deadlines & automatic transitions
-* Improved permissions (circle roles)
+- [x] Database schema (Stable)
+- [x] Service layer architecture
+- [x] RESTful API (v1)
+- [x] Real-time Dashboard with participation stats
 
 ---
 
-## 🔥 V2
-
-* Advanced permissions (ACL)
-* Audit logs
-* AI assistant (decision helper)
+## 🚀 V2 (Next)
+- [ ] Advanced permissions (ACL)
+- [ ] Audit logs visualization (Admin)
+- [ ] AI assistant (Decision summarizer)
+- [ ] Multi-tenancy (SaaS)
+- [ ] Plugin system
 
 ---
 
-## 🌍 V3 (SaaS)
-
-* Multi-tenancy
-* Billing
-* Advanced analytics
-* Plugin system
+## 🌍 V3
+- [ ] Billing integration
+- [ ] Advanced analytics
+- [ ] Decidim/GitHub OAuth integrations

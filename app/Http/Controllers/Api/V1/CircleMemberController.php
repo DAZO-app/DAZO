@@ -104,4 +104,36 @@ class CircleMemberController extends Controller
 
         return response()->json(['message' => 'Membre exclu avec succès.']);
     }
+
+    public function store(Request $request, Circle $circle): JsonResponse
+    {
+        if ($request->user()->cannot('update', $circle)) {
+            abort(403, "Seul un animateur peut ajouter des membres.");
+        }
+
+        $validated = $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'required|exists:users,id',
+            'role' => ['nullable', \Illuminate\Validation\Rule::enum(\App\Enums\CircleMemberRole::class)],
+        ]);
+
+        $role = $validated['role'] ?? \App\Enums\CircleMemberRole::MEMBER->value;
+        $addedCount = 0;
+
+        foreach ($validated['user_ids'] as $userId) {
+            $exists = $circle->members()->where('user_id', $userId)->exists();
+            if (!$exists) {
+                $circle->members()->create([
+                    'user_id' => $userId,
+                    'role' => $role
+                ]);
+                $addedCount++;
+            }
+        }
+
+        return response()->json([
+            'message' => "{$addedCount} membre(s) ajouté(s).",
+            'added_count' => $addedCount
+        ], 201);
+    }
 }

@@ -6,7 +6,7 @@
         <span class="font-semibold text-gray-700">Animateur :</span>
         {{ currentAnimatorName || 'Non défini (Auteur par défaut)' }}
       </span>
-      <button v-if="canEdit" class="btn btn-ghost btn-xs ml-8" @click="startEditing" title="Changer l'animateur">✏️</button>
+      <button v-if="canEdit" class="btn btn-ghost btn-xs ml-8" @click="startEditing" title="Changer l'animateur"><i class="fa-solid fa-pen"></i></button>
     </div>
 
     <!-- Mode édition -->
@@ -48,8 +48,8 @@
           </div>
         </div>
         <div v-if="selectedExternalUser" class="mt-8 p-8 bg-blue-50 border border-blue-200 rounded text-xs">
-          ✅ Sélectionné hors cercle : <strong>{{ selectedExternalUser.name }}</strong>
-          <button class="btn-ghost btn-xs ml-8" @click="clearExternal">✕</button>
+          <i class="fa-solid fa-circle-check" style="color:var(--teal-600)"></i> Sélectionné hors cercle : <strong>{{ selectedExternalUser.name }}</strong>
+          <button class="btn-ghost btn-xs ml-8" @click="clearExternal"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </div>
 

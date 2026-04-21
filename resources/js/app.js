@@ -1,5 +1,6 @@
 // resources/js/app.js
 import './bootstrap';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import router from './router';
