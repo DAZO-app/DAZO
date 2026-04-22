@@ -1,26 +1,32 @@
 <template>
   <main class="main">
-    <div class="hero-card">
-      <div class="hero-flex">
-        <div>
-          <div class="hero-title">Nouvelle proposition</div>
-          <div class="hero-subtitle">Remplissez les détails pour lancer un nouveau cycle de décision</div>
-        </div>
-        <div class="hero-action gap-12 flex">
-          <button class="btn btn-white" @click="$router.back()">Annuler</button>
-          <button class="btn btn-secondary" @click="submit" :disabled="submitting">
-            <i class="fa-solid fa-paper-plane mr-8"></i> {{ submitting ? 'Création...' : 'Créer la décision' }}
-          </button>
+    <div class="page-body">
+      <div class="hero-card">
+        <div class="hero-flex">
+          <div>
+            <div class="hero-title">Nouvelle proposition</div>
+            <div class="hero-subtitle">Remplissez les détails pour lancer un nouveau cycle de décision</div>
+          </div>
+          <div class="hero-action gap-12 flex">
+            <button class="btn btn-white" @click="$router.back()">Annuler</button>
+            <button class="btn btn-secondary" @click="submit" :disabled="submitting">
+              <i class="fa-solid fa-paper-plane mr-8"></i> {{ submitting ? 'Création...' : 'Créer la décision' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-
-    <div class="page-body">
       <div v-if="error" class="alert alert-error mb-16">{{ error }}</div>
 
       <div class="grid-layout">
         <div class="col-main">
-          <div class="card mb-16">
+          <div class="premium-card mb-16">
+            <div class="pc-header pc-header-blue">
+              <div class="pc-header-icon"><i class="fa-solid fa-pen-nib"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Contenu de la décision</div>
+                <div class="pc-header-sub">Titre et description détaillée</div>
+              </div>
+            </div>
             <div class="card-body">
               <div class="form-group">
                 <label class="label">Titre de la proposition *</label>
@@ -35,9 +41,13 @@
           </div>
 
           <!-- Zone de pièces jointes -->
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Pièces jointes</span>
+          <div class="premium-card">
+            <div class="pc-header pc-header-indigo">
+              <div class="pc-header-icon"><i class="fa-solid fa-paperclip"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Pièces jointes</div>
+                <div class="pc-header-sub">Documents et ressources liées</div>
+              </div>
             </div>
             <div class="card-body">
               <div 
@@ -49,8 +59,13 @@
               >
                 <div class="drop-zone-content">
                   <i class="fa-solid fa-folder-open text-2xl mb-8"></i>
-                  <p>Glissez-déposez vos fichiers ici ou <label class="text-blue-600 cursor-pointer">parcourez<input type="file" multiple class="hidden" @change="handleFileSelect"></label></p>
-                  <p class="text-xs text-muted mt-4">Images, PDF, Documents (Max 10Mo par fichier)</p>
+                  <p class="mb-8">Glissez-déposez vos fichiers ici</p>
+                  <p class="text-xs text-muted mb-12">ou</p>
+                  <button type="button" class="btn btn-secondary btn-sm" @click="$refs.fileInputRef.click()">
+                    <i class="fa-solid fa-search mr-4"></i> Parcourir
+                  </button>
+                  <input ref="fileInputRef" type="file" multiple class="hidden" @change="handleFileSelect">
+                  <p class="text-xs text-muted mt-12">Images, PDF, Documents (Max 10Mo par fichier)</p>
                 </div>
               </div>
 
@@ -83,8 +98,14 @@
         </div>
 
         <div class="col-side">
-          <div class="card mb-16">
-            <div class="card-header"><span class="card-title">Paramètres</span></div>
+          <div class="premium-card mb-16">
+            <div class="pc-header pc-header-amber">
+              <div class="pc-header-icon"><i class="fa-solid fa-sliders"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Paramètres de la décision</div>
+                <div class="pc-header-sub">Configuration du processus</div>
+              </div>
+            </div>
             <div class="card-body">
                 <div class="form-group">
                     <label class="label">Cercle *</label>
@@ -112,13 +133,7 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="label">Modèle de décision</label>
-                    <select v-model="form.model_id" class="select">
-                        <option value="">Par défaut</option>
-                        <option v-for="m in models" :key="m.id" :value="m.id">{{ m.name }}</option>
-                    </select>
-                </div>
+
             </div>
           </div>
         </div>

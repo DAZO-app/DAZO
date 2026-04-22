@@ -39,5 +39,16 @@ class UserController extends Controller
             ->get();
 
         return response()->json(['users' => $users]);
+    /**
+     * Liste tous les administrateurs du site.
+     */
+    public function admins(): JsonResponse
+    {
+        $admins = User::whereIn('role', ['admin', 'superadmin'])
+            ->where('is_active', true)
+            ->select('id', 'name', 'email', 'avatar_url')
+            ->get();
+
+        return response()->json(['admins' => $admins]);
     }
 }

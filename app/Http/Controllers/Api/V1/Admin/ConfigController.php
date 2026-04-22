@@ -21,14 +21,29 @@ class ConfigController extends Controller
     public function update(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'configs' => ['required', 'array'],
+            'config' => ['required', 'array'],
         ]);
 
-        $this->configService->setMultiple($validated['configs']);
+        $this->configService->setMultiple($validated['config']);
 
         return response()->json([
             'message' => 'Configuration updated successfully',
-            'configs' => $this->configService->all()
+            'config' => $this->configService->all()
+        ]);
+    }
+
+    public function uploadLogo(Request $request): JsonResponse
+    {
+        $request->validate([
+            'logo' => ['required', 'image', 'max:2048'],
+        ]);
+
+        $path = $this->configService->uploadLogo($request->file('logo'));
+
+        return response()->json([
+            'message' => 'Logo uploaded successfully',
+            'url' => asset('storage/' . $path),
+            'config' => $this->configService->all()
         ]);
     }
 }

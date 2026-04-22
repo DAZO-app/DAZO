@@ -16,16 +16,25 @@
         </div>
       </div>
 
-      <!-- FILTER BAR -->
-      <div class="filter-bar">
-        <div class="filter-group main-search">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input v-model="filters.search" placeholder="Rechercher une catégorie..." class="input-inline">
+      <!-- FILTER CARD -->
+      <div class="premium-card mb-32">
+        <div class="pc-header pc-header-indigo" style="padding: 16px 24px;">
+          <div class="pc-header-icon" style="width: 32px; height: 32px; font-size: 14px;"><i class="fa-solid fa-filter"></i></div>
+          <div class="pc-header-content">
+            <div class="pc-header-title">Filtres & Recherche</div>
+            <div class="pc-header-sub">Recherchez des thématiques spécifiques.</div>
+          </div>
         </div>
-        <div class="filter-row">
-           <button class="btn btn-ghost btn-sm ml-auto" @click="resetFilters">
-            <i class="fa-solid fa-rotate-left"></i> Réinitialiser
-          </button>
+        <div class="pc-body p-20">
+          <div class="filter-group main-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input v-model="filters.search" placeholder="Rechercher une catégorie..." class="input-inline">
+          </div>
+          <div class="filter-row">
+             <button class="btn btn-ghost btn-sm ml-auto" @click="resetFilters">
+              <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+            </button>
+          </div>
         </div>
       </div>
 
@@ -65,13 +74,16 @@
       <div v-if="loading" class="text-center text-muted py-24">Chargement...</div>
       <div v-else class="cat-grid">
         <div v-for="cat in categories" :key="cat.id" class="premium-card">
-          <div class="card-header card-header-sexy justify-between" :style="{ borderLeft: '4px solid ' + (cat.color || '#cccccc') }">
-            <span class="card-title" style="display:flex; align-items:center;">
-              <div class="cat-color-pill" :style="{ background: cat.color || '#cccccc' }"></div>
-              {{ cat.name }}
-            </span>
+          <div class="pc-header pc-header-blue" style="padding: 12px 16px;">
+            <div class="pc-header-icon" style="width: 32px; height: 32px; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4); color: white;">
+              <i class="fa-solid fa-tags"></i>
+            </div>
+            <div class="pc-header-content">
+              <div class="pc-header-title">{{ cat.name }}</div>
+            </div>
           </div>
-          <div class="card-body">
+
+          <div class="pc-body p-24">
             <div class="cat-desc-large">{{ cat.description || 'Aucune description fournie.' }}</div>
             <div class="cat-actions-footer">
               <button class="btn btn-secondary btn-sm" @click="openEdit(cat)">
@@ -160,11 +172,22 @@ const deleteCategory = async (cat) => {
     }
   }
 };
+
+const darkenColor = (color) => {
+  if (!color) return '#999999';
+  let r = parseInt(color.substring(1, 3), 16);
+  let g = parseInt(color.substring(3, 5), 16);
+  let b = parseInt(color.substring(5, 7), 16);
+  r = Math.max(0, Math.floor(r * 0.8));
+  g = Math.max(0, Math.floor(g * 0.8));
+  b = Math.max(0, Math.floor(b * 0.8));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+};
 </script>
 
 <style scoped>
 .py-24 { padding: 24px 0; }
-.cat-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.cat-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
 @media (min-width: 768px) {
   .cat-grid { grid-template-columns: 1fr 1fr; }
 }

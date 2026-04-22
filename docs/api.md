@@ -16,6 +16,9 @@
 | `GET` | `/api/v1/auth/me` | Profil utilisateur courant |
 | `POST` | `/api/v1/auth/email/verify/{id}/{hash}` | Vérification email |
 | `POST` | `/api/v1/auth/email/resend` | Renvoyer l'email de vérification |
+| `GET` | `/api/v1/magic-login/{userId}` | Connexion via Magic Link (Public/Admin) |
+| `POST` | `/api/v1/admin/impersonate/{userId}` | Prendre le contrôle d'un utilisateur |
+| `POST` | `/api/v1/admin/stop-impersonation` | Arrêter l'impersonation |
 
 > **OAuth (Google, GitHub, Decidim) — reporté en V2.** L'entité `OAUTH_PROVIDER`
 > est modélisée dans le MCD mais n'est pas implémentée en V1.
@@ -160,13 +163,28 @@
 | Méthode | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/v1/admin/config` | Lire la configuration instance |
-| `PUT` | `/api/v1/admin/config/{key}` | Modifier une clé de configuration |
+| `PUT` | `/api/v1/admin/config` | Mise à jour groupée de la configuration |
+| `POST` | `/api/v1/admin/config/logo` | Upload du logo de l'instance |
 | `GET` | `/api/v1/admin/categories` | Lire les catégories |
 | `POST` | `/api/v1/admin/categories` | Créer une catégorie |
 | `GET` | `/api/v1/admin/labels` | Lire les labels |
 | `POST` | `/api/v1/admin/labels` | Créer un label |
 | `GET` | `/api/v1/admin/models` | Lire les modèles de décision |
 | `POST` | `/api/v1/admin/models` | Créer un modèle de décision |
+
+---
+
+## 🛠 Outils Admin
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/admin/tools/database` | Statistiques des tables SQL |
+| `GET` | `/api/v1/admin/tools/database/backups` | Liste des sauvegardes SQL |
+| `POST` | `/api/v1/admin/tools/database/backups` | Créer une sauvegarde à la volée |
+| `GET` | `/api/v1/admin/tools/database/backups/{filename}/download` | Télécharger un backup (URL signée) |
+| `DELETE` | `/api/v1/admin/tools/database/backups/{filename}` | Supprimer un backup |
+| `GET` | `/api/v1/admin/tools/server` | Monitoring CPU/RAM/Disque |
+| `GET` | `/api/v1/admin/tools/server/logs` | Lire les logs Laravel |
 
 ---
 

@@ -16,27 +16,36 @@
         </div>
       </div>
 
-      <!-- FILTER BAR -->
-      <div class="filter-bar">
-        <div class="filter-group main-search">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input v-model="filters.search" placeholder="Rechercher un cercle par nom..." class="input-inline">
-        </div>
-        
-        <div class="filter-row">
-          <div class="filter-item">
-            <label>Type de cercle</label>
-            <select v-model="filters.type" class="select-sm">
-              <option value="">Tous les types</option>
-              <option value="open">Ouvert</option>
-              <option value="closed">Fermé</option>
-              <option value="observer_open">Observateur ouvert</option>
-            </select>
+      <!-- FILTER CARD -->
+      <div class="premium-card mb-32">
+        <div class="pc-header pc-header-indigo" style="padding: 16px 24px;">
+          <div class="pc-header-icon" style="width: 32px; height: 32px; font-size: 14px;"><i class="fa-solid fa-filter"></i></div>
+          <div class="pc-header-content">
+            <div class="pc-header-title">Filtres & Recherche</div>
+            <div class="pc-header-sub">Recherchez des cercles par nom ou par type de participation.</div>
           </div>
+        </div>
+        <div class="pc-body p-20">
+          <div class="filter-group main-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input v-model="filters.search" placeholder="Rechercher un cercle par nom..." class="input-inline">
+          </div>
+          
+          <div class="filter-row">
+            <div class="filter-item">
+              <label>Type de cercle</label>
+              <select v-model="filters.type" class="select-sm">
+                <option value="">Tous les types</option>
+                <option value="open">Ouvert</option>
+                <option value="closed">Fermé</option>
+                <option value="observer_open">Observateur ouvert</option>
+              </select>
+            </div>
 
-          <button class="btn btn-ghost btn-sm ml-auto" @click="resetFilters">
-            <i class="fa-solid fa-rotate-left"></i> Réinitialiser
-          </button>
+            <button class="btn btn-ghost btn-sm ml-auto" @click="resetFilters">
+              <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+            </button>
+          </div>
         </div>
       </div>
 
@@ -205,28 +214,28 @@
 
       <div v-else class="premium-grid mt-24">
         <div v-for="circle in circles" :key="circle.id" class="premium-card">
-          <div class="card-header card-header-sexy justify-between">
-            <div class="flex items-center gap-12">
-               <div class="avatar av-blue" style="width:32px;height:32px;"><i class="fa-solid fa-circle-nodes"></i></div>
-               <div>
-                  <div class="card-title">{{ circle.name }}</div>
-                  <div class="text-xs text-muted" style="color:var(--blue-600)">{{ typeLabel(circle.type) }}</div>
-               </div>
+          <div class="pc-header pc-header-blue" style="padding: 14px 20px;">
+            <div class="pc-header-icon" style="width: 36px; height: 36px; font-size: 16px;">
+              <i class="fa-solid fa-circle-nodes"></i>
             </div>
-            <div class="flex flex-col items-end gap-4 min-w-[80px]">
-               <span class="badge" :class="typeBadge(circle.type)">{{ circle.type }}</span>
+            <div class="pc-header-content">
+              <div class="pc-header-title">{{ circle.name }}</div>
+              <div class="pc-header-sub">{{ typeLabel(circle.type) }}</div>
+            </div>
+            <div class="flex flex-col items-end gap-6 ml-auto">
+               <span class="badge" :class="typeBadge(circle.type)" style="font-size: 10px;">{{ circle.type }}</span>
                <div class="flex gap-4">
-                  <button class="btn btn-ghost btn-icon btn-sm" @click="openEditCircle(circle)" title="Modifier">
+                  <button class="btn btn-ghost btn-icon btn-sm text-white opacity-80 hover:opacity-100" @click="openEditCircle(circle)" title="Modifier">
                     <i class="fa-solid fa-pen text-xs"></i>
                   </button>
-                  <button class="btn btn-ghost btn-icon btn-sm text-red" @click="deleteCircle(circle)" title="Supprimer">
+                  <button class="btn btn-ghost btn-icon btn-sm text-white opacity-80 hover:opacity-100" @click="deleteCircle(circle)" title="Supprimer">
                     <i class="fa-solid fa-trash text-xs"></i>
                   </button>
                </div>
             </div>
           </div>
           
-          <div class="card-body">
+          <div class="pc-body p-24">
             <p class="circle-desc">{{ circle.description || 'Pas de description fournie.' }}</p>
             
             <div class="mt-16">
@@ -273,7 +282,6 @@
               </div>
             </div>
           </div>
-
         </div>
         <EmptyState v-if="circles.length === 0" message="Aucun cercle trouvé." />
       </div>
@@ -589,7 +597,7 @@ const typeLabel = (t) => ({ open: 'Cercle Ouvert', closed: 'Cercle Fermé', obse
 
 .card-actions-footer { display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--gray-50); padding-top: 14px; margin-top: 16px; }
 
-.premium-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.premium-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
 @media (min-width: 1024px) {
   .premium-grid { grid-template-columns: 1fr 1fr; }
 }

@@ -12,90 +12,87 @@
   </main>
 
   <main class="main" v-else-if="decision">
-    <div class="hero-card">
-      <div class="hero-flex">
-        <div class="flex items-center gap-20">
-          <div class="page-role-indicator" v-if="myRoleInfo">
-            <div class="role-circle" :class="myRoleInfo.className" :title="myRoleInfo.label">
-              <i :class="myRoleInfo.icon"></i>
-            </div>
-          </div>
-          <div>
-            <div class="hero-title">{{ decision.title }}</div>
-            <div class="hero-subtitle">
-              {{ decision.circle?.name }} · Version {{ currentVersion?.version_number || 1 }} ·
-              Porteur: <strong>{{ authorName }}</strong>
-            </div>
-          </div>
-        </div>
-        <div class="hero-action flex items-center gap-12">
-          <span class="badge" :class="statusClass" style="font-size: 14px; padding: 6px 16px;">{{ statusLabel }}</span>
-          
-          <div class="header-nav">
-             <template v-if="isRevision && isAuthorOrAnimator">
-               <button class="btn btn-secondary" :disabled="savingDraft || publishing" @click="saveRevision">
-                 {{ savingDraft ? 'Enregistrer' : 'Enregistrer' }}
-               </button>
-               <button class="btn btn-primary" :disabled="savingDraft || publishing" @click="publishRevision">
-                 {{ publishing ? 'Publier...' : 'Publier' }}
-               </button>
-             </template>
-             <template v-else>
-               <button class="btn btn-white btn-icon" :disabled="!previousDecisionId" @click="goToDecision(previousDecisionId)">
-                 <i class="fa-solid fa-chevron-left"></i>
-               </button>
-               <button class="btn btn-white btn-icon" :disabled="!nextDecisionId" @click="goToDecision(nextDecisionId)">
-                 <i class="fa-solid fa-chevron-right"></i>
-               </button>
-             </template>
-          </div>
-        </div>
-      </div>
-      <div class="hero-footer-meta mt-16 flex items-center gap-16 text-xs" style="opacity: 0.8;">
-        <span><i class="fa-solid fa-calendar-plus mr-4"></i> Créée le {{ formatDateOnly(decision.created_at) }}</span>
-        <span><i class="fa-solid fa-clock mr-4"></i> Actue le {{ formatDateOnly(decision.updated_at) }}</span>
-        <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="refreshDecision" style="margin-left: auto;" />
-      </div>
-    </div>
-
-    <div class="steps-bar">
-      <div class="steps">
-        <div class="step" :class="getStepClass('clarification')">
-          <div class="step-num">1</div>
-          <span class="step-label hidden-mobile-text">Clarification</span>
-        </div>
-        <div class="step-sep"></div>
-        <div class="step" :class="getStepClass('reaction')">
-          <div class="step-num">2</div>
-          <span class="step-label hidden-mobile-text">Réaction</span>
-        </div>
-        <div class="step-sep"></div>
-        <div class="step" :class="getStepClass('objection')">
-          <div class="step-num">3</div>
-          <span class="step-label hidden-mobile-text">Objection</span>
-        </div>
-        <div class="step-sep"></div>
-        <div class="step" :class="getStepClass('adopted')">
-          <div class="step-num"><i class="fa-solid fa-check"></i></div>
-          <span class="step-label hidden-mobile-text">Adopté</span>
-        </div>
-      </div>
-
-      <div class="status-actions" v-if="isAuthorOrAnimator">
-        <button
-          v-for="action in stepActions"
-          :key="action.key"
-          class="btn btn-sm"
-          :class="action.primary ? 'btn-primary' : 'btn-secondary'"
-          :disabled="transitioning || publishing || savingDraft"
-          @click="action.run"
-        >
-          {{ action.label }}
-        </button>
-      </div>
-    </div>
-
     <div class="page-body">
+      <div class="hero-card">
+        <div class="hero-flex">
+          <div class="flex items-center gap-20">
+            <div>
+              <div class="hero-title">{{ decision.title }}</div>
+              <div class="hero-subtitle">
+                {{ decision.circle?.name }} · Version {{ currentVersion?.version_number || 1 }} ·
+                Porteur: <strong>{{ authorName }}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="hero-action flex items-center gap-12">
+            <span class="badge" :class="statusClass" style="font-size: 14px; padding: 6px 16px;">{{ statusLabel }}</span>
+            
+            <div class="header-nav">
+               <template v-if="isRevision && isAuthorOrAnimator">
+                 <button class="btn btn-secondary" :disabled="savingDraft || publishing" @click="saveRevision">
+                   {{ savingDraft ? 'Enregistrer' : 'Enregistrer' }}
+                 </button>
+                 <button class="btn btn-primary" :disabled="savingDraft || publishing" @click="publishRevision">
+                   {{ publishing ? 'Publier...' : 'Publier' }}
+                 </button>
+               </template>
+               <template v-else>
+                 <button class="btn btn-white btn-icon" :disabled="!previousDecisionId" @click="goToDecision(previousDecisionId)">
+                   <i class="fa-solid fa-chevron-left"></i>
+                 </button>
+                 <button class="btn btn-white btn-icon" :disabled="!nextDecisionId" @click="goToDecision(nextDecisionId)">
+                   <i class="fa-solid fa-chevron-right"></i>
+                 </button>
+               </template>
+            </div>
+          </div>
+        </div>
+        <div class="hero-footer-meta mt-16 flex items-center gap-16 text-xs" style="opacity: 0.8;">
+          <span><i class="fa-solid fa-calendar-plus mr-4"></i> Créée le {{ formatDateOnly(decision.created_at) }}</span>
+          <span><i class="fa-solid fa-clock mr-4"></i> Actu. le {{ formatDateOnly(decision.updated_at) }}</span>
+          <span v-if="decision.current_deadline && !['adopted', 'abandoned'].includes(currentStatus)" :class="{ 'text-red font-bold': isUrgent }">
+            <i class="fa-solid fa-hourglass-half mr-4"></i> {{ deadlineLabel }}
+          </span>
+          <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="refreshDecision" style="margin-left: auto;" />
+        </div>
+      </div>
+
+      <div class="steps-bar">
+        <div class="steps">
+          <div class="step" :class="getStepClass('clarification')">
+            <div class="step-num">1</div>
+            <span class="step-label hidden-mobile-text">Clarification</span>
+          </div>
+          <div class="step-sep"></div>
+          <div class="step" :class="getStepClass('reaction')">
+            <div class="step-num">2</div>
+            <span class="step-label hidden-mobile-text">Réaction</span>
+          </div>
+          <div class="step-sep"></div>
+          <div class="step" :class="getStepClass('objection')">
+            <div class="step-num">3</div>
+            <span class="step-label hidden-mobile-text">Objection</span>
+          </div>
+          <div class="step-sep"></div>
+          <div class="step" :class="getStepClass('adopted')">
+            <div class="step-num"><i class="fa-solid fa-check"></i></div>
+            <span class="step-label hidden-mobile-text">Adopté</span>
+          </div>
+        </div>
+
+        <div class="status-actions" v-if="isAuthorOrAnimator">
+          <button
+            v-for="action in stepActions"
+            :key="action.key"
+            class="btn btn-sm"
+            :class="action.primary ? 'btn-primary' : 'btn-secondary'"
+            :disabled="transitioning || publishing || savingDraft"
+            @click="action.run"
+          >
+            {{ action.label }}
+          </button>
+        </div>
+      </div>
       <div class="grid-layout">
         <div class="col-main">
           <div v-if="isDraft" class="premium-card mb-16">
@@ -120,22 +117,6 @@
                     v-model="draftForm.content"
                     placeholder="Rédigez la décision avec mise en forme, liens et listes…"
                   />
-                </div>
-
-                <div class="form-row">
-                  <div class="form-group form-col">
-                    <label class="label">Animateur désigné</label>
-                    <select v-model="draftForm.animator_id" class="select">
-                      <option value="">Auteur (par défaut)</option>
-                      <option
-                        v-for="member in selectableMembers"
-                        :key="member.user_id"
-                        :value="member.user_id"
-                      >
-                        {{ member.user?.name }} ({{ member.role }})
-                      </option>
-                    </select>
-                  </div>
                 </div>
 
                 <div class="form-group">
@@ -247,7 +228,7 @@
             </div>
           </div>
 
-          <div class="mb-16">
+          <div v-if="!((isDraft || isRevision) && isAuthorOrAnimator)" class="mb-16">
             <AttachmentPanel
               :attachments="displayAttachments"
               :editable="false"
@@ -335,22 +316,28 @@
 
         <div class="col-side">
           <!-- Cartes de Rôle / Participation -->
-          <div v-if="myRole === 'author'" class="premium-card mb-16">
+          <div v-if="myRole === 'author' || isAuthor" class="premium-card mb-16">
             <div class="pc-header pc-header-blue" style="padding: 12px;">
               <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-bullhorn"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title" style="font-size: 14px;">Porteur</div>
                 <div class="pc-header-sub" style="font-size: 12px;">Vous pilotez cette décision.</div>
               </div>
+              <button v-if="isAuthorOrAnimator" class="btn btn-icon btn-sm" style="color: white; background: rgba(255,255,255,0.15); border: none; position: relative; z-index: 10;" title="Actions rapides" @click="showActionsModal = true">
+                <i class="fa-solid fa-gear"></i>
+              </button>
             </div>
           </div>
-          <div v-else-if="myRole === 'animator'" class="premium-card mb-16">
+          <div v-else-if="myRole === 'animator' || isAnimator" class="premium-card mb-16">
             <div class="pc-header pc-header-amber" style="padding: 12px;">
               <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-user-tie"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title" style="font-size: 14px;">Animateur</div>
                 <div class="pc-header-sub" style="font-size: 12px;">Vous facilitez ce processus.</div>
               </div>
+              <button v-if="isAuthorOrAnimator" class="btn btn-icon btn-sm" style="color: white; background: rgba(255,255,255,0.15); border: none; position: relative; z-index: 10;" title="Actions rapides" @click="showActionsModal = true">
+                <i class="fa-solid fa-gear"></i>
+              </button>
             </div>
           </div>
           <div v-else-if="hasAlreadyParticipated" class="premium-card mb-16">
@@ -359,6 +346,47 @@
               <div class="pc-header-content">
                 <div class="pc-header-title" style="font-size: 14px;">Participation validée</div>
                 <div class="pc-header-sub" style="font-size: 12px;">Vous avez agi pour cette phase.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paramètres de la décision -->
+          <div v-if="isDraft && isAuthorOrAnimator" class="premium-card mb-16">
+            <div class="pc-header pc-header-indigo">
+              <div class="pc-header-icon"><i class="fa-solid fa-sliders"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Paramètres de la décision</div>
+                <div class="pc-header-sub">Configuration du processus</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="label">Cercle *</label>
+                <select v-model="draftForm.circle_id" class="select" required>
+                  <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="label">Catégorie</label>
+                <select v-model="draftForm.category_id" class="select">
+                  <option value="">Aucune</option>
+                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="label">Animateur désigné</label>
+                <select v-model="draftForm.animator_id" class="select">
+                  <option value="">Auteur (par défaut)</option>
+                  <option
+                    v-for="member in selectableMembers"
+                    :key="member.user_id"
+                    :value="member.user_id"
+                  >
+                    {{ member.user?.name }} ({{ member.role }})
+                  </option>
+                </select>
               </div>
             </div>
           </div>
@@ -391,6 +419,7 @@
           </div>
 
           <ParticipantPhasePanel
+            v-if="!isDraft"
             :decision="viewingVersionId ? historicalVersionDecision : decision"
             :phase-participation-map="viewingVersionId ? historicalPhaseParticipationMap : phaseParticipationMap"
           />
@@ -425,6 +454,57 @@
             <button class="btn btn-ghost" @click="showReactionModal = false">Annuler</button>
             <button class="btn btn-primary" :disabled="submittingReaction || !reactionText.trim()" @click="submitReaction">
               {{ submittingReaction ? 'Envoi…' : 'Envoyer' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL ACTIONS RAPIDES -->
+    <div v-if="showActionsModal" class="modal-overlay" @click.self="showActionsModal = false" style="z-index: 1000;">
+      <div class="modal-card" style="max-width: 400px;">
+        <div class="modal-header">
+          <span class="modal-title">Actions rapides</span>
+          <button class="btn btn-ghost btn-icon" @click="showActionsModal = false"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body text-center">
+          <p class="text-sm text-muted mb-24">Gestion manuelle du cycle de vie</p>
+          
+          <div class="flex flex-col gap-12">
+            <!-- REPRENDRE (SI SUSPENDUE) -->
+            <button v-if="currentStatus === 'suspended'" 
+                    class="btn btn-primary btn-block p-16" 
+                    style="height: 54px; font-size: 15px;"
+                    @click="handleManualAction('resume')" 
+                    :disabled="performingAction">
+              <i class="fa-solid fa-play mr-10"></i> Reprendre le cycle
+            </button>
+
+            <!-- PAUSE (SI ACTIVE) -->
+            <button v-if="['clarification', 'reaction', 'objection', 'revision'].includes(currentStatus)" 
+                    class="btn btn-amber btn-block p-16" 
+                    style="height: 54px; font-size: 15px;"
+                    @click="handleManualAction('suspend')" 
+                    :disabled="performingAction">
+              <i class="fa-solid fa-pause mr-10"></i> Mettre en pause
+            </button>
+
+            <!-- NOUVELLE RÉVISION -->
+            <button v-if="['clarification', 'reaction', 'objection'].includes(currentStatus)" 
+                    class="btn btn-blue btn-block p-16" 
+                    style="height: 54px; font-size: 15px;"
+                    @click="handleManualAction('revision')" 
+                    :disabled="performingAction">
+              <i class="fa-solid fa-pen-nib mr-10"></i> Créer une révision
+            </button>
+
+            <!-- ABANDONNER -->
+            <button v-if="!['abandoned', 'adopted'].includes(currentStatus)" 
+                    class="btn btn-danger btn-block p-16" 
+                    style="height: 54px; font-size: 15px;"
+                    @click="handleManualAction('abandon')" 
+                    :disabled="performingAction">
+              <i class="fa-solid fa-ban mr-10"></i> Abandonner définitivement
             </button>
           </div>
         </div>
@@ -537,12 +617,16 @@ const publishing = ref(false);
 const transitioning = ref(false);
 const submittingReaction = ref(false);
 const showReactionModal = ref(false);
+const showActionsModal = ref(false);
+const performingAction = ref(false);
 const showNotificationPrompt = ref(false);
 const pendingPublishType = ref(null);
 const revisionAttachments = ref([]);
 
 // Navigation Historique
 const allVersions = ref([]);
+const circles = ref([]);
+const categories = ref([]);
 const viewingVersionId = ref(null);
 const historicalVersionData = ref(null);
 const selectedVersionNavId = ref(null);
@@ -552,6 +636,8 @@ const draftForm = ref({
   title: '',
   content: '',
   animator_id: '',
+  circle_id: '',
+  category_id: '',
   excluded_members: [],
 });
 
@@ -592,24 +678,36 @@ const isRevision = computed(() => {
   return s === 'revision';
 });
 
-const isAuthorOrAnimator = computed(() => ['author', 'animator'].includes(myRole.value));
+const isAuthor = computed(() => {
+  return decision.value?.participants?.some(p => p.user_id === authStore.user?.id && p.role === 'author');
+});
+const isAnimator = computed(() => {
+  return decision.value?.participants?.some(p => p.user_id === authStore.user?.id && p.role === 'animator');
+});
 
-const selectableMembers = computed(() => (
-  decision.value?.circle?.members || []
-).filter((member) => member.role !== 'observer' && member.user_id !== authorParticipant.value?.user_id));
+const isAuthorOrAnimator = computed(() => isAuthor.value || isAnimator.value || authStore.user?.is_global_animator);
+
+const draftCircleMembers = ref([]);
+const loadingCircleMembers = ref(false);
+
+const selectableMembers = computed(() => {
+  const list = (isDraft.value && draftForm.value.circle_id) ? draftCircleMembers.value : (decision.value?.circle?.members || []);
+  return list.filter((member) => member.role !== 'observer' && member.user_id !== authorParticipant.value?.user_id);
+});
 
 const authorParticipant = computed(() => decision.value?.participants?.find((participant) => participant.role === 'author') || null);
 
 const authorName = computed(() => authorParticipant.value?.user?.name || 'Inconnu');
 
-const excludableMembers = computed(() => (
-  decision.value?.circle?.members || []
-).filter((member) => {
-  if (member.role === 'observer') return false;
-  if (member.user_id === authorParticipant.value?.user_id) return false;
-  if (member.user_id === draftForm.value.animator_id) return false;
-  return true;
-}));
+const excludableMembers = computed(() => {
+  const list = (isDraft.value && draftForm.value.circle_id) ? draftCircleMembers.value : (decision.value?.circle?.members || []);
+  return list.filter((member) => {
+    if (member.role === 'observer') return false;
+    if (member.user_id === authorParticipant.value?.user_id) return false;
+    if (member.user_id === draftForm.value.animator_id) return false;
+    return true;
+  });
+});
 
 const hasAlreadyParticipated = computed(() => {
   if (decision.value?.user_status) {
@@ -689,11 +787,34 @@ const statusLabel = computed(() => {
     adopted: 'Adoptée',
     adopted_override: 'Adoptée avec override',
     abandoned: 'Abandonnée',
+    suspended: 'Suspendue (Pause)',
     lapsed: 'Échue',
     deserted: 'Désertée',
   };
 
   return labels[currentStatus.value] || 'Inconnue';
+});
+
+const isUrgent = computed(() => {
+    if (!decision.value?.current_deadline) return false;
+    const deadline = new Date(decision.value.current_deadline);
+    return (deadline.getTime() - new Date().getTime()) < 24 * 60 * 60 * 1000;
+});
+
+const deadlineLabel = computed(() => {
+    if (!decision.value?.current_deadline) return '';
+    const deadline = new Date(decision.value.current_deadline);
+    const now = new Date();
+    const diff = deadline.getTime() - now.getTime();
+
+    if (diff < 0) return 'Échéance dépassée';
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours < 1) return 'Finit dans moins d\'une heure !';
+    if (hours < 24) return `Finit dans ${hours}h`;
+    
+    const days = Math.floor(hours / 24);
+    return `Échéance phase : ${days}j (${new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(deadline)})`;
 });
 
 const statusClass = computed(() => {
@@ -706,6 +827,7 @@ const statusClass = computed(() => {
     adopted: 'badge-teal',
     adopted_override: 'badge-teal',
     abandoned: 'badge-red',
+    suspended: 'badge-amber',
     lapsed: 'badge-red',
     deserted: 'badge-gray',
   };
@@ -773,6 +895,8 @@ const updateDraftForm = () => {
     title: value.title || '',
     content: status === 'revision' ? (value.revision_content || value.current_version?.content || '') : (value.current_version?.content || ''),
     animator_id: value.participants?.find((p) => p.role === 'animator')?.user_id || '',
+    circle_id: value.circle_id || '',
+    category_id: value.category_id || '',
     excluded_members: (value.participants || [])
       .filter((p) => p.role === 'excluded')
       .map((p) => p.user_id),
@@ -1140,13 +1264,67 @@ const consentIcon = (signal) => {
 
 // Removed redundant watch since it's already handled above with async/await
 
+watch(() => draftForm.value.circle_id, async (newCircleId) => {
+  if (isDraft.value && newCircleId) {
+    loadingCircleMembers.value = true;
+    try {
+      const { data } = await axios.get(`/api/v1/circles/${newCircleId}/members`);
+      draftCircleMembers.value = data.members || [];
+    } catch (e) {
+      draftCircleMembers.value = [];
+    } finally {
+      loadingCircleMembers.value = false;
+    }
+  }
+}, { immediate: true });
+
 onMounted(async () => {
   if (route.params.id) {
     await decisionStore.fetchDecisionById(route.params.id);
     updateDraftForm();
     await fetchAllVersions();
   }
+
+  try {
+    const [circleRes, catRes] = await Promise.all([
+      axios.get('/api/v1/circles'),
+      axios.get('/api/v1/categories'),
+    ]);
+    circles.value = circleRes.data.circles || [];
+    categories.value = catRes.data.categories || [];
+  } catch (e) { /* silent */ }
 });
+
+const handleManualAction = async (type) => {
+  if (type === 'abandon' && !confirm('Êtes-vous sûr de vouloir abandonner cette décision ?')) return;
+  
+  performingAction.value = true;
+  try {
+    let endpoint = `/api/v1/decisions/${decision.value.id}/transition`;
+    let data = {};
+
+    if (type === 'suspend') {
+      data = { to: 'suspended' };
+    } else if (type === 'resume') {
+      // Reprendre selon le status sauvegardé
+      data = { to: decision.value.status_before_suspension || 'clarification' };
+    } else if (type === 'revision') {
+      data = { to: 'revision' };
+    } else if (type === 'abandon') {
+      endpoint = `/api/v1/decisions/${decision.value.id}/abandon`;
+    }
+
+    const { data: responseData } = await axios.post(endpoint, data);
+    decisionStore.setCurrentDecision(responseData.decision);
+    showActionsModal.value = false;
+    alert('Action effectuée avec succès.');
+  } catch (e) {
+    console.error(e);
+    alert('Erreur lors de l\'exécution de l\'action.');
+  } finally {
+    performingAction.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -1206,17 +1384,11 @@ onMounted(async () => {
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
   padding: 12px 20px;
-  margin: 0 16px;
+  margin-bottom: 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-}
-
-@media (min-width: 768px) {
-  .steps-bar {
-    margin: 0 28px;
-  }
 }
 
 .steps {

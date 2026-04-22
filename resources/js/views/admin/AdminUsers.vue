@@ -16,62 +16,71 @@
         </div>
       </div>
 
-      <!-- FILTER BAR -->
-      <div class="filter-bar">
-        <div class="filter-group main-search">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input v-model="filters.search" placeholder="Rechercher un nom ou un email..." class="input-inline">
+      <!-- FILTER CARD -->
+      <div class="premium-card mb-32">
+        <div class="pc-header pc-header-indigo" style="padding: 16px 24px;">
+          <div class="pc-header-icon" style="width: 32px; height: 32px; font-size: 14px;"><i class="fa-solid fa-filter"></i></div>
+          <div class="pc-header-content">
+            <div class="pc-header-title">Filtres & Recherche</div>
+            <div class="pc-header-sub">Affinez la liste des utilisateurs selon vos critères.</div>
+          </div>
         </div>
-        
-        <div class="filter-row">
-          <div class="filter-item">
-            <label>Rôle</label>
-            <select v-model="filters.role" class="select-sm">
-              <option value="">Tous les rôles</option>
-              <option value="user">Utilisateurs</option>
-              <option value="admin">Administrateurs</option>
-              <option value="superadmin">Super-Admins</option>
-            </select>
+        <div class="pc-body p-20">
+          <div class="filter-group main-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input v-model="filters.search" placeholder="Rechercher un nom ou un email..." class="input-inline">
           </div>
-
-          <div class="filter-item">
-            <label>Cercle</label>
-            <select v-model="filters.circle_id" class="select-sm">
-              <option value="">Tous les cercles</option>
-              <option v-for="c in availableCircles" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
-          </div>
-
-          <div class="filter-item">
-            <label>Décisions</label>
-            <select v-model="filters.has_decisions" class="select-sm">
-              <option value="">Toutes les activités</option>
-              <option value="true">Auteurs de décisions</option>
-              <option value="false">Aucune décision</option>
-            </select>
-          </div>
-
-          <div class="filter-item">
-            <label>Statut</label>
-            <select v-model="filters.is_active" class="select-sm">
-              <option value="">Tous les statuts</option>
-              <option value="true">Actifs</option>
-              <option value="false">Inactifs</option>
-            </select>
-          </div>
-
-          <div class="filter-item">
-            <label>Inscrit entre le...</label>
-            <div class="date-range">
-              <input type="date" v-model="filters.date_from" class="input-sm">
-              <span>et le</span>
-              <input type="date" v-model="filters.date_to" class="input-sm">
+          
+          <div class="filter-row">
+            <div class="filter-item">
+              <label>Rôle</label>
+              <select v-model="filters.role" class="select-sm">
+                <option value="">Tous les rôles</option>
+                <option value="user">Utilisateurs</option>
+                <option value="admin">Administrateurs</option>
+                <option value="superadmin">Super-Admins</option>
+              </select>
             </div>
-          </div>
 
-          <button class="btn btn-ghost btn-sm ml-auto" @click="resetFilters">
-            <i class="fa-solid fa-rotate-left"></i> Réinitialiser
-          </button>
+            <div class="filter-item">
+              <label>Cercle</label>
+              <select v-model="filters.circle_id" class="select-sm">
+                <option value="">Tous les cercles</option>
+                <option v-for="c in availableCircles" :key="c.id" :value="c.id">{{ c.name }}</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label>Décisions</label>
+              <select v-model="filters.has_decisions" class="select-sm">
+                <option value="">Toutes les activités</option>
+                <option value="true">Auteurs de décisions</option>
+                <option value="false">Aucune décision</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label>Statut</label>
+              <select v-model="filters.is_active" class="select-sm">
+                <option value="">Tous les statuts</option>
+                <option value="true">Actifs</option>
+                <option value="false">Inactifs</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label>Inscrit entre le...</label>
+              <div class="date-range">
+                <input type="date" v-model="filters.date_from" class="input-sm">
+                <span>et le</span>
+                <input type="date" v-model="filters.date_to" class="input-sm">
+              </div>
+            </div>
+
+            <button class="btn btn-ghost btn-sm ml-auto" @click="resetFilters">
+              <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+            </button>
+          </div>
         </div>
       </div>
 
@@ -129,17 +138,18 @@
       <div v-if="loading" class="text-center text-muted py-24">Chargement...</div>
       <div v-else class="user-grid">
         <div v-for="u in users" :key="u.id" class="premium-card">
-          <div class="card-header card-header-sexy justify-between">
-            <div class="flex items-center gap-12">
-               <div class="avatar av-blue" style="width:32px;height:32px;">{{ u.name[0].toUpperCase() }}</div>
-               <div>
-                  <div class="card-title">{{ u.name }}</div>
-                  <div class="text-xs text-muted">{{ u.email }}</div>
-               </div>
+          <div class="pc-header pc-header-blue" style="padding: 12px 16px;">
+            <div class="pc-header-icon" style="width: 36px; height: 36px; background: white; color: var(--blue-600); font-weight: 700;">
+              {{ u.name[0].toUpperCase() }}
             </div>
-            <span class="badge" :class="roleBadge(u.role)">{{ u.role }}</span>
+            <div class="pc-header-content">
+              <div class="pc-header-title" style="font-size: 14px;">{{ u.name }}</div>
+              <div class="pc-header-sub" style="font-size: 11px;">{{ u.email }}</div>
+            </div>
+            <span class="badge" :class="roleBadge(u.role)" style="margin-left: 8px; font-size: 10px;">{{ u.role }}</span>
           </div>
-          <div class="card-body">
+          
+          <div class="pc-body p-24">
             <div class="user-indicators-row">
                <div class="indicator cursor-pointer" @click="showUserCircles(u)" title="Voir les cercles">
                   <i class="fa-solid fa-circle-nodes"></i>
@@ -347,7 +357,7 @@ const impersonate = async (userToImpersonate) => {
 
 <style scoped>
 .py-24 { padding: 24px 0; }
-.user-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.user-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
 @media (min-width: 768px) {
   .user-grid { grid-template-columns: 1fr 1fr; }
 }
@@ -359,7 +369,7 @@ const impersonate = async (userToImpersonate) => {
 .indicator { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gray-600); }
 .indicator i { width: 14px; color: var(--blue-400); }
 
-.user-actions-footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--gray-50); padding-top: 12px; margin-top: 4px; }
+.user-actions-footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--gray-100); padding-top: 12px; margin-top: 16px; }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
 .modal-card { background: white; border-radius: var(--radius-lg); width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); overflow: hidden; animation: modalIn 0.2s ease; }

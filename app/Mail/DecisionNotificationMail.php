@@ -14,8 +14,9 @@ class DecisionNotificationMail extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        public Decision $decision,
-        public DecisionVersion $version,
+        public \App\Models\Decision $decision,
+        public \App\Models\DecisionVersion $version,
+        public \App\Models\User $recipient,
     ) {}
 
     public function envelope(): Envelope
@@ -27,8 +28,20 @@ class DecisionNotificationMail extends Mailable
 
     public function content(): Content
     {
+        $magicLink = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'magic.login',
+            now()->addDays(7),
+            [
+                'user' => $this->recipient->id,
+                'redirect' => '/decisions/' . $this->decision->id
+            ]
+        );
+
         return new Content(
             view: 'emails.decision_notification',
+            with: [
+                'magicLink' => $magicLink,
+            ]
         );
     }
 

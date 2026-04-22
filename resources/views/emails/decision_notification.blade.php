@@ -24,10 +24,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>DAZO</h1>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                <img src="{{ config('app.url') }}/DAZO-logo-carre-blanc.svg" alt="DAZO Logo" style="height: 48px; width: 48px;">
+                <h1 style="margin: 0; display: inline-block; vertical-align: middle;">DAZO</h1>
+            </div>
         </div>
         <div class="content">
-            <p class="intro">Bonjour,</p>
+            <p class="intro">Bonjour {{ $recipient->name }},</p>
             <p class="intro">Une nouvelle proposition nécessite votre attention dans le cercle <strong>{{ $decision->circle->name }}</strong>.</p>
             
             <div class="decision-box">
@@ -51,8 +54,8 @@
             </ul>
             @endif
 
-            <div style="text-align: center;">
-                <a href="{{ config('app.url') . '/decisions/' . $decision->id }}" class="btn">Accéder à la décision</a>
+            <div style="text-align: center; margin-top: 32px;">
+                <a href="{{ $magicLink }}" class="btn">Accéder à la décision</a>
             </div>
         </div>
         <div class="footer">

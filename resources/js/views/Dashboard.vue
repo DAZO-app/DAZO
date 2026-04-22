@@ -165,6 +165,27 @@
 
       </div>
 
+      <!-- LIGNE D'URGENCE (OPTIONNELLE) -->
+      <div class="grid-1 mb-16" v-if="urgentDecisions.length > 0">
+        <div class="premium-card border-red">
+          <div class="pc-header pc-header-red">
+            <div class="pc-header-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="pc-header-content">
+              <div class="pc-header-title">Urgences & Échéances</div>
+              <div class="pc-header-sub">{{ urgentDecisions.length }} décision(s) nécessite(nt) votre attention immédiate</div>
+            </div>
+          </div>
+          <div class="pc-body grid-3-no-gap">
+            <DecisionListItem
+                v-for="d in urgentDecisions" :key="d.id" :decision="d"
+                @click="goToDecision"
+                @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
+                @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
+            />
+          </div>
+        </div>
+      </div>
+
       <!-- LIGNE 2 : DÉCISIONS -->
       <div class="grid-3 mb-16">
         
@@ -292,6 +313,19 @@ const circleStore = useCircleStore();
 
 const loading = ref(true);
 const dashboard = ref({ my_decisions: {}, my_animated: {}, circle_decisions: {}, my_clarifications: [], my_objections: [], stats: null, categories: [] });
+
+const urgentDecisions = computed(() => {
+  const all = [...Object.values(dashboard.value.my_decisions).flat(), ...Object.values(dashboard.value.my_animated).flat(), ...Object.values(dashboard.value.circle_decisions).flat()];
+  // Deduplicate by ID
+  const unique = Array.from(new Map(all.map(d => [d.id, d])).values());
+  
+  return unique.filter(d => {
+    if (!d.current_deadline) return false;
+    const deadline = new Date(d.current_deadline);
+    const now = new Date();
+    return deadline.getTime() - now.getTime() < 24 * 60 * 60 * 1000;
+  });
+});
 
 const hasActiveTickets = computed(() => dashboard.value.my_clarifications?.length > 0 || dashboard.value.my_objections?.length > 0);
 
@@ -429,10 +463,15 @@ const getMyRoleLabel = (decision) => {
 <style scoped>
 .grid-2 { display: grid; gap: 16px; grid-template-columns: 1fr; }
 .grid-3 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+.grid-1 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+.grid-3-no-gap { display: grid; grid-template-columns: 1fr; }
 @media(min-width: 800px) { 
   .grid-2 { grid-template-columns: 1fr 1fr; } 
   .grid-3 { grid-template-columns: 1fr 1fr 1fr; } 
+  .grid-3-no-gap { grid-template-columns: 1fr 1fr 1fr; }
 }
+
+.border-red { border: 2px solid var(--red-500) !important; }
 
 /* Stats Block */
 .stats-row { display: flex; gap: 14px; flex-wrap: wrap; }

@@ -35,9 +35,17 @@ Route::prefix('v1')->group(function () {
         Route::get('/categories', [\App\Http\Controllers\Api\V1\CategoryController::class, 'index']);
         Route::get('/dashboard', [\App\Http\Controllers\Api\V1\DashboardController::class, 'index']);
         
+        // Wiki (lecture publique)
+        Route::get('/wiki', [\App\Http\Controllers\Api\V1\WikiController::class, 'index']);
+        Route::get('/wiki/{slug}', [\App\Http\Controllers\Api\V1\WikiController::class, 'show']);
+        
         // Utilisateurs
         Route::get('/users/me', [\App\Http\Controllers\Api\V1\UserController::class, 'me']);
+        Route::get('/users/admins', [\App\Http\Controllers\Api\V1\UserController::class, 'admins']);
         Route::get('/users/search', [\App\Http\Controllers\Api\V1\UserController::class, 'search']);
+
+        // Contact
+        Route::post('/contact/admin', [\App\Http\Controllers\Api\V1\ContactController::class, 'sendToAdmin']);
 
         // Données de navigation (compteurs en attente)
         Route::get('/pending-counts', [\App\Http\Controllers\Api\V1\PendingCountsController::class, 'index']);
@@ -108,6 +116,7 @@ Route::prefix('v1')->group(function () {
         Route::prefix('admin')->middleware(['admin'])->group(function () {
             Route::get('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'index']);
             Route::put('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'update']);
+            Route::post('/config/logo', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'uploadLogo']);
             Route::get('/stats', [\App\Http\Controllers\Api\V1\Admin\DashboardController::class, 'stats']);
             
             // Impersonation
@@ -131,6 +140,24 @@ Route::prefix('v1')->group(function () {
 
             Route::delete('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'removeMember']);
             Route::put('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'updateMemberRole']);
+
+            // Wiki Admin CRUD
+            Route::apiResource('wiki', \App\Http\Controllers\Api\V1\Admin\WikiController::class);
+
+            // Monitoring & Outils
+            Route::prefix('tools')->group(function () {
+                Route::get('/database', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'databaseStats']);
+                Route::post('/database/backup', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'backup']);
+                Route::get('/database/backups/{filename}/url', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'getDownloadUrl']);
+                Route::delete('/database/backups/{filename}', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'deleteBackup']);
+                Route::get('/server', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'serverStats']);
+                Route::get('/logs', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'logs']);
+            });
         });
     });
 });
+
+// Route de téléchargement publique mais signée (pour contourner les limitations des SPAs lors des téléchargements directs)
+Route::get('/v1/admin/backups/{filename}/download', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'downloadBackup'])
+    ->name('admin.backup.download')
+    ->middleware('signed');

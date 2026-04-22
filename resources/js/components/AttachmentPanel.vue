@@ -31,7 +31,10 @@
       >
         <div class="drop-zone-icon"><i class="fa-solid fa-paperclip"></i></div>
         <div class="drop-zone-title">Glissez-déposez vos fichiers ici</div>
-        <div class="drop-zone-subtitle">ou utilisez le bouton Ajouter pour joindre un document</div>
+        <div class="drop-zone-subtitle">ou</div>
+        <button type="button" class="btn btn-secondary btn-sm mt-8" @click="browseFiles">
+          <i class="fa-solid fa-folder-open mr-4"></i> Parcourir
+        </button>
       </div>
 
       <div v-if="displayAttachments.length" class="attachments-grid" :class="{ 'mt-16': editable }">

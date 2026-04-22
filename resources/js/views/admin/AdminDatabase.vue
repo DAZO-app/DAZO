@@ -10,122 +10,144 @@
           </div>
           <div class="hero-action">
             <div class="db-status-pill">
-                <span class="status-dot online"></span>
-                <span class="font-semibold text-white">PostgreSQL 16.2</span>
-                <span class="opacity-60 ml-8">Uptime: 14j 02h</span>
+                <span class="status-dot" :class="loading ? '' : 'online'"></span>
+                <span class="font-semibold text-white">{{ dbInfo.engine }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="admin-grid">
-        <!-- LEFT COLUMN: TABLES & BACKUP HISTORY (NOW PRIMARY) -->
-        <div class="admin-col">
+      <div class="grid-layout mt-32">
+        <!-- LEFT COLUMN: TABLES & BACKUP HISTORY -->
+        <div class="col-main">
             <!-- TABLES STATE -->
-            <div class="card mb-32">
-                <div class="card-header card-header-sexy">
-                   <div class="flex items-center gap-16">
-                       <span class="card-title"><i class="fa-solid fa-table mr-8"></i> État des Tables</span>
-                       <span class="badge badge-blue">7.2 MB Total</span>
-                   </div>
-                   <div class="ml-auto flex gap-8">
-                       <button class="btn btn-ghost btn-sm" @click="refreshTables"><i class="fa-solid fa-sync"></i></button>
-                       <button class="btn btn-secondary btn-sm"><i class="fa-solid fa-wand-magic-sparkles mr-4"></i> Optimisation</button>
-                   </div>
-                </div>
-                <div class="card-body p-0">
-                    <table class="db-table">
-                        <thead>
-                            <tr>
-                                <th>Table</th>
-                                <th>Entrées</th>
-                                <th>Taille Données</th>
-                                <th>Taille Index</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="t in tables" :key="t.name">
-                                <td class="font-bold text-gray-800">{{ t.name }}</td>
-                                <td>{{ t.rows.toLocaleString() }}</td>
-                                <td>{{ t.data_size }}</td>
-                                <td>{{ t.index_size }}</td>
-                                <td class="text-right">
-                                    <button class="btn btn-ghost btn-xs mr-4" title="Réparer"><i class="fa-solid fa-wrench"></i></button>
-                                    <button class="btn btn-ghost btn-xs" title="Optimiser"><i class="fa-solid fa-broom"></i></button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="premium-card mb-32">
+                <div class="pc-header pc-header-blue">
+                    <div class="pc-header-icon"><i class="fa-solid fa-table"></i></div>
+                    <div class="pc-header-content">
+                        <div class="pc-header-title">État des Tables</div>
+                        <div class="pc-header-sub">{{ dbInfo.total_size }} occupés au total</div>
+                    </div>
+                    <div class="ml-auto flex gap-8" style="position: relative; z-index: 2;">
+                        <button class="btn btn-white btn-icon" @click="refreshTables" :disabled="loading">
+                          <i class="fa-solid fa-sync" :class="{'fa-spin': loading}"></i>
+                        </button>
+                    </div>
+                 </div>
+                <div class="pc-body">
+                    <div class="table-responsive">
+                      <table class="db-table">
+                          <thead>
+                              <tr>
+                                  <th>Table</th>
+                                  <th>Entrées</th>
+                                  <th>Données</th>
+                                  <th>Index</th>
+                                  <th class="text-right">Actions</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              <tr v-for="t in tables" :key="t.name">
+                                  <td class="font-bold text-gray-800">{{ t.name }}</td>
+                                  <td>{{ t.rows.toLocaleString() }}</td>
+                                  <td><span class="badge badge-gray">{{ t.data_size }}</span></td>
+                                  <td><span class="text-muted text-xs">{{ t.index_size }}</span></td>
+                                  <td class="text-right">
+                                      <button class="btn btn-ghost btn-xs mr-4" title="Optimiser"><i class="fa-solid fa-broom"></i></button>
+                                  </td>
+                              </tr>
+                          </tbody>
+                      </table>
+                    </div>
                 </div>
             </div>
 
             <!-- BACKUP HISTORY -->
-            <div class="card">
-                <div class="card-header card-header-sexy bg-teal-50 border-teal-100">
-                    <span class="card-title text-teal-800"><i class="fa-solid fa-clock-rotate-left mr-8"></i> Historique des Sauvegardes (.sql.gz)</span>
+            <div class="premium-card">
+                <div class="pc-header pc-header-teal">
+                    <div class="pc-header-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <div class="pc-header-content">
+                        <div class="pc-header-title">Historique des Sauvegardes</div>
+                        <div class="pc-header-sub">Fichiers .sql.gz stockés sur le serveur</div>
+                    </div>
                 </div>
-                <div class="card-body p-0">
-                    <table class="db-table">
-                        <thead>
-                            <tr>
-                                <th>Nom du fichier</th>
-                                <th>Taille</th>
-                                <th>Date de création</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="b in backups" :key="b.id">
-                                <td>
-                                    <div class="flex items-center gap-12">
-                                        <i class="fa-solid fa-file-zipper text-blue-400"></i>
-                                        <span class="font-mono text-xs">{{ b.name }}</span>
-                                    </div>
-                                </td>
-                                <td><span class="badge badge-gray">{{ b.size }}</span></td>
-                                <td class="text-xs text-muted">{{ b.date }}</td>
-                                <td class="text-right">
-                                    <button class="btn btn-ghost btn-xs mr-4" title="Télécharger"><i class="fa-solid fa-download"></i></button>
-                                    <button class="btn btn-ghost btn-xs text-red" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
-                                    <button class="btn btn-secondary btn-xs ml-8" title="Restaurer"><i class="fa-solid fa-undo mr-4"></i> Restaurer</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="pc-body">
+                    <div class="table-responsive">
+                      <table class="db-table">
+                          <thead>
+                              <tr>
+                                  <th>Fichier</th>
+                                  <th>Taille</th>
+                                  <th>Date</th>
+                                  <th class="text-right">Action</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              <tr v-for="b in backups" :key="b.id">
+                                  <td>
+                                      <div class="flex items-center gap-12">
+                                          <i class="fa-solid fa-file-zipper text-teal-500"></i>
+                                          <span class="font-mono text-xs">{{ b.name }}</span>
+                                      </div>
+                                  </td>
+                                  <td><span class="badge badge-teal">{{ b.size }}</span></td>
+                                  <td class="text-xs text-muted">{{ b.date }}</td>
+                                  <td class="text-right">
+                                      <button class="btn btn-secondary btn-icon mr-4" @click="downloadBackup(b.name)" title="Télécharger">
+                                        <i class="fa-solid fa-download"></i>
+                                      </button>
+                                      <button class="btn btn-secondary btn-icon text-red-500" @click="confirmDeleteBackup(b.name)" title="Supprimer">
+                                        <i class="fa-solid fa-trash"></i>
+                                      </button>
+                                  </td>
+                              </tr>
+                              <tr v-if="backups.length === 0">
+                                <td colspan="4" class="text-center py-24 text-muted">Aucune sauvegarde trouvée.</td>
+                              </tr>
+                          </tbody>
+                      </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT COLUMN: SETTINGS (SIDEBAR) -->
-        <div class="admin-col">
+        <!-- RIGHT COLUMN: SETTINGS -->
+        <div class="col-side">
             <!-- QUICK ACTIONS -->
-            <div class="card mb-32">
-                <div class="card-header card-header-sexy">
-                    <span class="card-title"><i class="fa-solid fa-bolt mr-8"></i> Actions Rapides</span>
+            <div class="premium-card mb-32">
+                <div class="pc-header pc-header-indigo">
+                    <div class="pc-header-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="pc-header-content">
+                        <div class="pc-header-title">Actions Rapides</div>
+                        <div class="pc-header-sub">Maintenance manuelle</div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <button class="btn btn-primary w-full mb-16 py-12 flex justify-center text-center" @click="handleBackup">
-                        <i class="fa-solid fa-download mr-8"></i> Backup immédiat
+                <div class="pc-body p-24">
+                    <button class="btn btn-primary btn-block py-12 mb-16" @click="handleBackup" :disabled="loading">
+                        <i class="fa-solid fa-floppy-disk mr-8"></i> Backup immédiat
                     </button>
                     <div class="import-zone">
                         <label class="import-box border-dashed">
                             <i class="fa-solid fa-cloud-arrow-up mb-4"></i>
-                            <span class="text-xs font-semibold">Importer un dump</span>
+                            <span class="text-xs font-semibold">Importer SQL</span>
                             <input type="file" class="hidden">
                         </label>
                     </div>
                 </div>
             </div>
 
-            <!-- ROLLING BACKUP SETTINGS -->
-            <div class="card mb-32">
-                <div class="card-header card-header-sexy bg-amber-50 border-amber-100">
-                    <span class="card-title text-amber-800"><i class="fa-solid fa-clock-rotate-left mr-8"></i> Sauvegardes Automatiques</span>
+            <!-- AUTOMATIC BACKUP -->
+            <div class="premium-card mb-32">
+                <div class="pc-header pc-header-amber">
+                    <div class="pc-header-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="pc-header-content">
+                        <div class="pc-header-title">Sauvegardes Auto</div>
+                        <div class="pc-header-sub">Tâche planifiée (Cron)</div>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="pc-body p-24">
                     <div class="flex items-center justify-between mb-16">
-                        <span class="text-sm font-semibold text-gray-700">Activer le backup glissant</span>
+                        <span class="text-sm font-semibold text-gray-700">Activer</span>
                         <label class="switch">
                             <input type="checkbox" v-model="autoBackup.enabled">
                             <span class="slider round"></span>
@@ -135,50 +157,40 @@
                     <div :class="{ 'opacity-50 pointer-events-none': !autoBackup.enabled }">
                         <div class="form-group mb-16">
                             <label class="label">Heure d'exécution</label>
-                            <input type="time" v-model="autoBackup.time" class="input-sm w-full">
+                            <input type="time" v-model="autoBackup.time" class="input w-full">
                         </div>
-                        <div class="form-group mb-0">
-                            <label class="label">Rétention (jours)</label>
+                        <div class="form-group">
+                            <label class="label">Rétention</label>
                             <div class="flex items-center gap-12">
-                                <input type="number" v-model="autoBackup.retention" min="1" max="90" class="input-sm w-24">
-                                <span class="text-xs text-muted">{{ autoBackup.retention }}j</span>
+                                <input type="number" v-model="autoBackup.retention" min="1" max="90" class="input" style="width: 80px;">
+                                <span class="text-xs text-muted">jours</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- CONNECTION SETTINGS -->
-            <div class="card">
-                <div class="card-header card-header-sexy">
-                    <span class="card-title"><i class="fa-solid fa-link mr-8"></i> Paramètres de connexion</span>
-                    <button class="btn btn-ghost btn-sm ml-auto" @click="toggleEdit">
-                        <i class="fa-solid" :class="isEditing ? 'fa-xmark' : 'fa-pen-to-square'"></i>
-                    </button>
+            <!-- CONNECTION INFO -->
+            <div class="premium-card">
+                <div class="pc-header pc-header-purple">
+                    <div class="pc-header-icon"><i class="fa-solid fa-link"></i></div>
+                    <div class="pc-header-content">
+                        <div class="pc-header-title">Connexion BDD</div>
+                        <div class="pc-header-sub">Paramètres d'accès</div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="form-group mb-16">
-                        <label class="label">Serveur / Hôte</label>
-                        <input type="text" value="127.0.0.1" :disabled="!isEditing" class="input-sm w-full">
+                <div class="pc-body p-24">
+                    <div class="form-group mb-12">
+                        <label class="label">Hôte</label>
+                        <div class="text-xs font-mono bg-gray-50 p-8 border-radius-sm">{{ dbInfo.connection.host || '...' }}</div>
                     </div>
-                    <div class="form-group mb-16">
+                    <div class="form-group mb-12">
                         <label class="label">Port</label>
-                        <input type="text" value="5432" :disabled="!isEditing" class="input-sm w-full">
-                    </div>
-                    <div class="form-group mb-16">
-                        <label class="label">Base de données</label>
-                        <input type="text" value="dazo_prod" :disabled="!isEditing" class="input-sm w-full">
-                    </div>
-                    <div class="form-group mb-16">
-                        <label class="label">Utilisateur</label>
-                        <input type="text" value="dazo_admin" :disabled="!isEditing" class="input-sm w-full">
+                        <div class="text-xs font-mono bg-gray-50 p-8 border-radius-sm">{{ dbInfo.connection.port || '...' }}</div>
                     </div>
                     <div class="form-group">
-                        <label class="label">Mot de passe</label>
-                        <input type="password" value="********" :disabled="!isEditing" class="input-sm w-full">
-                    </div>
-                    <div v-if="isEditing" class="mt-16 text-right">
-                        <button class="btn btn-primary btn-sm">Enregistrer</button>
+                        <label class="label">Nom Base</label>
+                        <div class="text-xs font-mono bg-gray-50 p-8 border-radius-sm text-blue-600 font-bold">{{ dbInfo.connection.database || '...' }}</div>
                     </div>
                 </div>
             </div>
@@ -189,10 +201,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 
-const isEditing = ref(false);
-const toggleEdit = () => isEditing.value = !isEditing.value;
+const loading = ref(true);
+const dbInfo = ref({
+    engine: 'Chargement...',
+    total_size: '0 B',
+    connection: {}
+});
 
 const autoBackup = ref({
     enabled: true,
@@ -200,51 +217,89 @@ const autoBackup = ref({
     retention: 30
 });
 
-const backups = ref([
-    { id: 1, name: 'bkp_2024-04-21_04-00-00.sql.gz', size: '1.2 MB', date: 'Aujourd\'hui, 04:00:00' },
-    { id: 2, name: 'bkp_2024-04-20_04-00-00.sql.gz', size: '1.1 MB', date: 'Hier, 04:00:02' },
-    { id: 3, name: 'bkp_2024-04-19_04-00-00.sql.gz', size: '1.1 MB', date: '19/04/2024, 04:00:01' },
-    { id: 4, name: 'bkp_2024-04-18_04-00-00.sql.gz', size: '1.0 MB', date: '18/04/2024, 04:00:03' },
-    { id: 5, name: 'bkp_manual_2024-04-17_14-30.sql.gz', size: '1.1 MB', date: '17/04/2024, 14:30:15' },
-]);
+const backups = ref([]);
+const tables = ref([]);
 
-const tables = ref([
-    { name: 'decisions', rows: 124, data_size: '840 KB', index_size: '128 KB' },
-    { name: 'users', rows: 45, data_size: '48 KB', index_size: '32 KB' },
-    { name: 'decision_versions', rows: 312, data_size: '4.2 MB', index_size: '512 KB' },
-    { name: 'circles', rows: 12, data_size: '16 KB', index_size: '16 KB' },
-    { name: 'thread_messages', rows: 1450, data_size: '1.8 MB', index_size: '256 KB' },
-    { name: 'audit_logs', rows: 8400, data_size: '12.4 MB', index_size: '1.2 MB' },
-]);
-
-const handleBackup = () => {
-    alert('Génération du backup en cours...');
+const fetchData = async () => {
+    loading.value = true;
+    try {
+        const { data } = await axios.get('/api/v1/admin/tools/database');
+        dbInfo.value = {
+            engine: data.engine,
+            total_size: data.total_size,
+            connection: data.connection
+        };
+        tables.value = data.tables;
+        backups.value = data.backups;
+    } catch (e) {
+        console.error("Erreur lors du chargement des stats BDD", e);
+    } finally {
+        loading.value = false;
+    }
 };
 
-const refreshTables = () => {
-    // Logic to refresh table stats
+const handleBackup = async () => {
+    if (!confirm('Lancer une sauvegarde manuelle maintenant ?')) return;
+    loading.value = true;
+    try {
+        await axios.post('/api/v1/admin/tools/database/backup');
+        alert('Sauvegarde terminée avec succès.');
+        fetchData();
+    } catch (e) {
+        alert('Échec de la sauvegarde. Vérifiez les permissions pg_dump.');
+    } finally {
+      loading.value = false;
+    }
 };
+
+const downloadBackup = async (filename) => {
+  try {
+    const { data } = await axios.get(`/api/v1/admin/tools/database/backups/${filename}/url`);
+    window.location.href = data.url;
+  } catch (e) {
+    alert('Erreur lors de la génération du lien de téléchargement.');
+  }
+};
+
+const confirmDeleteBackup = async (filename) => {
+  if (!confirm('Voulez-vous vraiment supprimer définitivement cette sauvegarde ?')) return;
+  try {
+    await axios.delete(`/api/v1/admin/tools/database/backups/${filename}`);
+    fetchData();
+  } catch (e) {
+    alert('Erreur lors de la suppression.');
+  }
+};
+
+const refreshTables = () => fetchData();
+
+onMounted(fetchData);
 </script>
 
 <style scoped>
-.admin-grid { display: grid; grid-template-columns: 1fr 350px; gap: 32px; align-items: start; }
+.grid-layout { display: flex; flex-direction: column; gap: 24px; }
+@media (min-width: 1024px) {
+  .grid-layout { flex-direction: row; align-items: flex-start; }
+  .col-main { flex: 2; min-width: 0; }
+  .col-side { flex: 1; min-width: 320px; }
+}
+
 .db-status-pill { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 10px; }
 .status-dot.online { background: #10b981; box-shadow: 0 0 8px #10b981; }
 
+.table-responsive { overflow-x: auto; }
 .db-table { width: 100%; border-collapse: collapse; }
 .db-table th { text-align: left; padding: 12px 20px; font-size: 11px; text-transform: uppercase; color: var(--gray-500); background: var(--gray-50); border-bottom: 1px solid var(--gray-100); }
-.db-table td { padding: 14px 20px; border-bottom: 1px solid var(--gray-100); font-size: 14px; }
+.db-table td { padding: 14px 20px; border-bottom: 1px solid var(--gray-100); font-size: 13px; }
 .db-table tr:hover { background: var(--gray-50); }
 
 .import-zone .import-box {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    border: 2px dashed var(--gray-200); border-radius: var(--radius-lg); padding: 16px;
+    border: 2px dashed var(--gray-200); border-radius: var(--radius-lg); padding: 20px;
     cursor: pointer; transition: all 0.2s; background: var(--gray-50);
 }
 .import-zone .import-box:hover { border-color: var(--blue-400); background: var(--blue-50); color: var(--blue-700); }
-
-.w-24 { width: 60px; }
 
 /* Switch Toggle */
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
@@ -256,21 +311,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 .slider.round { border-radius: 34px; }
 .slider.round:before { border-radius: 50%; }
 
-.bg-amber-50 { background-color: var(--amber-50); }
-.border-amber-100 { border-color: var(--amber-100); }
-.text-amber-800 { color: var(--amber-800); }
-.bg-teal-50 { background-color: var(--teal-50); }
-.border-teal-100 { border-color: var(--teal-100); }
-.text-teal-800 { color: var(--teal-800); }
-
-.opacity-50 { opacity: 0.5; }
-.pointer-events-none { pointer-events: none; }
+.border-radius-sm { border-radius: 4px; }
+.bg-gray-50 { background-color: var(--gray-50); }
 .font-mono { font-family: var(--font-mono); }
-
 .hidden { display: none; }
-.mb-32 { margin-bottom: 32px; }
-
-@media (max-width: 1200px) {
-    .admin-grid { grid-template-columns: 1fr; }
-}
+.btn-white { background: white; color: var(--gray-800); }
 </style>

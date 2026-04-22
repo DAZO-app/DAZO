@@ -24,14 +24,15 @@ resources/js/
 ├── layouts/
 │   └── AppLayout.vue    # Coquille globale avec Sidebar / BottomNav mobile
 ├── views/
-│   ├── Login.vue        # Page de connexion
-│   ├── Register.vue     # Inscription avec indicateur de force de mot de passe
-│   ├── InvitationAccept.vue # Pont d'accueil des invités (Public)
-│   ├── ForgotPassword.vue # Récupération de compte
-│   ├── ResetPassword.vue  # Nouveau mot de passe
+│   ├── ...
 │   ├── Dashboard.vue    # Indicateurs et timeline
 │   ├── DecisionList.vue # Liste des décisions
-│   └── DecisionDetail.vue # Moteur de décision interactif
+│   ├── DecisionDetail.vue # Moteur de décision interactif
+│   └── wiki/
+│       ├── WikiIndex.vue    # Portail de recherche help
+│       ├── WikiDetail.vue   # Article help détaillé (2 colonnes)
+│       ├── AdminWiki.vue    # Table de gestion CRUD wiki
+│       └── WikiEditor.vue   # Édition riche d'articles
 └── components/
     ├── AttachmentPanel.vue # Gestion des fichiers
     ├── ParticipantPhasePanel.vue # Progression des phases

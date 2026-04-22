@@ -4,19 +4,35 @@ namespace App\Services;
 
 use App\Models\InstanceConfig;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 
 class ConfigService
 {
     private const CACHE_KEY = 'instance_config';
 
     /**
-     * Retrieve all configurations.
+     * Retrieve all configurations with defaults.
      */
     public function all(): array
     {
-        return Cache::rememberForever(self::CACHE_KEY, function () {
+        $defaults = [
+            'app_name' => 'DAZO',
+            'app_logo' => null,
+            'decision_reaction_days' => '3',
+            'decision_objection_days' => '3',
+            'reminder_hours_before' => '24',
+            'public_registration' => 'true',
+            'mail_sender_name' => 'DAZO Notifications',
+            'mail_contact_address' => 'contact@dazo.app',
+            'maintenance_mode' => 'false',
+        ];
+
+        $fromDb = Cache::rememberForever(self::CACHE_KEY, function () {
             return InstanceConfig::all()->pluck('value', 'key')->toArray();
         });
+
+        return array_merge($defaults, $fromDb);
     }
 
     /**
@@ -47,7 +63,27 @@ class ConfigService
     public function setMultiple(array $configs): void
     {
         foreach ($configs as $key => $value) {
-            $this->set($key, $value);
+            // Handle booleans as strings "true"/"false" if needed, 
+            // but the service treats everything as string in DB for now.
+            $val = is_bool($value) ? ($value ? 'true' : 'false') : $value;
+            $this->set($key, $val);
         }
+    }
+
+    /**
+     * Upload and set the app logo.
+     */
+    public function uploadLogo(UploadedFile $file): string
+    {
+        // Delete old logo if exists
+        $oldLogo = $this->get('app_logo');
+        if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
+            Storage::disk('public')->delete($oldLogo);
+        }
+
+        $path = $file->store('branding', 'public');
+        $this->set('app_logo', $path);
+
+        return $path;
     }
 }

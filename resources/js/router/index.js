@@ -104,6 +104,33 @@ const routes = [
                 name: 'AdminServer',
                 component: () => import('../views/admin/AdminServer.vue')
             },
+
+            // Wiki
+            {
+                path: 'wiki',
+                name: 'WikiIndex',
+                component: () => import('../views/wiki/WikiIndex.vue')
+            },
+            {
+                path: 'wiki/:slug',
+                name: 'WikiDetail',
+                component: () => import('../views/wiki/WikiDetail.vue')
+            },
+            {
+                path: 'admin/wiki',
+                name: 'AdminWiki',
+                component: () => import('../views/wiki/AdminWiki.vue')
+            },
+            {
+                path: 'admin/wiki/create',
+                name: 'WikiCreate',
+                component: () => import('../views/wiki/WikiEditor.vue')
+            },
+            {
+                path: 'admin/wiki/:id/edit',
+                name: 'WikiEdit',
+                component: () => import('../views/wiki/WikiEditor.vue')
+            },
         ]
     }
 ];

@@ -6,7 +6,7 @@
     <header class="topbar">
       <div class="topbar-left">
         <router-link to="/">
-          <img src="/DAZO-logo-carre-blanc.svg" alt="DAZO" class="topbar-logo" />
+          <img :src="configStore.logoUrl" alt="DAZO" class="topbar-logo" />
         </router-link>
       </div>
       <div class="topbar-right">
@@ -24,6 +24,7 @@
           <router-link to="/" class="mobile-menu-item" exact-active-class="active"><i class="fa-solid fa-house" style="margin-right: 8px;"></i> Tableau de bord</router-link>
           <router-link to="/decisions" class="mobile-menu-item" :class="{ active: $route.path === '/decisions' && Object.keys($route.query).length === 0 }"><i class="fa-solid fa-list" style="margin-right: 8px;"></i> Décisions</router-link>
           <router-link :to="{ name: 'CircleList' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-circle-nodes" style="margin-right: 8px;"></i> Cercles</router-link>
+          <router-link to="/wiki" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-book-open" style="margin-right: 8px;"></i> Aide</router-link>
           
           <div v-if="hasMyProposals || hasMyAnimations || pendingTotal > 0" class="mobile-menu-divider"></div>
           <router-link v-if="hasMyProposals" :to="{ path: '/decisions', query: { role: 'author' } }" class="mobile-menu-item mobile-menu-sub" :class="{ active: $route.path === '/decisions' && $route.query.role === 'author' }">
@@ -65,8 +66,8 @@
       <aside class="sidebar">
         <!-- Logo & Brand -->
         <router-link to="/" class="sidebar-logo">
-          <img src="/DAZO-logo-carre-blanc.svg" alt="DAZO" class="sidebar-logo-img" />
-          <div class="sidebar-logo-sub">Decision At Zero Objection</div>
+          <img :src="configStore.logoUrl" alt="DAZO" class="sidebar-logo-img" />
+          <div class="sidebar-logo-sub">{{ configStore.appName }}</div>
         </router-link>
 
         <!-- Bouton Nouvelle Décision -->
@@ -88,6 +89,9 @@
         <router-link :to="{ name: 'CircleList' }" class="sidebar-item" active-class="active">
           <span><i class="fa-solid fa-circle-nodes"></i></span> Cercles
         </router-link>
+        <router-link to="/wiki" class="sidebar-item" active-class="active">
+          <span><i class="fa-solid fa-book-open"></i></span> Aide
+        </router-link>
 
         <!-- Sous-navigation: Mes filtres -->
         <template v-if="hasMyProposals || hasMyAnimations || pendingTotal > 0">
@@ -100,7 +104,11 @@
           </router-link>
           <router-link v-if="pendingTotal > 0" :to="{ path: '/decisions', query: { action: 'pending' } }" class="sidebar-subitem" :class="{ active: $route.path === '/decisions' && $route.query.action === 'pending' }">
             <span class="sub-dot dot-amber"></span> Réactions attendues
-            <span v-if="pendingTotal > 0" class="sidebar-badge badge-red">{{ pendingTotal }}</span>
+            <span v-if="pendingTotal > 0" class="sidebar-badge badge-amber">{{ pendingTotal }}</span>
+          </router-link>
+          <router-link v-if="urgentTotal > 0" :to="{ path: '/decisions', query: { urgency: 'urgent' } }" class="sidebar-subitem" :class="{ active: $route.path === '/decisions' && $route.query.urgency === 'urgent' }">
+            <span class="sub-dot dot-red"></span> Urgentes / Expirées
+            <span class="sidebar-badge badge-red">{{ urgentTotal }}</span>
           </router-link>
         </template>
 
@@ -162,12 +170,14 @@ import { computed, onMounted, ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { usePendingStore } from '../stores/pending';
 import { useDecisionStore } from '../stores/decision';
+import { useConfigStore } from '../stores/config';
 import { useRouter } from 'vue-router';
 import ImpersonationBanner from '../components/ImpersonationBanner.vue';
 
 const authStore = useAuthStore();
 const pending = usePendingStore();
 const decisionStore = useDecisionStore();
+const configStore = useConfigStore();
 const router = useRouter();
 
 const mobileMenuOpen = ref(false);
@@ -192,6 +202,16 @@ const pendingTotal = computed(() => {
     return (pending.counts.clarifications || 0) + (pending.counts.reactions || 0) + (pending.counts.objections || 0);
 });
 
+const urgentTotal = computed(() => {
+    return decisionStore.decisions.filter(d => {
+        if (!d.current_deadline) return false;
+        const deadline = new Date(d.current_deadline);
+        const now = new Date();
+        // Urgent if less than 24h or already expired
+        return deadline.getTime() - now.getTime() < 24 * 60 * 60 * 1000;
+    }).length;
+});
+
 const hasMyProposals = computed(() => {
     return decisionStore.decisions.some(d => {
         return d.participants?.some(p => p.user_id === user.value?.id && p.role === 'author');
@@ -212,6 +232,7 @@ onMounted(() => {
   if (authStore.isAuthenticated) {
     pending.startPolling(); // auto-refresh every 60s
     decisionStore.fetchDecisions();
+    configStore.fetchConfig();
   }
 });
 
@@ -401,6 +422,7 @@ const logout = async () => {
   background: rgba(255,255,255,0.2); color: white;
 }
 .sidebar-badge.badge-red { background: var(--red-500); }
+.sidebar-badge.badge-amber { background: var(--amber-500); }
 
 .sidebar-footer {
   margin-top: auto; padding: 12px 20px;

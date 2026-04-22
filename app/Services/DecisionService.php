@@ -18,9 +18,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use App\Mail\DecisionNotificationMail;
+use App\Services\ConfigService;
 
 class DecisionService
 {
+    public function __construct(private ConfigService $configService)
+    {
+    }
+
     /**
      * Initialise une nouvelle Décision (DRAFT).
      */
@@ -85,14 +90,32 @@ class DecisionService
         // Transitions spécifiques
         $allowedTransitions = [
             DecisionStatus::DRAFT->value => [DecisionStatus::CLARIFICATION->value],
-            DecisionStatus::CLARIFICATION->value => [DecisionStatus::REACTION->value],
-            DecisionStatus::REACTION->value => [DecisionStatus::OBJECTION->value],
+            DecisionStatus::CLARIFICATION->value => [
+                DecisionStatus::REACTION->value,
+                DecisionStatus::REVISION->value,
+                DecisionStatus::SUSPENDED->value
+            ],
+            DecisionStatus::REACTION->value => [
+                DecisionStatus::OBJECTION->value,
+                DecisionStatus::REVISION->value,
+                DecisionStatus::SUSPENDED->value
+            ],
             DecisionStatus::OBJECTION->value => [
                 DecisionStatus::ADOPTED->value,
                 DecisionStatus::ADOPTED_OVERRIDE->value,
                 DecisionStatus::REVISION->value,
+                DecisionStatus::SUSPENDED->value
             ],
-            DecisionStatus::REVISION->value => [DecisionStatus::CLARIFICATION->value],
+            DecisionStatus::SUSPENDED->value => [
+                DecisionStatus::CLARIFICATION->value,
+                DecisionStatus::REACTION->value,
+                DecisionStatus::OBJECTION->value,
+                DecisionStatus::REVISION->value,
+            ],
+            DecisionStatus::REVISION->value => [
+                DecisionStatus::CLARIFICATION->value,
+                DecisionStatus::SUSPENDED->value
+            ],
         ];
 
         if (!in_array($toStatus, $globalTransitions)) {
@@ -118,16 +141,52 @@ class DecisionService
                 ]);
             }
 
-            // Ex: "objection -> adopted" seulement possible si pas d'objection bloquante ?
-            // Laissez la liberté à l'animateur si manual, ou throw si strict.
+            // Gestion de la suspension
+            if ($toStatus === DecisionStatus::SUSPENDED->value) {
+                $decision->status_before_suspension = $fromStatus;
+            }
+
+            // Gestion de la reprise
+            if ($fromStatus === DecisionStatus::SUSPENDED->value) {
+                if ($toStatus !== $decision->status_before_suspension) {
+                   // Optionnel: on pourrait forcer la reprise vers l'état exact d'avant,
+                   // mais laisser le choix à l'animateur est plus souple.
+                }
+                $decision->status_before_suspension = null;
+            }
         }
 
         $decision->status = $toStatus;
+        
+        // Reset reminder and set deadline
+        $decision->reminder_sent = false;
+        
+        // Clear deadline if suspended, otherwise recalculate
+        if ($toStatus === DecisionStatus::SUSPENDED->value) {
+            $decision->current_deadline = null;
+        } else {
+            $decision->current_deadline = $this->calculateDeadline($toStatus);
+        }
+        
         $decision->save();
 
         $this->dispatchEventForTransition($decision, $toStatus);
 
         return $decision;
+    }
+
+    /**
+     * Calculate the deadline based on the new status and configuration.
+     */
+    private function calculateDeadline(string $status): ?\Illuminate\Support\Carbon
+    {
+        $days = match ($status) {
+            DecisionStatus::REACTION->value => (int) $this->configService->get('decision_reaction_days', 3),
+            DecisionStatus::OBJECTION->value => (int) $this->configService->get('decision_objection_days', 3),
+            default => null,
+        };
+
+        return $days ? now()->addDays($days) : null;
     }
 
     private function dispatchEventForTransition(Decision $decision, string $toStatus)
@@ -281,7 +340,7 @@ class DecisionService
             if (!$user->is_active || !$user->email) continue;
 
             Mail::to($user->email)
-                ->queue(new DecisionNotificationMail($decision, $decision->currentVersion));
+                ->queue(new DecisionNotificationMail($decision, $decision->currentVersion, $user));
         }
     }
 }

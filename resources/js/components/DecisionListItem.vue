@@ -22,7 +22,11 @@
         <span>· Dernière modif : {{ formatDateOnly(decision.updated_at) }}</span>
       </div>
       <div class="decision-meta" style="margin-top: 2px" v-if="decision.participation_stats && ['clarification', 'reaction', 'objection'].includes(decision.status)">
-        <span>Progression : {{ decision.participation_stats.participated }}/{{ decision.participation_stats.eligible }} intervention(s) sur cette phase</span>
+        <span>Progression : {{ decision.participation_stats.participated }}/{{ decision.participation_stats.eligible }} intervention(s)</span>
+      </div>
+      <div class="decision-deadline" v-if="decision.current_deadline && !['adopted', 'deserted', 'lapsed'].includes(decision.status)">
+        <i class="fa-solid fa-clock"></i> 
+        <span :class="{ 'text-red': isUrgent }">{{ deadlineLabel }}</span>
       </div>
       <div class="decision-tags">
         <span class="badge" :class="statusClass(decision.status)">{{ decision.status?.toUpperCase() }}</span>
@@ -36,6 +40,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({
@@ -86,6 +91,29 @@ const formatDateOnly = (isoString) => {
         day: '2-digit', month: '2-digit', year: 'numeric'
     }).format(new Date(isoString));
 };
+
+const isUrgent = computed(() => {
+    if (!props.decision.current_deadline) return false;
+    const deadline = new Date(props.decision.current_deadline);
+    const now = new Date();
+    return deadline.getTime() - now.getTime() < 24 * 60 * 60 * 1000;
+});
+
+const deadlineLabel = computed(() => {
+    if (!props.decision.current_deadline) return '';
+    const deadline = new Date(props.decision.current_deadline);
+    const now = new Date();
+    const diff = deadline.getTime() - now.getTime();
+
+    if (diff < 0) return 'Échéance dépassée';
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours < 1) return 'Moins d\'une heure !';
+    if (hours < 24) return `Finit dans ${hours}h`;
+    
+    const days = Math.floor(hours / 24);
+    return `Expire dans ${days}j`;
+});
 </script>
 
 <style scoped>
@@ -98,6 +126,7 @@ const formatDateOnly = (isoString) => {
 .text-animator { color: var(--gray-500); }
 
 .decision-meta { font-size: 11px; color: var(--gray-400); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.decision-deadline { font-size: 11px; font-weight: 700; color: var(--gray-500); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
 .decision-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
 
 .version-pill { display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; background: var(--gray-100); color: var(--gray-600); padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid var(--gray-200); position: relative; top: -1px; }
@@ -132,4 +161,6 @@ const formatDateOnly = (isoString) => {
 }
 .dot-red   { background: #ef4444; box-shadow: 0 0 0 2px #fee2e2; }
 .dot-green { background: #14b8a6; box-shadow: 0 0 0 2px #ccfbf1; }
+
+.text-red { color: #ef4444 !important; }
 </style>

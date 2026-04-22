@@ -16,10 +16,11 @@ L'objectif de DAZO est de transformer la manière dont les groupes collaborent e
 
 - **Gestion des Cercles** : Définition des rôles (Animateur, Membre, Observateur) et types de cercles (Ouvert/Fermé).
 - **Cycle de Décision** : Étapes claires (Brouillon, Clarification, Réaction, Objection, Adoption, Révision).
-- **Moteur de Feedback** : Système structuré d'objections, suggestions et clarifications.
-- **Édition Riche** : Rédaction des propositions avec l'éditeur Quill (support rich-text et images).
-- **Tableau de Bord** : Visualisation en temps réel de la participation et de l'état des décisions en cours.
-- **Outils Admin** : Monitoring serveur et base de données intégré.
+- **Échéances & Relances** : Délais automatiques par phase et relances par mail pour garantir la fluidité des processus.
+- **Moteur de Feedback** : Système structuré d'objections, suggestions et clarifications intégré au thread de discussion.
+- **Accès Simplifié** : Connexion par **Magic Link** et prise de contrôle admin (**Impersonation**).
+- **Identité Visuelle** : Personnalisation dynamique du logo et du nom de l'instance.
+- **Centre de Contrôle** : Dashboard d'administration avec monitoring serveur, gestion des sauvegardes SQL et lecture de logs.
 
 ## 🛠 Stack Technique
 
@@ -44,6 +45,22 @@ php artisan migrate --seed
 # Installation Frontend
 npm install
 npm run dev
+```
+
+### ⚙️ Automatisation (Production)
+
+Pour activer les relances automatiques et la gestion des échéances, configurez le **Scheduler** et le **Worker** :
+
+**1. Scheduler (Cron)** :
+Ajoutez cette ligne à la crontab de votre serveur (`crontab -e`) :
+```bash
+* * * * * cd /chemin/vers/votre/projet && php artisan schedule:run >> /dev/null 2>&1
+```
+
+**2. File d'attente (Queues)** :
+Pour l'envoi asynchrone des emails, lancez le worker (idéalement via Supervisor) :
+```bash
+php artisan queue:work
 ```
 
 ## 📚 Documentation

@@ -12,6 +12,7 @@ enum DecisionStatus: string
     case ADOPTED = 'adopted';
     case ADOPTED_OVERRIDE = 'adopted_override';
     case ABANDONED = 'abandoned';
+    case SUSPENDED = 'suspended';
     case LAPSED = 'lapsed';
     case DESERTED = 'deserted';
 }
