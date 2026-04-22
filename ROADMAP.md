@@ -21,16 +21,27 @@
 
 ---
 
-## 🚀 V2 (Next)
-- [ ] Advanced permissions (ACL)
-- [ ] Audit logs visualization (Admin)
-- [ ] AI assistant (Decision summarizer)
-- [ ] Multi-tenancy (SaaS)
-- [ ] Plugin system
+## 🚀 V2 — Expansion & Administration (In Progress)
+
+### Administration & Surveillance
+- [x] High-fidelity Admin Dashboard
+- [x] Server Monitoring (CPU, RAM, Logs peak)
+- [x] Database Management (Tables, Backup history)
+- [ ] Automated Rolling Backups (Engine implementation)
+- [ ] Table Repair & Optimization tools (CLI & UI)
+
+### Social Features & Onboarding
+- [x] Re-designed Invitation Bridge
+- [x] Batch invitations (CSV/Separator upload)
+- [x] Invitation management (Resend, Cancel, Expire)
+- [x] Impersonation for debugging (Admin only)
+- [ ] Real-time notifications (WebSockets)
 
 ---
 
-## 🌍 V3
-- [ ] Billing integration
-- [ ] Advanced analytics
-- [ ] Decidim/GitHub OAuth integrations
+## 🌍 V3 — Advanced Intelligence
+- [ ] AI assistant (Decision summarizer & Conflict detection)
+- [ ] Advanced permissions (ACL / Role Builder)
+- [ ] Multi-tenancy (SaaS architecture)
+- [ ] Billing & Subscription management
+- [ ] Decidim & GitHub OAuth integrations
