@@ -61,13 +61,23 @@
             <textarea v-model="form.content" class="textarea" rows="5" placeholder="Décrivez votre proposition en détail..." required></textarea>
           </div>
 
-          <div class="form-row">
             <div class="form-group" style="flex:1">
-              <label class="label">Catégorie</label>
-              <select v-model="form.category_id" class="select">
-                <option value="">Aucune</option>
-                <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-              </select>
+              <label class="label">Catégories</label>
+              <div class="categories-selector mt-8">
+                 <div class="category-chips">
+                    <div 
+                      v-for="cat in categories" 
+                      :key="cat.id"
+                      class="category-chip"
+                      :class="{ active: form.category_ids.includes(cat.id) }"
+                      @click="toggleCategory(cat.id)"
+                      :style="form.category_ids.includes(cat.id) ? { borderColor: cat.color_hex, background: cat.color_hex + '15', color: cat.color_hex } : {}"
+                    >
+                       <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
+                       {{ cat.name }}
+                    </div>
+                 </div>
+              </div>
             </div>
             <div class="form-group" style="flex:1">
               <label class="label">Modèle</label>
@@ -114,9 +124,18 @@ const form = ref({
   animator_id: '',
   title: '',
   content: '',
-  category_id: '',
+  category_ids: [],
   model_id: '',
 });
+
+const toggleCategory = (id) => {
+  const index = form.value.category_ids.indexOf(id);
+  if (index === -1) {
+    form.value.category_ids.push(id);
+  } else {
+    form.value.category_ids.splice(index, 1);
+  }
+};
 
 let extSearchTimeout = null;
 
@@ -182,7 +201,7 @@ const submit = async () => {
       title: form.value.title,
       content: form.value.content,
       animator_id: form.value.animator_id || undefined,
-      category_id: form.value.category_id || undefined,
+      category_ids: form.value.category_ids,
       model_id: form.value.model_id || undefined,
     });
     emit('created', data.decision);

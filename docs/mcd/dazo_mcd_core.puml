@@ -100,7 +100,7 @@ entity "DECISION" as DECISION {
   --
   * circle_id : uuid <<FK>>
   ' Toujours rattachée à un cercle — jamais orpheline
-  category_id : uuid <<FK nullable>>
+  * title : string
   ' author_id et animator_id supprimés — portés par DECISION_PARTICIPANT
   ' Auteur courant  : DECISION_PARTICIPANT WHERE role = author  (unique)
   ' Animateur courant : DECISION_PARTICIPANT WHERE role = animator (unique, nullable)

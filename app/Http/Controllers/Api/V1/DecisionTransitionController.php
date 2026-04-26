@@ -31,10 +31,6 @@ class DecisionTransitionController extends Controller
             $request->user()
         );
 
-        if ($request->boolean('notify') && $request->to === \App\Enums\DecisionStatus::CLARIFICATION->value) {
-            $this->decisionService->notifyParticipants($decision, $request->user());
-        }
-
         return response()->json([
             'message' => "Décision passée au statut : {$request->to}",
             'decision' => $decision->fresh()

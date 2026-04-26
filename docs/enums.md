@@ -55,16 +55,34 @@
 ### `DecisionStatus`
 | Valeur | Type | Description |
 |---|---|---|
-| `draft` | Actif | Brouillon — visible auteur + animateur uniquement |
-| `clarification` | Actif | Phase de questions/clarifications |
-| `reaction` | Actif | Phase de ressenti personnel (CNV) |
-| `objection` | Actif | Phase d'objections, suggestions, consentements |
+| `draft` | Pré-actif | Brouillon — visible auteur + animateur uniquement |
+| `suspended` | Pré-actif | Suspendu temporairement |
+| `clarification` | Phase active | Phase de questions/clarifications |
+| `reaction` | Phase active | Phase de ressenti personnel (CNV) |
+| `objection` | Phase active | Phase d'objections, suggestions, consentements |
 | `revision` | Actif | Rédaction d'une nouvelle version |
 | `adopted` | Terminal ✅ | Adopté proprement — 0 objection bloquante |
 | `adopted_override` | Terminal ✅⚠️ | Adopté avec objections restantes — affiché de façon distincte |
 | `abandoned` | Terminal ❌ | Annulé volontairement |
 | `lapsed` | Terminal ❌ | Délai dépassé sans complétion |
 | `deserted` | Terminal ❌ | Aucune activité pendant la période configurée |
+
+#### Méthodes helper (source de vérité)
+
+| Méthode | Retour | Description |
+|---|---|---|
+| `getPhaseConfig()` | `array\|null` | Retourne `['feedback_types' => [], 'consent_signals' => []]` pour les phases actives, `null` sinon. **Seule source de vérité** pour mapper phase → types. |
+| `isActivePhase()` | `bool` | `true` pour clarification, réaction, objection |
+| `isTerminal()` | `bool` | `true` pour adopted, adopted\_override, abandoned, lapsed, deserted |
+
+```php
+// Usage type dans les services et controllers :
+$config = $decision->status->getPhaseConfig();
+if ($config) {
+    $feedbackTypes = $config['feedback_types'];   // ex: ['objection', 'suggestion']
+    $consentSignals = $config['consent_signals']; // ex: ['no_objection', 'abstention']
+}
+```
 
 ### `DecisionVisibility`
 | Valeur | Description |
@@ -84,6 +102,7 @@
 | `author` | ✅ Oui | Auteur de la décision — ne participe pas aux phases réaction/feedback |
 | `animator` | ✅ Oui (nullable) | Animateur courant — peut évoluer (cf. DECISION_ANIMATOR_LOG) |
 | `participant` | ❌ Multiple | Membre du cercle participant normalement à toutes les phases |
+| `excluded` | ❌ Multiple | Membre explicitement exclu de cette décision (ne vote pas, non compté) |
 
 ---
 
@@ -108,10 +127,12 @@
 ## 💬 FEEDBACKS
 
 ### `FeedbackType`
-| Valeur | Bloque l'adoption | Description |
-|---|---|---|
-| `objection` | ✅ Oui (si non-terminal) | Objection formelle dans l'intérêt du groupe |
-| `suggestion` | ❌ Non | Proposition d'amélioration non bloquante |
+| Valeur | Phase | Bloque l'adoption | Description |
+|---|---|---|---|
+| `clarification` | Clarification | ❌ Non | Question ou demande de précision |
+| `reaction` | Réaction | ❌ Non | Ressenti / avis personnel (CNV) |
+| `objection` | Objection | ✅ Oui (si non-terminal) | Objection formelle dans l'intérêt du groupe |
+| `suggestion` | Objection | ❌ Non | Proposition d'amélioration non bloquante |
 
 ### `FeedbackStatus`
 | Valeur | Terminal | Acteur(s) autorisé(s) | Description |

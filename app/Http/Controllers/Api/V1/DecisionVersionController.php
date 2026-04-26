@@ -73,12 +73,12 @@ class DecisionVersionController extends Controller
             $decision, 
             $request->content, 
             $request->user(),
-            $request->attachment_ids ?? []
+            $request->attachment_ids ?? [],
+            $request->status
         );
 
-        if ($request->boolean('notify')) {
-            $this->decisionService->notifyParticipants($decision, $request->user());
-        }
+        // Event is dispatched inside DecisionService::createNewVersion -> transition
+
 
         return response()->json([
             'message' => 'Nouvelle version soumise. La décision est repassée en clarification.',

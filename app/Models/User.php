@@ -16,7 +16,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'avatar_url', 'role', 'is_global_animator', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'avatar_url', 'role', 'is_global_animator', 'is_active', 'custom_views'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordContract
 {
@@ -42,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordC
             'role' => UserRole::class,
             'is_global_animator' => 'boolean',
             'is_active' => 'boolean',
+            'custom_views' => 'array',
         ];
     }
 
@@ -72,6 +73,11 @@ class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordC
     public function authoredDecisions(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\DecisionParticipant::class)->where('role', 'author');
+    }
+
+    public function decisionSettings(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\DecisionUserSetting::class);
     }
 }
 

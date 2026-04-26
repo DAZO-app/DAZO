@@ -19,11 +19,13 @@ class Decision extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'circle_id', 'category_id', 'status', 'title', 'visibility',
+        'circle_id', 'status', 'title', 'visibility',
         'priority', 'emergency_mode', 'objection_round_deadline', 'model_id',
         'revision_content', 'revision_attachment_ids',
         'current_deadline', 'reminder_sent'
     ];
+
+    protected $appends = ['author_id', 'animator_id'];
 
     protected function casts(): array
     {
@@ -39,14 +41,35 @@ class Decision extends Model
         ];
     }
 
+    public function getAuthorIdAttribute(): ?string
+    {
+        // Si la relation participants est déjà chargée, utiliser la collection en mémoire
+        if ($this->relationLoaded('participants')) {
+            return $this->participants
+                ->firstWhere('role', \App\Enums\DecisionParticipantRole::AUTHOR->value)
+                ?->user_id;
+        }
+        return $this->author()->value('user_id');
+    }
+
+    public function getAnimatorIdAttribute(): ?string
+    {
+        if ($this->relationLoaded('participants')) {
+            return $this->participants
+                ->firstWhere('role', \App\Enums\DecisionParticipantRole::ANIMATOR->value)
+                ?->user_id;
+        }
+        return $this->currentAnimator()->value('user_id');
+    }
+
     public function circle(): BelongsTo
     {
         return $this->belongsTo(Circle::class);
     }
 
-    public function category(): BelongsTo
+    public function categories(): BelongsToMany
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Category::class, 'decision_categories');
     }
 
     public function decisionModel(): BelongsTo
@@ -87,5 +110,10 @@ class Decision extends Model
     public function animatorLogs(): HasMany
     {
         return $this->hasMany(DecisionAnimatorLog::class);
+    }
+
+    public function userSettings(): HasMany
+    {
+        return $this->hasMany(DecisionUserSetting::class);
     }
 }

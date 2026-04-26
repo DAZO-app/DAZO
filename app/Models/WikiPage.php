@@ -11,14 +11,20 @@ class WikiPage extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
+        'wiki_category_id',
         'slug',
         'title',
         'content',
-        'category',
         'is_published',
+        'order',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(WikiCategory::class, 'wiki_category_id');
+    }
 }

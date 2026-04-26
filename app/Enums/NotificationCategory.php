@@ -4,9 +4,11 @@ namespace App\Enums;
 
 enum NotificationCategory: string
 {
-    case LIFECYCLE = 'lifecycle';
+    case NEW_DECISION = 'new_decision';
+    case PHASE_CHANGE = 'phase_change';
+    case REVISION = 'revision';
+    case DEADLINE = 'deadline';
     case FEEDBACK = 'feedback';
-    case VOTE = 'vote';
-    case ADMIN = 'admin';
+    case MENTION = 'mention';
     case SYSTEM = 'system';
 }

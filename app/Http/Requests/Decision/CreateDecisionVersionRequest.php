@@ -33,6 +33,7 @@ class CreateDecisionVersionRequest extends FormRequest
             'attachment_ids' => ['nullable', 'array'],
             'attachment_ids.*' => ['exists:attachments,id'],
             'notify' => ['nullable', 'boolean'],
+            'status' => ['nullable', 'string', 'in:clarification,objection'],
         ];
     }
 }

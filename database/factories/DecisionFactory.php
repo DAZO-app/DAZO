@@ -23,7 +23,6 @@ class DecisionFactory extends Factory
     {
         return [
             'circle_id' => Circle::factory(),
-            'category_id' => Category::factory(),
             'model_id' => DecisionModel::factory(),
             'status' => $this->faker->randomElement(DecisionStatus::cases()),
             'title' => $this->faker->sentence(),

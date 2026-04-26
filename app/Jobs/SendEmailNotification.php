@@ -23,6 +23,8 @@ class SendEmailNotification implements ShouldQueue
 
     public function handle(): void
     {
+        app(\App\Services\ConfigService::class)->applyMailConfig();
+
         // Simple raw string email for V1
         $subject = "Dazo Notification: " . str_replace('_', ' ', $this->eventType->value);
         $body = "Hello {$this->user->name},\n\nYou have a new notification: {$this->eventType->value}.\n";

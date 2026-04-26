@@ -28,13 +28,33 @@
         <i class="fa-solid fa-clock"></i> 
         <span :class="{ 'text-red': isUrgent }">{{ deadlineLabel }}</span>
       </div>
-      <div class="decision-tags">
-        <span class="badge" :class="statusClass(decision.status)">{{ decision.status?.toUpperCase() }}</span>
+      <div class="decision-tags-row">
+        <div class="decision-actions-mini">
+          <button @click.stop="emit('toggle-favorite', decision)" class="mini-btn" :class="{ active: decision.my_settings?.is_favorite }" title="Favori">
+            <i :class="decision.my_settings?.is_favorite ? 'fa-solid fa-star text-amber-500' : 'fa-regular fa-star'"></i>
+          </button>
+          <button @click.stop="emit('open-notifications', decision)" class="mini-btn" :class="{ active: decision.my_settings?.notification_level && decision.my_settings.notification_level !== 'none' }" title="Notifications">
+            <i :class="decision.my_settings?.notification_level && decision.my_settings.notification_level !== 'none' ? 'fa-solid fa-bell text-blue-500' : 'fa-regular fa-bell'"></i>
+          </button>
+        </div>
+        <div class="decision-tags">
+          <span class="badge" :class="statusClass(decision.status)">{{ translateStatus(decision.status) }}</span>
+        </div>
       </div>
     </div>
     <div class="decision-end-actions">
       <button class="action-badge-btn circle-btn" @click.stop="emit('filter-circle', decision.circle_id)">{{ decision.circle?.name || 'Général' }}</button>
-      <button v-if="decision.category" class="action-badge-btn category-btn" @click.stop="emit('filter-category', decision.category_id)">{{ decision.category.name }}</button>
+      <template v-if="decision.categories && decision.categories.length > 0">
+        <button 
+          v-for="cat in decision.categories" 
+          :key="cat.id" 
+          class="action-badge-btn category-btn" 
+          @click.stop="emit('filter-category', cat.id)"
+          :style="{ color: cat.color_hex, background: cat.color_hex + '10', borderColor: cat.color_hex + '30' }"
+        >
+          {{ cat.name }}
+        </button>
+      </template>
     </div>
   </div>
 </template>
@@ -50,7 +70,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['click', 'filter-circle', 'filter-category']);
+const emit = defineEmits(['click', 'filter-circle', 'filter-category', 'toggle-favorite', 'open-notifications']);
 
 const authStore = useAuthStore();
 
@@ -83,6 +103,21 @@ const getParticipantName = (decision, role) => {
 const statusClass = (status) => {
   const map = { draft: 'badge-gray', clarification: 'badge-blue', reaction: 'badge-blue', objection: 'badge-amber', revision: 'badge-amber', adopted: 'badge-teal', adopted_override: 'badge-teal', deserted: 'badge-gray', lapsed: 'badge-red' };
   return map[status] || 'badge-gray';
+};
+
+const translateStatus = (status) => {
+  const map = {
+    draft: 'BROUILLON',
+    clarification: 'CLARIFICATION',
+    reaction: 'RÉACTION',
+    objection: 'OBJECTION',
+    revision: 'RÉVISION',
+    adopted: 'ADOPTÉE',
+    adopted_override: 'ADOPTÉE (FORCE)',
+    deserted: 'ABANDONNÉE',
+    lapsed: 'EXPIRÉE'
+  };
+  return map[status] || status?.toUpperCase();
 };
 
 const formatDateOnly = (isoString) => {
@@ -127,11 +162,23 @@ const deadlineLabel = computed(() => {
 
 .decision-meta { font-size: 11px; color: var(--gray-400); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .decision-deadline { font-size: 11px; font-weight: 700; color: var(--gray-500); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
-.decision-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.decision-tags-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.decision-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.decision-actions-mini { display: flex; gap: 4px; align-items: center; }
+.mini-btn { 
+  background: none; border: none; padding: 4px; cursor: pointer; color: var(--gray-400); font-size: 14px; border-radius: 4px; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.mini-btn:hover { background: var(--gray-100); color: var(--gray-600); }
+.mini-btn.active { color: var(--gray-700); }
+.text-amber-500 { color: #f59e0b; }
+.text-blue-500 { color: #3b82f6; }
 
 .version-pill { display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; background: var(--gray-100); color: var(--gray-600); padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid var(--gray-200); position: relative; top: -1px; }
 
 .role-bg-mini {
+  position: relative;
   width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-size: 22px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1.5px solid transparent;
   flex-shrink: 0;

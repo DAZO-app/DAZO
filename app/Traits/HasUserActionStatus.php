@@ -2,21 +2,27 @@
 
 namespace App\Traits;
 
-use App\Enums\ConsentSignal;
 use App\Enums\DecisionParticipantRole;
 use App\Enums\DecisionStatus;
 use App\Enums\FeedbackStatus;
-use App\Enums\FeedbackType;
 use App\Models\Decision;
 
 trait HasUserActionStatus
 {
     /**
      * Attache le statut d'action de l'utilisateur sur une collection de décisions.
+     * Précharge les relations nécessaires pour éviter les requêtes N+1.
      */
-    protected function attachUserActionStatus($decisions, $userId)
+    protected function attachUserActionStatus($decisions, $userId): void
     {
-        if (!$userId) return;
+        if (!$userId || $decisions->isEmpty()) return;
+
+        // Eager-load des relations nécessaires pour le calcul (évite N+1)
+        $decisions->loadMissing([
+            'participants',
+            'currentVersion.feedbacks.messages',
+            'currentVersion.consents',
+        ]);
 
         foreach ($decisions as $decision) {
             $decision->setAttribute('user_status', $this->calculateUserActionStatus($decision, $userId));
@@ -25,46 +31,47 @@ trait HasUserActionStatus
 
     /**
      * Calcule si l'utilisateur doit agir sur la décision.
+     * Utilise exclusivement les relations déjà chargées (pas de requêtes supplémentaires).
      */
-    protected function calculateUserActionStatus(Decision $decision, $userId)
+    protected function calculateUserActionStatus(Decision $decision, $userId): array
     {
-        $status = [
-            'needs_action' => false,
-            'reason' => null
-        ];
+        $status = ['needs_action' => false, 'reason' => null];
 
-        $v = $decision->currentVersion;
-        $decisionStatus = $decision->status->value;
-
-        // On ne gère que les phases actives
-        $activePhases = [
-            DecisionStatus::CLARIFICATION->value,
-            DecisionStatus::REACTION->value,
-            DecisionStatus::OBJECTION->value,
-        ];
-
-        if (!in_array($decisionStatus, $activePhases) || !$v) {
+        if (!$decision->status->isActivePhase()) {
             return $status;
         }
 
-        // 1. Déterminer le rôle de l'utilisateur
-        $participants = $decision->participants;
-        $myParticipant = $participants->where('user_id', $userId)->first();
-        $myRole = $myParticipant ? $myParticipant->role->value : DecisionParticipantRole::PARTICIPANT->value;
+        $v = $decision->currentVersion;
+        if (!$v) return $status;
 
-        // Si exclu, pas d'action
+        // Rôle de l'utilisateur (via relation déjà chargée)
+        $participants = $decision->relationLoaded('participants')
+            ? $decision->participants
+            : $decision->participants()->get();
+
+        $myParticipant = $participants->firstWhere('user_id', $userId);
+        $myRole = $myParticipant?->role->value ?? DecisionParticipantRole::PARTICIPANT->value;
+
         if ($myRole === DecisionParticipantRole::EXCLUDED->value) {
             return $status;
         }
 
-        // Cas A : L'utilisateur est PORTEUR ou ANIMATEUR
-        // Il doit agir si un fil de discussion attend une réponse de sa part.
+        // Cas A : PORTEUR ou ANIMATEUR → agir si un thread attend une réponse
         if (in_array($myRole, [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value])) {
-            $needsReply = $v->feedbacks()
-                ->whereNotIn('status', [FeedbackStatus::WITHDRAWN->value, FeedbackStatus::ACKNOWLEDGED->value, FeedbackStatus::TREATED->value])
-                ->get()
+            $feedbacks = $v->relationLoaded('feedbacks')
+                ? $v->feedbacks
+                : $v->feedbacks()->with('messages')->get();
+
+            $needsReply = $feedbacks
+                ->whereNotIn('status', [
+                    FeedbackStatus::WITHDRAWN->value,
+                    FeedbackStatus::ACKNOWLEDGED->value,
+                    FeedbackStatus::TREATED->value,
+                ])
                 ->contains(function ($fb) use ($userId) {
-                    $lastMsg = $fb->messages()->latest()->first();
+                    // Utiliser messages déjà chargés si disponibles
+                    $messages = $fb->relationLoaded('messages') ? $fb->messages : collect();
+                    $lastMsg = $messages->sortByDesc('created_at')->first();
                     return $lastMsg && $lastMsg->author_id !== $userId;
                 });
 
@@ -75,31 +82,28 @@ trait HasUserActionStatus
             return $status;
         }
 
-        // Cas B : L'utilisateur est PARTICIPANT
-        // Il doit agir s'il n'a pas encore participé à la phase actuelle.
-        $phaseFeedbackTypes = [];
-        $phaseConsentSignals = [];
+        // Cas B : PARTICIPANT → agir s'il n'a pas encore participé à la phase
+        $phaseConfig = $decision->status->getPhaseConfig();
+        if (!$phaseConfig) return $status;
 
-        if ($decisionStatus === DecisionStatus::CLARIFICATION->value) {
-            $phaseFeedbackTypes = [FeedbackType::CLARIFICATION->value];
-            $phaseConsentSignals = [ConsentSignal::NO_QUESTIONS->value];
-        } elseif ($decisionStatus === DecisionStatus::REACTION->value) {
-            $phaseFeedbackTypes = [FeedbackType::REACTION->value];
-            $phaseConsentSignals = [ConsentSignal::NO_REACTION->value];
-        } elseif ($decisionStatus === DecisionStatus::OBJECTION->value) {
-            $phaseFeedbackTypes = [FeedbackType::OBJECTION->value, FeedbackType::SUGGESTION->value];
-            $phaseConsentSignals = [ConsentSignal::NO_OBJECTION->value, ConsentSignal::ABSTENTION->value];
-        }
+        $feedbacks = $v->relationLoaded('feedbacks') ? $v->feedbacks : collect();
+        $consents  = $v->relationLoaded('consents')  ? $v->consents  : collect();
 
-        $hasFeedback = $v->feedbacks()
+        $hasFeedback = $feedbacks
             ->where('author_id', $userId)
-            ->whereIn('type', $phaseFeedbackTypes)
-            ->exists();
+            ->whereIn('type', array_map(
+                fn($t) => is_object($t) ? $t->value : $t,
+                $phaseConfig['feedback_types']
+            ))
+            ->isNotEmpty();
 
-        $hasConsent = $v->consents()
+        $hasConsent = $consents
             ->where('user_id', $userId)
-            ->whereIn('signal', $phaseConsentSignals)
-            ->exists();
+            ->whereIn('signal', array_map(
+                fn($s) => is_object($s) ? $s->value : $s,
+                $phaseConfig['consent_signals']
+            ))
+            ->isNotEmpty();
 
         if (!$hasFeedback && !$hasConsent) {
             $status['needs_action'] = true;

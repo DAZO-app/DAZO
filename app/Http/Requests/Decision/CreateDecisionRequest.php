@@ -17,7 +17,8 @@ class CreateDecisionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
+            'category_ids' => ['nullable', 'array'],
+            'category_ids.*' => ['uuid', 'exists:categories,id'],
             'model_id' => ['nullable', 'uuid', 'exists:decision_models,id'],
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],

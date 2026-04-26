@@ -21,6 +21,7 @@ class DecisionReminderMail extends Mailable
         public \App\Models\Decision $decision,
         public \App\Models\User $user
     ) {
+        app(\App\Services\ConfigService::class)->applyMailConfig();
     }
 
     /**
@@ -28,9 +29,28 @@ class DecisionReminderMail extends Mailable
      */
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: "⚠️ Rappel : La décision '{$this->decision->title}' arrive à échéance",
+        $configService = app(\App\Services\ConfigService::class);
+        $subjectTemplate = $configService->get('reminder_email_subject', "⚠️ Rappel : La décision '{title}' arrive à échéance");
+        
+        $subject = str_replace('{title}', $this->decision->title, $subjectTemplate);
+
+        $envelope = new Envelope(
+            subject: $subject,
         );
+
+        $senderName = $configService->get('mail_sender_name');
+        $contactAddress = $configService->get('mail_contact_address');
+
+        if ($senderName || $contactAddress) {
+            $envelope->from(
+                new \Illuminate\Mail\Mailables\Address(
+                    $contactAddress ?? config('mail.from.address'),
+                    $senderName ?? config('mail.from.name')
+                )
+            );
+        }
+
+        return $envelope;
     }
 
     /**
@@ -38,11 +58,24 @@ class DecisionReminderMail extends Mailable
      */
     public function content(): Content
     {
+        $configService = app(\App\Services\ConfigService::class);
+        $bodyTemplate = $configService->get('reminder_email_body');
+
+        $replacements = [
+            '{name}'     => $this->user->name,
+            '{title}'    => $this->decision->title,
+            '{phase}'    => $this->decision->status->value,
+            '{deadline}' => $this->decision->current_deadline?->format('d/m/Y à H:i') ?? 'N/A',
+            '{url}'      => config('app.url') . "/decisions/{$this->decision->id}"
+        ];
+
+        $body = strtr($bodyTemplate, $replacements);
+
         return new Content(
             markdown: 'emails.decisions.reminder',
             with: [
-                'deadline' => $this->decision->current_deadline?->format('d/m/Y à H:i'),
-                'url' => config('app.url') . "/decisions/{$this->decision->id}"
+                'body' => $body,
+                'url'  => config('app.url') . "/decisions/{$this->decision->id}"
             ]
         );
     }

@@ -17,15 +17,25 @@ class ConfigService
     public function all(): array
     {
         $defaults = [
-            'app_name' => 'DAZO',
-            'app_logo' => null,
+            'app_name'              => 'DAZO',
+            'app_logo'              => null,
             'decision_reaction_days' => '3',
             'decision_objection_days' => '3',
             'reminder_hours_before' => '24',
-            'public_registration' => 'true',
-            'mail_sender_name' => 'DAZO Notifications',
-            'mail_contact_address' => 'contact@dazo.app',
-            'maintenance_mode' => 'false',
+            'public_registration'   => 'true',
+            'mail_sender_name'      => 'DAZO Notifications',
+            'mail_contact_address'  => 'contact@dazo.app',
+            'maintenance_mode'      => 'false',
+            // Pièces jointes — laisser vide pour accepter tous les types non-bloqués
+            'allowed_file_types'    => '',
+            'max_file_size_mb'      => '10',
+            'mail_host'             => '',
+            'mail_port'             => '587',
+            'mail_username'         => '',
+            'mail_password'         => '',
+            'mail_encryption'       => 'tls',
+            'reminder_email_subject' => "⚠️ Rappel : La décision '{title}' arrive à échéance",
+            'reminder_email_body'    => "Bonjour {name},\n\nCeci est un rappel concernant la décision : **{title}**.\n\nLa phase actuelle (**{phase}**) arrive bientôt à échéance. Votre participation est attendue afin de faire progresser le processus.\n\n**Échéance :** {deadline}\n\nMerci de votre contribution.",
         ];
 
         $fromDb = Cache::rememberForever(self::CACHE_KEY, function () {
@@ -85,5 +95,25 @@ class ConfigService
         $this->set('app_logo', $path);
 
         return $path;
+    }
+
+    /**
+     * Apply SMTP configuration to Laravel at runtime.
+     */
+    public function applyMailConfig(): void
+    {
+        $configs = $this->all();
+
+        if (!empty($configs['mail_host'])) {
+            config([
+                'mail.mailers.smtp.host'       => $configs['mail_host'],
+                'mail.mailers.smtp.port'       => $configs['mail_port'] ?? 587,
+                'mail.mailers.smtp.username'   => $configs['mail_username'],
+                'mail.mailers.smtp.password'   => $configs['mail_password'],
+                'mail.mailers.smtp.encryption' => $configs['mail_encryption'] === 'null' ? null : $configs['mail_encryption'],
+                'mail.from.address'            => $configs['mail_contact_address'] ?? config('mail.from.address'),
+                'mail.from.name'               => $configs['mail_sender_name'] ?? config('mail.from.name'),
+            ]);
+        }
     }
 }

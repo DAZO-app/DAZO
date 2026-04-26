@@ -25,8 +25,14 @@ class FeedbackMessageController extends Controller
     {
         $feedback = Feedback::findOrFail($feedbackId);
 
+        $authorId = $request->user()->id;
+        if ($request->has('acting_as_user_id')) {
+            // Seul l'animateur peut poster au nom de quelqu'un (généralement le porteur)
+            $authorId = $request->acting_as_user_id;
+        }
+
         $message = $feedback->messages()->create([
-            'author_id' => $request->user()->id,
+            'author_id' => $authorId,
             'content' => $request->content,
         ]);
 
@@ -34,5 +40,18 @@ class FeedbackMessageController extends Controller
             'message' => 'Message publié sur le feedback.',
             'feedback_message' => $message->load('author'),
         ], 201);
+    }
+
+    public function destroy(string $messageId): JsonResponse
+    {
+        $message = \App\Models\FeedbackMessage::findOrFail($messageId);
+        
+        $decision = $message->feedback->version->decision;
+        $userRole = $decision->participants()->where('user_id', request()->user()->id)->first()?->role;
+        abort_unless($userRole === \App\Enums\DecisionParticipantRole::ANIMATOR, 403, 'Seul l\'animateur peut annuler cette action.');
+
+        $message->delete();
+
+        return response()->json(['message' => 'Message annulé.'], 200);
     }
 }

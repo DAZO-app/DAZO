@@ -28,6 +28,15 @@ class CreateConsentRequest extends FormRequest
         $participant = $decision->participants()->where('user_id', $user->id)->first();
         $role = $participant?->role->value;
         
+        // Si l'utilisateur agit au nom de quelqu'un d'autre
+        if ($this->has('acting_as_user_id')) {
+            // Seul l'animateur (ou le porteur ?) peut agir au nom de quelqu'un
+            if (!in_array($role, [\App\Enums\DecisionParticipantRole::ANIMATOR->value])) {
+                return false;
+            }
+            return true;
+        }
+        
         if (in_array($role, [\App\Enums\DecisionParticipantRole::AUTHOR->value, \App\Enums\DecisionParticipantRole::ANIMATOR->value])) {
             return false;
         }
@@ -39,6 +48,7 @@ class CreateConsentRequest extends FormRequest
     {
         return [
             'type' => ['required', Rule::in(['no_objection', 'abstention', 'no_questions', 'no_reaction'])],
+            'acting_as_user_id' => ['nullable', 'exists:users,id'],
         ];
     }
 }

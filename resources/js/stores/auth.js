@@ -9,6 +9,8 @@ export const useAuthStore = defineStore('auth', {
     state: () => ({
         user: null,
         originalToken: localStorage.getItem('dazo_original_token') || null,
+        originalRole: localStorage.getItem('dazo_original_role') || null,
+        bannerHidden: localStorage.getItem('dazo_banner_hidden') === 'true',
     }),
     
     getters: {
@@ -42,19 +44,25 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async impersonate(userId) {
-            // Store the current token as original ONLY IF NOT ALREADY IMPERSONATING
+            // Store the current token and role as original ONLY IF NOT ALREADY IMPERSONATING
             const currentToken = localStorage.getItem('dazo_token');
             if (currentToken && !this.originalToken) {
                 this.originalToken = currentToken;
                 localStorage.setItem('dazo_original_token', currentToken);
+                localStorage.setItem('dazo_original_role', this.user?.role || '');
             }
 
-            const response = await axios.post(`/api/v1/admin/impersonate/${userId}`);
+            const config = {};
+            if (this.originalToken) {
+                config.headers = { 'Authorization': `Bearer ${this.originalToken}` };
+            }
+
+            const response = await axios.post(`/api/v1/admin/impersonate/${userId}`, {}, config);
             
             if (response.data.access_token) {
                 axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
                 localStorage.setItem('dazo_token', response.data.access_token);
-                await this.fetchUser();
+                this.user = null; // Clear local user to force refresh
             }
         },
 
@@ -64,7 +72,8 @@ export const useAuthStore = defineStore('auth', {
                 localStorage.setItem('dazo_token', this.originalToken);
                 this.originalToken = null;
                 localStorage.removeItem('dazo_original_token');
-                await this.fetchUser();
+                localStorage.removeItem('dazo_original_role');
+                this.user = null; // Clear local user to force refresh
             }
         },
         
@@ -101,6 +110,11 @@ export const useAuthStore = defineStore('auth', {
             localStorage.removeItem('dazo_token');
             localStorage.removeItem('dazo_original_token');
             delete axios.defaults.headers.common['Authorization'];
+        },
+
+        setBannerHidden(hidden) {
+            this.bannerHidden = hidden;
+            localStorage.setItem('dazo_banner_hidden', hidden ? 'true' : 'false');
         }
     }
 });

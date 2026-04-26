@@ -30,6 +30,9 @@ class ConsentController extends Controller
     public function store(CreateConsentRequest $request, string $decisionId, string $versionId): JsonResponse
     {
         $user = $request->user();
+        if ($request->has('acting_as_user_id')) {
+            $user = \App\Models\User::findOrFail($request->acting_as_user_id);
+        }
         $decision = Decision::findOrFail($decisionId);
         abort_unless($decision->versions()->whereKey($versionId)->exists(), 404);
 
@@ -85,5 +88,19 @@ class ConsentController extends Controller
             'message' => 'Consentement enregistré.',
             'consent' => $consent,
         ], 201);
+    }
+
+    public function destroy(string $consentId): JsonResponse
+    {
+        $consent = Consent::findOrFail($consentId);
+        
+        // Authorization: animator can delete
+        $decision = $consent->decisionVersion->decision;
+        $userRole = $decision->participants()->where('user_id', request()->user()->id)->first()?->role;
+        abort_unless($userRole === \App\Enums\DecisionParticipantRole::ANIMATOR, 403, 'Seul l\'animateur peut annuler cette action.');
+
+        $consent->delete();
+
+        return response()->json(['message' => 'Consentement annulé.'], 200);
     }
 }

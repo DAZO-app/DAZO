@@ -243,9 +243,18 @@ entity "APP_LOG" as LOG {
 DECISION ||--o{ DEC_LABEL : "taguée"
 LABEL ||--o{ DEC_LABEL : "appliqué à"
 
-DECISION }o--|| CATEGORY : "classée dans"
+DECISION ||--o{ DEC_CAT : "classée dans"
+CATEGORY ||--o{ DEC_CAT : "contient"
 CATEGORY ||--o| CATEGORY : "sous-catégorie de"
 
+entity "DECISION_CATEGORY" as DEC_CAT {
+  * id : uuid <<PK>>
+  --
+  * decision_id : uuid <<FK>>
+  * category_id : uuid <<FK>>
+}
+
+' ── PIÈCES JOINTES ────────────────────────────────────────
 VERSION ||--o{ ATTACH : "possède"
 FEEDBACK ||--o{ ATTACH : "possède"
 

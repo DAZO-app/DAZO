@@ -199,43 +199,74 @@
             </div>
           </div>
 
+          <!-- SECTION SERVEUR MAIL -->
+          <div v-if="activeSection === 'mail_server'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-indigo">
+              <div class="pc-header-icon"><i class="fa-solid fa-server"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Serveur de Messagerie</div>
+                <div class="pc-header-sub">Configuration SMTP pour l'envoi des notifications</div>
+              </div>
+            </div>
+            <div class="pc-body p-24">
+              <div class="alert alert-info mb-24">
+                <i class="fa-solid fa-circle-info"></i>
+                <p>Ces paramètres surchargent la configuration par défaut du serveur si renseignés.</p>
+              </div>
+
+              <div class="grid-2 gap-24 mb-24">
+                <div class="form-group">
+                  <label class="config-label">Hôte SMTP</label>
+                  <input v-model="config.mail_host" class="input" placeholder="smtp.mailtrap.io">
+                </div>
+                <div class="form-group">
+                  <label class="config-label">Port</label>
+                  <input v-model="config.mail_port" class="input" placeholder="587">
+                </div>
+              </div>
+
+              <div class="grid-2 gap-24 mb-24">
+                <div class="form-group">
+                  <label class="config-label">Utilisateur</label>
+                  <input v-model="config.mail_username" class="input">
+                </div>
+                <div class="form-group">
+                  <label class="config-label">Mot de passe</label>
+                  <input type="password" v-model="config.mail_password" class="input">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="config-label">Chiffrement</label>
+                <select v-model="config.mail_encryption" class="select">
+                  <option value="null">Aucun</option>
+                  <option value="tls">TLS</option>
+                  <option value="ssl">SSL</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <!-- SECTION EMAILS -->
           <div v-if="activeSection === 'emails'" class="premium-card animate-fade-in">
             <div class="pc-header pc-header-purple">
               <div class="pc-header-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
               <div class="pc-header-content">
-                <div class="pc-header-title">Textes des Emails</div>
-                <div class="pc-header-sub">Personnalisez le contenu des messages automatiques</div>
+                <div class="pc-header-title">Personnalisation des Emails</div>
+                <div class="pc-header-sub">Éditez le contenu des messages envoyés aux utilisateurs</div>
               </div>
             </div>
             <div class="pc-body p-24">
-              <div class="alert alert-warning mb-24">
-                <i class="fa-solid fa-info-circle"></i>
-                <div>Cette fonctionnalité est en cours de développement. Les textes ci-dessous seront bientôt éditables.</div>
+              <div class="form-group mb-24">
+                <label class="config-label">Sujet de l'email de relance</label>
+                <input v-model="config.reminder_email_subject" class="input" placeholder="⚠️ Rappel : La décision '{title}' arrive à échéance">
+                <p class="help-text">Variables disponibles : <code>{title}</code></p>
               </div>
-              
-              <div class="email-placeholder-list">
-                <div class="email-item active">
-                  <div class="email-item-info">
-                    <div class="font-bold">Invitation de nouveau membre</div>
-                    <div class="text-xs text-muted">Envoyé lorsqu'un admin invite un utilisateur.</div>
-                  </div>
-                  <i class="fa-solid fa-chevron-right text-xs opacity-30"></i>
-                </div>
-                <div class="email-item">
-                  <div class="email-item-info">
-                    <div class="font-bold">Rappel d'échéance</div>
-                    <div class="text-xs text-muted">Envoyé X heures avant la fin d'une phase.</div>
-                  </div>
-                  <i class="fa-solid fa-chevron-right text-xs opacity-30"></i>
-                </div>
-                <div class="email-item">
-                  <div class="email-item-info">
-                    <div class="font-bold">Notification d'objection</div>
-                    <div class="text-xs text-muted">Envoyé à l'auteur si une objection est posée.</div>
-                  </div>
-                  <i class="fa-solid fa-chevron-right text-xs opacity-30"></i>
-                </div>
+
+              <div class="form-group">
+                <label class="config-label">Corps de l'email de relance</label>
+                <textarea v-model="config.reminder_email_body" class="textarea" style="height: 150px;" placeholder="Bonjour {name}, ceci est un rappel..."></textarea>
+                <p class="help-text">Variables disponibles : <code>{name}</code>, <code>{title}</code>, <code>{phase}</code>, <code>{deadline}</code>, <code>{url}</code></p>
               </div>
             </div>
           </div>
@@ -284,7 +315,8 @@ const sections = [
   { id: 'decisions', label: 'Gouvernance', icon: 'fa-solid fa-scale-balanced' },
   { id: 'access', label: 'Sécurité', icon: 'fa-solid fa-user-shield' },
   { id: 'notifications', label: 'Alertes', icon: 'fa-solid fa-bell' },
-  { id: 'emails', label: 'Emails', icon: 'fa-solid fa-envelope-open-text' },
+  { id: 'mail_server', label: 'Serveur Mail', icon: 'fa-solid fa-server' },
+  { id: 'emails', label: 'Contenu Emails', icon: 'fa-solid fa-envelope-open-text' },
   { id: 'system', label: 'Maintenance', icon: 'fa-solid fa-triangle-exclamation' },
 ];
 

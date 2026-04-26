@@ -32,38 +32,36 @@ class DecisionService
     public function createDecision(array $data, User $author, Circle $circle): Decision
     {
         return DB::transaction(function () use ($data, $author, $circle) {
-            
             $decision = Decision::create([
-                'circle_id' => $circle->id,
-                'category_id' => $data['category_id'] ?? null,
-                'model_id' => $data['model_id'] ?? null,
-                'title' => $data['title'],
-                'visibility' => $data['visibility'] ?? \App\Enums\DecisionVisibility::PUBLIC->value,
-                'priority' => $data['priority'] ?? 0,
+                'circle_id'      => $circle->id,
+                'model_id'       => $data['model_id'] ?? null,
+                'title'          => $data['title'],
+                'visibility'     => $data['visibility'] ?? \App\Enums\DecisionVisibility::PUBLIC->value,
+                'priority'       => $data['priority'] ?? 0,
                 'emergency_mode' => $data['emergency_mode'] ?? false,
-                'status' => DecisionStatus::DRAFT->value,
+                'status'         => DecisionStatus::DRAFT->value,
             ]);
 
-            // Création de la Version 1 (DRAFT)
+            if (!empty($data['category_ids'])) {
+                $decision->categories()->sync($data['category_ids']);
+            }
+
             $decision->versions()->create([
-                'author_id' => $author->id,
+                'author_id'      => $author->id,
                 'version_number' => 1,
-                'is_current' => true,
-                'content' => $data['content'],
+                'is_current'     => true,
+                'content'        => $data['content'],
             ]);
 
-            // Auteur = Participant
             $decision->participants()->create([
                 'user_id' => $author->id,
-                'role' => DecisionParticipantRole::AUTHOR->value,
+                'role'    => DecisionParticipantRole::AUTHOR->value,
             ]);
 
-            // Optionnel: Assigné à un animateur distinct
-            // Si $data['animator_id'] est fourni et valide :
             if (!empty($data['animator_id'])) {
                 $decision->participants()->create([
                     'user_id' => $data['animator_id'],
-                    'role' => DecisionParticipantRole::ANIMATOR->value,
+                    'role'    => DecisionParticipantRole::ANIMATOR->value,
                 ]);
             }
 
@@ -74,37 +72,35 @@ class DecisionService
     }
 
     /**
-     * Machine à États simplifiée (sans Spatie pour compat Laravel 13).
+     * Machine à États simplifiée.
      */
     public function transition(Decision $decision, string $toStatus, User $actor, bool $isSystem = false): Decision
     {
         $fromStatus = $decision->status->value;
 
-        // Transitions sans contrainte de départ (globales)
         $globalTransitions = [
             DecisionStatus::ABANDONED->value,
             DecisionStatus::LAPSED->value,
             DecisionStatus::DESERTED->value,
         ];
 
-        // Transitions spécifiques
         $allowedTransitions = [
             DecisionStatus::DRAFT->value => [DecisionStatus::CLARIFICATION->value],
             DecisionStatus::CLARIFICATION->value => [
                 DecisionStatus::REACTION->value,
                 DecisionStatus::REVISION->value,
-                DecisionStatus::SUSPENDED->value
+                DecisionStatus::SUSPENDED->value,
             ],
             DecisionStatus::REACTION->value => [
                 DecisionStatus::OBJECTION->value,
                 DecisionStatus::REVISION->value,
-                DecisionStatus::SUSPENDED->value
+                DecisionStatus::SUSPENDED->value,
             ],
             DecisionStatus::OBJECTION->value => [
                 DecisionStatus::ADOPTED->value,
                 DecisionStatus::ADOPTED_OVERRIDE->value,
                 DecisionStatus::REVISION->value,
-                DecisionStatus::SUSPENDED->value
+                DecisionStatus::SUSPENDED->value,
             ],
             DecisionStatus::SUSPENDED->value => [
                 DecisionStatus::CLARIFICATION->value,
@@ -114,7 +110,7 @@ class DecisionService
             ],
             DecisionStatus::REVISION->value => [
                 DecisionStatus::CLARIFICATION->value,
-                DecisionStatus::SUSPENDED->value
+                DecisionStatus::SUSPENDED->value,
             ],
         ];
 
@@ -127,49 +123,38 @@ class DecisionService
             }
         }
 
-        // Vérifications de droits supplémentaires si non-système
         if (!$isSystem) {
             $isAuthorOrAnimator = $decision->participants()->where('user_id', $actor->id)
                 ->whereIn('role', [
                     DecisionParticipantRole::AUTHOR->value,
-                    DecisionParticipantRole::ANIMATOR->value
+                    DecisionParticipantRole::ANIMATOR->value,
                 ])->exists();
 
             if (!$isAuthorOrAnimator && !$actor->is_global_animator) {
-                 throw ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'status' => ["Vous n'avez pas les droits pour changer le statut de cette décision."],
                 ]);
             }
 
-            // Gestion de la suspension
             if ($toStatus === DecisionStatus::SUSPENDED->value) {
                 $decision->status_before_suspension = $fromStatus;
             }
 
-            // Gestion de la reprise
             if ($fromStatus === DecisionStatus::SUSPENDED->value) {
-                if ($toStatus !== $decision->status_before_suspension) {
-                   // Optionnel: on pourrait forcer la reprise vers l'état exact d'avant,
-                   // mais laisser le choix à l'animateur est plus souple.
-                }
                 $decision->status_before_suspension = null;
             }
         }
 
         $decision->status = $toStatus;
-        
-        // Reset reminder and set deadline
         $decision->reminder_sent = false;
-        
-        // Clear deadline if suspended, otherwise recalculate
+
         if ($toStatus === DecisionStatus::SUSPENDED->value) {
             $decision->current_deadline = null;
         } else {
             $decision->current_deadline = $this->calculateDeadline($toStatus);
         }
-        
-        $decision->save();
 
+        $decision->save();
         $this->dispatchEventForTransition($decision, $toStatus);
 
         return $decision;
@@ -181,7 +166,7 @@ class DecisionService
     private function calculateDeadline(string $status): ?\Illuminate\Support\Carbon
     {
         $days = match ($status) {
-            DecisionStatus::REACTION->value => (int) $this->configService->get('decision_reaction_days', 3),
+            DecisionStatus::REACTION->value  => (int) $this->configService->get('decision_reaction_days', 3),
             DecisionStatus::OBJECTION->value => (int) $this->configService->get('decision_objection_days', 3),
             default => null,
         };
@@ -189,43 +174,29 @@ class DecisionService
         return $days ? now()->addDays($days) : null;
     }
 
-    private function dispatchEventForTransition(Decision $decision, string $toStatus)
+    private function dispatchEventForTransition(Decision $decision, string $toStatus): void
     {
-        switch ($toStatus) {
-            case DecisionStatus::CLARIFICATION->value:
-            case DecisionStatus::REACTION->value:
-                event(new \App\Events\DecisionTransitioned($decision));
-                break;
-            case DecisionStatus::ADOPTED->value:
-                event(new \App\Events\DecisionAdopted($decision));
-                break;
-            case DecisionStatus::ADOPTED_OVERRIDE->value:
-                event(new \App\Events\DecisionAdoptedWithOverride($decision));
-                break;
-            case DecisionStatus::REVISION->value:
-                event(new \App\Events\DecisionRevisionStarted($decision));
-                break;
-            case DecisionStatus::ABANDONED->value:
-                event(new \App\Events\DecisionAbandoned($decision));
-                break;
-            case DecisionStatus::LAPSED->value:
-                event(new \App\Events\DecisionLapsed($decision));
-                break;
-            case DecisionStatus::DESERTED->value:
-                event(new \App\Events\DecisionDeserted($decision));
-                break;
-        }
+        match ($toStatus) {
+            DecisionStatus::CLARIFICATION->value,
+            DecisionStatus::REACTION->value       => event(new \App\Events\DecisionTransitioned($decision)),
+            DecisionStatus::ADOPTED->value        => event(new \App\Events\DecisionAdopted($decision)),
+            DecisionStatus::ADOPTED_OVERRIDE->value => event(new \App\Events\DecisionAdoptedWithOverride($decision)),
+            DecisionStatus::REVISION->value       => event(new \App\Events\DecisionRevisionStarted($decision)),
+            DecisionStatus::ABANDONED->value      => event(new \App\Events\DecisionAbandoned($decision)),
+            DecisionStatus::LAPSED->value         => event(new \App\Events\DecisionLapsed($decision)),
+            DecisionStatus::DESERTED->value       => event(new \App\Events\DecisionDeserted($decision)),
+            default => null,
+        };
     }
 
     /**
-     * Crée une nouvelle version et effectue la transition de révision vers clarification.
+     * Crée une nouvelle version et effectue la transition de révision vers le statut cible.
      */
-    public function createNewVersion(Decision $decision, string $content, User $author, array $attachmentIds = []): DecisionVersion
+    public function createNewVersion(Decision $decision, string $content, User $author, array $attachmentIds = [], ?string $targetStatus = null): DecisionVersion
     {
-        return DB::transaction(function () use ($decision, $content, $author, $attachmentIds) {
+        return DB::transaction(function () use ($decision, $content, $author, $attachmentIds, $targetStatus) {
             $oldVersion = $decision->currentVersion;
 
-            // Désactive l'ancienne version courante
             if ($oldVersion) {
                 $oldVersion->is_current = false;
                 $oldVersion->save();
@@ -233,29 +204,26 @@ class DecisionService
 
             $currentMax = $decision->versions()->max('version_number') ?? 0;
 
-            // Insère la nouvelle
             $newVersion = $decision->versions()->create([
-                'author_id' => $author->id,
+                'author_id'           => $author->id,
                 'previous_version_id' => $oldVersion?->id,
-                'version_number' => $currentMax + 1,
-                'is_current' => true,
-                'content' => $content,
+                'version_number'      => $currentMax + 1,
+                'is_current'          => true,
+                'content'             => $content,
             ]);
 
-            // Lier les pièces jointes explicitement reçues
             if (!empty($attachmentIds)) {
                 Attachment::whereIn('id', $attachmentIds)
                     ->update(['decision_version_id' => $newVersion->id]);
             }
 
-            // Nettoyage des champs de brouillon
             $decision->update([
-                'revision_content' => null,
+                'revision_content'        => null,
                 'revision_attachment_ids' => null,
             ]);
 
-            // Forcer la transition auto de REVISION à CLARIFICATION (le nouveau cycle)
-            $this->transition($decision, DecisionStatus::CLARIFICATION->value, $author, true);
+            $status = $targetStatus ?? DecisionStatus::CLARIFICATION->value;
+            $this->transition($decision, $status, $author, true);
 
             return $newVersion;
         });
@@ -263,84 +231,122 @@ class DecisionService
 
     /**
      * Calcule les statistiques de participation pour une version spécifique.
+     * Utilise le helper getPhaseConfig() pour éviter la duplication.
      */
     public function getParticipationStats(Decision $decision, DecisionVersion $version, ?string $statusOverride = null): array
     {
-        $circle = $decision->circle;
+        $circle      = $decision->circle;
         $totalMembers = $circle->members()->where('role', '!=', CircleMemberRole::OBSERVER->value)->pluck('user_id')->toArray();
         $excludedOrManaging = $decision->participants()
             ->whereIn('role', [
-                \App\Enums\DecisionParticipantRole::EXCLUDED->value,
-                \App\Enums\DecisionParticipantRole::AUTHOR->value,
-                \App\Enums\DecisionParticipantRole::ANIMATOR->value
+                DecisionParticipantRole::EXCLUDED->value,
+                DecisionParticipantRole::AUTHOR->value,
+                DecisionParticipantRole::ANIMATOR->value,
             ])->pluck('user_id')->toArray();
-        
-        $eligible = array_diff($totalMembers, $excludedOrManaging);
-        $status = $statusOverride ?? $decision->status->value;
+
+        $eligible   = array_diff($totalMembers, $excludedOrManaging);
+        $statusEnum = DecisionStatus::tryFrom($statusOverride ?? $decision->status->value);
+        $phaseConfig = $statusEnum?->getPhaseConfig();
+
         $participated = 0;
-
-        $phaseFeedbackTypes = [];
-        $phaseConsentSignals = [];
-
-        if (in_array($status, [DecisionStatus::CLARIFICATION->value, DecisionStatus::REACTION->value, DecisionStatus::OBJECTION->value], true)) {
-            
-            if ($status === DecisionStatus::CLARIFICATION->value) {
-                $phaseFeedbackTypes = [FeedbackType::CLARIFICATION->value];
-                $phaseConsentSignals = [ConsentSignal::NO_QUESTIONS->value];
-            } elseif ($status === DecisionStatus::REACTION->value) {
-                $phaseFeedbackTypes = [FeedbackType::REACTION->value];
-                $phaseConsentSignals = [ConsentSignal::NO_REACTION->value];
-            } elseif ($status === DecisionStatus::OBJECTION->value) {
-                $phaseFeedbackTypes = [FeedbackType::OBJECTION->value, FeedbackType::SUGGESTION->value];
-                $phaseConsentSignals = [ConsentSignal::NO_OBJECTION->value, ConsentSignal::ABSTENTION->value];
-            }
-
+        if ($phaseConfig) {
             $feedbackAuthors = Feedback::where('decision_version_id', $version->id)
-                ->whereIn('type', $phaseFeedbackTypes)
+                ->whereIn('type', $phaseConfig['feedback_types'])
                 ->pluck('author_id')->toArray();
-                
+
             $consentAuthors = Consent::where('decision_version_id', $version->id)
-                ->whereIn('signal', $phaseConsentSignals)
+                ->whereIn('signal', $phaseConfig['consent_signals'])
                 ->pluck('user_id')->toArray();
-            
+
             $allParticipants = array_unique(array_merge($feedbackAuthors, $consentAuthors));
-            $participated = count(array_intersect($eligible, $allParticipants));
+            $participated    = count(array_intersect($eligible, $allParticipants));
         }
 
         return [
-            'eligible'     => count($eligible),
+            'eligible'    => count($eligible),
             'participated' => $participated,
-            'pending'      => max(0, count($eligible) - $participated)
+            'pending'     => max(0, count($eligible) - $participated),
         ];
     }
 
     /**
-     * Notifie les participants du cercle par email.
+     * Construit la map de participation par phase pour une version donnée.
+     * Centralisé ici pour éviter la duplication entre show() et autres méthodes.
      */
-    public function notifyParticipants(Decision $decision, User $sender): void
+    public function getPhaseParticipationMap(Decision $decision, DecisionVersion $version): array
     {
-        // On recharge les relations nécessaires pour l'email
-        $decision->load(['circle.members.user', 'currentVersion.attachments']);
-        
-        $circle = $decision->circle;
-        if (!$circle) return;
+        $map = ['clarification' => [], 'reaction' => [], 'objection' => []];
 
-        $excludedIds = $decision->participants()
-            ->where('role', \App\Enums\DecisionParticipantRole::EXCLUDED->value)
-            ->pluck('user_id')
-            ->toArray();
+        $versionFeedbacks = $version->feedbacks()->get(['author_id', 'type']);
+        $versionConsents  = $version->consents()->get(['user_id', 'signal']);
 
-        foreach ($circle->members as $member) {
-            $user = $member->user;
-            
-            // Skip observer, excluded, sender, or inactive users
-            if ($member->role === CircleMemberRole::OBSERVER->value) continue;
-            if (in_array($user->id, $excludedIds)) continue;
-            if ($user->id === $sender->id) continue;
-            if (!$user->is_active || !$user->email) continue;
-
-            Mail::to($user->email)
-                ->queue(new DecisionNotificationMail($decision, $decision->currentVersion, $user));
+        foreach ($versionFeedbacks as $fb) {
+            $typeVal = is_object($fb->type) ? $fb->type->value : $fb->type;
+            match ($typeVal) {
+                FeedbackType::CLARIFICATION->value => $map['clarification'][$fb->author_id] = true,
+                FeedbackType::REACTION->value      => $map['reaction'][$fb->author_id] = true,
+                FeedbackType::OBJECTION->value,
+                FeedbackType::SUGGESTION->value    => $map['objection'][$fb->author_id] = true,
+                default => null,
+            };
         }
+
+        foreach ($versionConsents as $cs) {
+            $signalVal = is_object($cs->signal) ? $cs->signal->value : $cs->signal;
+            match ($signalVal) {
+                ConsentSignal::NO_QUESTIONS->value => $map['clarification'][$cs->user_id] = true,
+                ConsentSignal::NO_REACTION->value  => $map['reaction'][$cs->user_id] = true,
+                ConsentSignal::NO_OBJECTION->value,
+                ConsentSignal::ABSTENTION->value   => $map['objection'][$cs->user_id] = true,
+                default => null,
+            };
+        }
+
+        return $map;
+    }
+
+    /**
+     * Retourne les utilisateurs éligibles n'ayant pas encore participé à la phase active.
+     * Utilisé pour la fonctionnalité de relance manuelle.
+     */
+    public function getPendingUsers(Decision $decision): \Illuminate\Support\Collection
+    {
+        $circle = $decision->circle;
+        if (!$circle) return collect([]);
+
+        $statusEnum = $decision->status;
+        $phaseConfig = $statusEnum->getPhaseConfig();
+        if (!$phaseConfig) return collect([]);
+
+        $v = $decision->currentVersion;
+        if (!$v) return collect([]);
+
+        $eligibleUserIds = $circle->members()
+            ->where('role', '!=', CircleMemberRole::OBSERVER->value)
+            ->pluck('user_id')->toArray();
+
+        $excludedOrManaging = $decision->participants()
+            ->whereIn('role', [
+                DecisionParticipantRole::EXCLUDED->value,
+                DecisionParticipantRole::AUTHOR->value,
+                DecisionParticipantRole::ANIMATOR->value,
+            ])->pluck('user_id')->toArray();
+
+        $targetUserIds = array_diff($eligibleUserIds, $excludedOrManaging);
+
+        $participatedUserIds = array_unique(array_merge(
+            Feedback::where('decision_version_id', $v->id)
+                ->whereIn('type', $phaseConfig['feedback_types'])
+                ->pluck('author_id')->toArray(),
+            Consent::where('decision_version_id', $v->id)
+                ->whereIn('signal', $phaseConfig['consent_signals'])
+                ->pluck('user_id')->toArray()
+        ));
+
+        $pendingUserIds = array_diff($targetUserIds, $participatedUserIds);
+
+        return User::whereIn('id', $pendingUserIds)
+            ->where('is_active', true)
+            ->get(['id', 'name', 'email']);
     }
 }

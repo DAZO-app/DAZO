@@ -48,11 +48,25 @@ class CreateFeedbackRequest extends FormRequest
         $role = $participant?->role->value;
 
         // Le porteur ne peut jamais créer de feedback (il répond aux fils)
+        // L'animateur ne crée jamais de feedback : il répond aux fils ouverts.
+        // SAUF s'il agit au nom d'un autre participant
+        if ($this->has('acting_as_user_id')) {
+            if ($role !== \App\Enums\DecisionParticipantRole::ANIMATOR->value) {
+                return false;
+            }
+            $targetUser = \App\Models\User::findOrFail($this->acting_as_user_id);
+            // On vérifie que la cible est bien membre
+            $targetMember = $decision->circle->members()->where('user_id', $targetUser->id)->first();
+            if (!$targetMember || $targetMember->role->value === CircleMemberRole::OBSERVER->value) {
+                return false;
+            }
+            return true;
+        }
+
         if ($role === \App\Enums\DecisionParticipantRole::AUTHOR->value) {
             return false;
         }
 
-        // L'animateur ne crée jamais de feedback : il répond aux fils ouverts.
         if ($role === \App\Enums\DecisionParticipantRole::ANIMATOR->value) {
             return false;
         }
@@ -70,6 +84,7 @@ class CreateFeedbackRequest extends FormRequest
         return [
             'type' => ['required', Rule::enum(FeedbackType::class)],
             'content' => ['required', 'string'],
+            'acting_as_user_id' => ['nullable', 'exists:users,id'],
         ];
     }
 }

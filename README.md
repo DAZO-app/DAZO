@@ -21,11 +21,12 @@ L'objectif de DAZO est de transformer la manière dont les groupes collaborent e
 - **Accès Simplifié** : Connexion par **Magic Link** et prise de contrôle admin (**Impersonation**).
 - **Identité Visuelle** : Personnalisation dynamique du logo et du nom de l'instance.
 - **Centre de Contrôle** : Dashboard d'administration avec monitoring serveur, gestion des sauvegardes SQL et lecture de logs.
+- **Temps Réel** : Notifications et compteurs d'actions en attente via **Laravel Reverb** (WebSockets).
 
 ## 🛠 Stack Technique
 
-- **Backend** : Laravel 11 (PHP 8.2+), API REST, Sanctum Auth.
-- **Frontend** : Vue 3 (SPA), Pinia, Vue Router, Vite.js.
+- **Backend** : Laravel 11 (PHP 8.3+), API REST, Sanctum Auth, **Laravel Reverb** (WebSocket).
+- **Frontend** : Vue 3 (SPA), Pinia, Vue Router, Vite.js, **Laravel Echo**.
 - **Base de données** : PostgreSQL / MySQL.
 - **Design** : CSS Vanilla (Design System premium, responsive & mobile-first).
 
@@ -44,34 +45,57 @@ php artisan migrate --seed
 
 # Installation Frontend
 npm install
+npm run build
+```
+
+### 🖥 Développement local (3 terminaux)
+
+```bash
+# Terminal 1 — Serveur Laravel
+php artisan serve
+
+# Terminal 2 — Assets frontend avec Hot Module Replacement
 npm run dev
+
+# Terminal 3 — Serveur WebSocket temps réel (optionnel)
+php artisan reverb:start
 ```
 
 ### ⚙️ Automatisation (Production)
 
-Pour activer les relances automatiques et la gestion des échéances, configurez le **Scheduler** et le **Worker** :
+Pour activer les relances automatiques, les notifications et la gestion des échéances,
+configurez le **Scheduler**, le **Worker** et le **Serveur WebSocket** :
 
 **1. Scheduler (Cron)** :
-Ajoutez cette ligne à la crontab de votre serveur (`crontab -e`) :
 ```bash
 * * * * * cd /chemin/vers/votre/projet && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-**2. File d'attente (Queues)** :
-Pour l'envoi asynchrone des emails, lancez le worker (idéalement via Supervisor) :
+**2. File d'attente (Queues)** (emails asynchrones) :
 ```bash
 php artisan queue:work
+```
+
+**3. WebSocket Reverb** (temps réel) — via Supervisor :
+```bash
+php artisan reverb:start --host=0.0.0.0 --port=8080
 ```
 
 ## 📚 Documentation
 
 L'ensemble de la documentation détaillée se trouve dans le dossier [`docs/`](docs/) :
 
-- [Roadmap de Développement](ROADMAP.md)
-- [Spécifications de l'API](docs/api.md)
-- [Architecture & MCD](docs/architecture.md)
-- [Guide Front-End](docs/frontend.md)
-- [Cycle de vie des Décisions](docs/decision-lifecycle.md)
+| Document | Description |
+|---|---|
+| [ROADMAP.md](ROADMAP.md) | Roadmap V1 → V3 et backlog |
+| [docs/api.md](docs/api.md) | Référence complète de l'API REST v1 |
+| [docs/architecture.md](docs/architecture.md) | Architecture Laravel en couches |
+| [docs/frontend.md](docs/frontend.md) | Guide SPA Vue 3, stores Pinia, Echo |
+| [docs/decision-lifecycle.md](docs/decision-lifecycle.md) | Cycle de vie des décisions |
+| [docs/state-machine.md](docs/state-machine.md) | Machine d'états & transitions |
+| [docs/enums.md](docs/enums.md) | Référence de tous les Enums PHP |
+| [docs/domain-model.md](docs/domain-model.md) | Modèle de données |
+| [docs/TODO_TECHNIQUE.md](docs/TODO_TECHNIQUE.md) | Backlog technique détaillé |
 
 ---
 

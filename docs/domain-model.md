@@ -86,7 +86,6 @@
 |---|---|---|
 | `id` | uuid PK | |
 | `circle_id` | uuid FK | → CIRCLE — **obligatoire**, toujours rattachée à un cercle |
-| `category_id` | uuid FK | nullable → CATEGORY |
 | `title` | string | |
 
 > `author_id` et `animator_id` ont été **supprimés** de cette table.
@@ -276,9 +275,14 @@
 #### `DECISION_LABEL` (pivot)
 | Champ | Type | Notes |
 |---|---|---|
-| `id` | uuid PK | |
 | `decision_id` | uuid FK | → DECISION |
 | `label_id` | uuid FK | → LABEL |
+
+#### `DECISION_CATEGORY` (pivot)
+| Champ | Type | Notes |
+|---|---|---|
+| `decision_id` | uuid FK | → DECISION |
+| `category_id` | uuid FK | → CATEGORY |
 
 ---
 
@@ -449,7 +453,7 @@ Clés gérées : `use_circles`, `use_categories`, `use_labels`, `default_visibil
 | Relation | Cardinalité |
 |---|---|
 | DECISION ↔ LABEL via DECISION_LABEL | N-N |
-| DECISION → CATEGORY | N-1 |
+| DECISION ↔ CATEGORY via DECISION_CATEGORY | N-N |
 | CATEGORY → CATEGORY (parent_id) | auto-ref |
 | DECISION_VERSION → ATTACHMENT | 1-N |
 | FEEDBACK → ATTACHMENT | 1-N (optionnel) |

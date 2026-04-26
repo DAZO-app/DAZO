@@ -65,13 +65,27 @@
 | `POST` | `/api/v1/decisions/{id}/transition` | Déclencher une transition d'état |
 | `POST` | `/api/v1/decisions/{id}/abandon` | Abandonner une décision |
 
+### Participants en attente & Relances
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/decisions/{id}/pending-participants` | Liste des participants qui n'ont pas encore répondu dans la phase courante |
+| `POST` | `/api/v1/decisions/{id}/remind` | Envoyer un email de relance aux participants en attente (porteur ou animateur uniquement) |
+
+> ⚠️ **Rate limit** : `POST /remind` est limité à **5 req/min** par IP.
+
 ### Pièces jointes
 
 | Méthode | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/v1/attachments` | Upload d'une pièce jointe. Liée directement si `decision_version_id` fourni, sinon retourne l'ID pour liaison ultérieure (ex: phase révision). |
+| `GET` | `/api/v1/attachments/{id}/download` | Téléchargement sécurisé — vérifie les droits sur la décision parente avant de servir le fichier |
 | `POST` | `/api/v1/decisions/versions/{versionId}/attachments/link` | Lier des uploads existants à une version |
 | `DELETE` | `/api/v1/attachments/{attachmentId}` | Supprimer une pièce jointe |
+
+> ⚠️ Les fichiers sont stockés en **disque local privé** (jamais accessibles directement via URL publique).
+> Les extensions dangereuses (`.php`, `.sh`, `.exe`...) et les MIME types exécutables sont refusés.
+> La taille maximale est configurable via `ConfigService` (clé `max_file_size_mb`, défaut : 10 Mo).
 
 ### Animateur
 
@@ -185,6 +199,40 @@
 | `DELETE` | `/api/v1/admin/tools/database/backups/{filename}` | Supprimer un backup |
 | `GET` | `/api/v1/admin/tools/server` | Monitoring CPU/RAM/Disque |
 | `GET` | `/api/v1/admin/tools/server/logs` | Lire les logs Laravel |
+
+---
+
+## ⚡ Rate Limiting
+
+| Endpoint | Limite |
+|---|---|
+| `POST /remind` | 5 req/min |
+| `POST /feedback`, `POST /consent`, `POST /join` | 10 req/min |
+| `POST /transition`, `POST /abandon`, `PUT /feedback/{id}/status` | 20 req/min |
+| `POST /attachments` | 20 req/min |
+| `POST /feedback/{id}/messages` | 30 req/min |
+
+---
+
+## 📡 Temps réel (WebSockets — Laravel Reverb)
+
+DAZO utilise **Laravel Reverb** comme serveur WebSocket et **Laravel Echo** côté frontend.
+
+### Canal privé utilisateur
+```
+App.Models.User.{userId}
+```
+
+### Événements broadcastés sur ce canal (work in progress)
+
+| Event | Payload | Description |
+|---|---|---|
+| `.decision.transitioned` | `{ decision_id, new_status }` | Une décision a changé de phase |
+| `.feedback.submitted` | `{ decision_id, feedback_id }` | Un nouveau feedback soumis |
+| `.feedback.status.updated` | `{ feedback_id, status }` | Statut d'un feedback mis à jour |
+| `.consent.submitted` | `{ decision_id, user_id }` | Un signal de consentement exprimé |
+
+> Lancer le serveur WebSocket : `php artisan reverb:start`
 
 ---
 

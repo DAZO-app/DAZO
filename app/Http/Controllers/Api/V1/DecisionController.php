@@ -23,8 +23,10 @@ class DecisionController extends Controller
 {
     use HasUserActionStatus;
 
-    public function __construct(private DecisionService $decisionService)
-    {
+    public function __construct(
+        private DecisionService $decisionService,
+        private \App\Services\ConfigService $configService
+    ) {
     }
 
     public function mine(): JsonResponse
@@ -37,12 +39,13 @@ class DecisionController extends Controller
                 $q->where('user_id', $userId);
             });
         })
-            ->with(['circle', 'category', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user'])
+            ->with(['circle', 'categories', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user'])
             ->latest()
             ->get();
 
         $this->attachParticipationStats($decisions);
         $this->attachUserActionStatus($decisions, auth()->id());
+        $this->attachUserSettings($decisions, auth()->id());
 
         return response()->json(['decisions' => $decisions]);
     }
@@ -53,11 +56,12 @@ class DecisionController extends Controller
         $this->authorize('view', $circle);
 
         $decisions = Decision::where('circle_id', $circle->id)
-            ->with(['circle', 'category', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user'])
+            ->with(['circle', 'categories', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user'])
             ->get();
 
         $this->attachParticipationStats($decisions);
         $this->attachUserActionStatus($decisions, auth()->id());
+        $this->attachUserSettings($decisions, auth()->id());
 
         return response()->json(['decisions' => $decisions]);
     }
@@ -80,114 +84,67 @@ class DecisionController extends Controller
         $this->authorize('view', $decision);
 
         $decision->load([
-            'currentVersion.attachments', 
-            'currentVersion.feedbacks', 
-            'currentVersion.consents', 
-            'participants.user', 
+            'currentVersion.attachments',
+            'currentVersion.feedbacks',
+            'currentVersion.consents',
+            'participants.user',
             'circle.members.user',
-            'category', 
-            'decisionModel'
+            'categories',
+            'decisionModel',
         ]);
 
-        $participationStats = [
-            'eligible'     => 0,
-            'participated' => 0,
-            'pending'      => 0
-        ];
-
-        $v = $decision->currentVersion;
-
-        $phaseFeedbackTypes = [];
-        $phaseConsentSignals = [];
+        $v                 = $decision->currentVersion;
+        $phaseConfig       = $decision->status->getPhaseConfig();
+        $participationStats = ['eligible' => 0, 'participated' => 0, 'pending' => 0];
+        $phaseParticipationMap = ['clarification' => [], 'reaction' => [], 'objection' => []];
+        $myConsent = null;
+        $hasFeedbackInPhase = false;
+        $hasConsentInPhase  = false;
 
         if ($v) {
-            $participationStats = $this->decisionService->getParticipationStats($decision, $v);
-            
-            // Re-calcul des types de phase pour la suite du controller
-            $status = $decision->status->value;
-            if ($status === DecisionStatus::CLARIFICATION->value) {
-                $phaseFeedbackTypes = [FeedbackType::CLARIFICATION->value];
-                $phaseConsentSignals = [ConsentSignal::NO_QUESTIONS->value];
-            } elseif ($status === DecisionStatus::REACTION->value) {
-                $phaseFeedbackTypes = [FeedbackType::REACTION->value];
-                $phaseConsentSignals = [ConsentSignal::NO_REACTION->value];
-            } elseif ($status === DecisionStatus::OBJECTION->value) {
-                $phaseFeedbackTypes = [FeedbackType::OBJECTION->value, FeedbackType::SUGGESTION->value];
-                $phaseConsentSignals = [ConsentSignal::NO_OBJECTION->value, ConsentSignal::ABSTENTION->value];
+            $participationStats     = $this->decisionService->getParticipationStats($decision, $v);
+            $phaseParticipationMap  = $this->decisionService->getPhaseParticipationMap($decision, $v);
+
+            $myConsent = Consent::where('decision_version_id', $v->id)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if ($phaseConfig) {
+                $hasFeedbackInPhase = Feedback::where('decision_version_id', $v->id)
+                    ->where('author_id', auth()->id())
+                    ->whereIn('type', $phaseConfig['feedback_types'])
+                    ->exists();
+
+                $hasConsentInPhase = $myConsent
+                    && in_array(
+                        is_object($myConsent->signal) ? $myConsent->signal->value : $myConsent->signal,
+                        $phaseConfig['consent_signals']
+                    );
             }
         }
 
         $decision->setAttribute('participation_stats', $participationStats);
         $decision->setAttribute('user_status', $this->calculateUserActionStatus($decision, auth()->id()));
 
-        $myConsent = null;
-        if ($v) {
-            $myConsent = Consent::where('decision_version_id', $v->id)
-                ->where('user_id', auth()->id())
-                ->first();
-        }
-
-        $hasFeedbackInPhase = false;
-        $hasConsentInPhase = false;
-
-        if ($v && !empty($phaseFeedbackTypes)) {
-            $hasFeedbackInPhase = Feedback::where('decision_version_id', $v->id)
-                ->where('author_id', auth()->id())
-                ->whereIn('type', $phaseFeedbackTypes)
-                ->exists();
-
-            $hasConsentInPhase = $myConsent && in_array($myConsent->signal->value, $phaseConsentSignals);
-        }
-
-        $phaseParticipationMap = [
-            'clarification' => [],
-            'reaction' => [],
-            'objection' => [],
-        ];
-
-        if ($v) {
-            $versionFeedbacks = $v->feedbacks()->get(['author_id', 'type']);
-            $versionConsents = $v->consents()->get(['user_id', 'signal']);
-
-            foreach ($versionFeedbacks as $feedback) {
-                if ($feedback->type->value === FeedbackType::CLARIFICATION->value) {
-                    $phaseParticipationMap['clarification'][$feedback->author_id] = true;
-                }
-                if ($feedback->type->value === FeedbackType::REACTION->value) {
-                    $phaseParticipationMap['reaction'][$feedback->author_id] = true;
-                }
-                if (in_array($feedback->type->value, [FeedbackType::OBJECTION->value, FeedbackType::SUGGESTION->value], true)) {
-                    $phaseParticipationMap['objection'][$feedback->author_id] = true;
-                }
-            }
-
-            foreach ($versionConsents as $consent) {
-                if ($consent->signal->value === ConsentSignal::NO_QUESTIONS->value) {
-                    $phaseParticipationMap['clarification'][$consent->user_id] = true;
-                }
-                if ($consent->signal->value === ConsentSignal::NO_REACTION->value) {
-                    $phaseParticipationMap['reaction'][$consent->user_id] = true;
-                }
-                if (in_array($consent->signal->value, [ConsentSignal::NO_OBJECTION->value, ConsentSignal::ABSTENTION->value], true)) {
-                    $phaseParticipationMap['objection'][$consent->user_id] = true;
-                }
-            }
-        }
-
         if ($decision->status->value === DecisionStatus::REVISION->value && !empty($decision->revision_attachment_ids)) {
             $decision->setAttribute('revision_attachments', \App\Models\Attachment::whereIn('id', $decision->revision_attachment_ids)->get());
         }
 
+        $mySettings = \App\Models\DecisionUserSetting::where('user_id', auth()->id())
+            ->where('decision_id', $decision->id)
+            ->first();
+
         return response()->json([
-            'decision' => $decision,
-            'participation_stats' => $participationStats,
-            'has_participated' => $hasFeedbackInPhase || $hasConsentInPhase,
+            'decision'               => $decision,
+            'participation_stats'    => $participationStats,
+            'has_participated'       => $hasFeedbackInPhase || $hasConsentInPhase,
             'phase_participation_map' => $phaseParticipationMap,
+            'my_settings'            => $mySettings,
             'my_consent' => $myConsent ? [
-                'signal'              => $myConsent->signal,
-                'has_participated'    => $hasFeedbackInPhase || $hasConsentInPhase,
+                'signal'           => $myConsent->signal,
+                'has_participated' => $hasFeedbackInPhase || $hasConsentInPhase,
             ] : [
-                'has_participated'    => $hasFeedbackInPhase || $hasConsentInPhase,
+                'has_participated' => $hasFeedbackInPhase || $hasConsentInPhase,
             ],
         ]);
     }
@@ -207,7 +164,8 @@ class DecisionController extends Controller
             'animator_id' => 'nullable|uuid',
             'excluded_members' => 'nullable|array',
             'excluded_members.*' => 'uuid',
-            'category_id' => 'nullable|exists:categories,id',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'exists:categories,id',
             'model_id' => 'nullable|exists:decision_models,id',
             'revision_attachment_ids' => 'nullable|array',
             'revision_attachment_ids.*' => 'exists:attachments,id',
@@ -215,9 +173,12 @@ class DecisionController extends Controller
 
         $decision->update([
             'title' => $validated['title'],
-            'category_id' => $validated['category_id'] ?? null,
             'model_id' => $validated['model_id'] ?? null,
         ]);
+
+        if (isset($validated['category_ids'])) {
+            $decision->categories()->sync($validated['category_ids']);
+        }
 
         if ($decision->status->value === DecisionStatus::DRAFT->value) {
             $version = $decision->currentVersion;
@@ -319,68 +280,114 @@ class DecisionController extends Controller
         ]);
     }
 
-    private function attachParticipationStats($decisions)
+    private function attachParticipationStats($decisions): void
     {
         if ($decisions->isEmpty()) return;
 
-        $decisions->loadMissing(['circle.members', 'currentVersion.feedbacks', 'currentVersion.consents']);
-        
+        $decisions->loadMissing([
+            'circle.members',
+            'currentVersion.feedbacks',
+            'currentVersion.consents',
+            'categories',
+        ]);
+
         foreach ($decisions as $decision) {
             $circle = $decision->circle;
             if (!$circle) continue;
-            
-            $totalMembers = $circle->members->where('role', '!=', CircleMemberRole::OBSERVER->value)->pluck('user_id')->toArray();
+
+            $phaseConfig   = $decision->status->getPhaseConfig();
+            $totalMembers  = $circle->members
+                ->where('role', '!=', CircleMemberRole::OBSERVER->value)
+                ->pluck('user_id')->toArray();
+
             $excludedOrManaging = $decision->participants
                 ->whereIn('role', [
                     DecisionParticipantRole::EXCLUDED->value,
                     DecisionParticipantRole::AUTHOR->value,
-                    DecisionParticipantRole::ANIMATOR->value
+                    DecisionParticipantRole::ANIMATOR->value,
                 ])->pluck('user_id')->toArray();
-            
-            $eligible = array_diff($totalMembers, $excludedOrManaging);
-            $v = $decision->currentVersion;
+
+            $eligible    = array_diff($totalMembers, $excludedOrManaging);
+            $v           = $decision->currentVersion;
             $participated = 0;
-            $status = $decision->status->value;
 
-            if ($v && in_array($status, [DecisionStatus::CLARIFICATION->value, DecisionStatus::REACTION->value, DecisionStatus::OBJECTION->value], true)) {
-                $phaseFeedbackTypes = [];
-                $phaseConsentSignals = [];
+            if ($v && $phaseConfig) {
+                $feedbackAuthors = $v->feedbacks
+                    ->filter(fn($fb) => in_array(
+                        is_object($fb->type) ? $fb->type->value : $fb->type,
+                        $phaseConfig['feedback_types']
+                    ))->pluck('author_id')->toArray();
 
-                if ($status === DecisionStatus::CLARIFICATION->value) {
-                    $phaseFeedbackTypes = [FeedbackType::CLARIFICATION->value];
-                    $phaseConsentSignals = [ConsentSignal::NO_QUESTIONS->value];
-                } elseif ($status === DecisionStatus::REACTION->value) {
-                    $phaseFeedbackTypes = [FeedbackType::REACTION->value];
-                    $phaseConsentSignals = [ConsentSignal::NO_REACTION->value];
-                } elseif ($status === DecisionStatus::OBJECTION->value) {
-                    $phaseFeedbackTypes = [FeedbackType::OBJECTION->value, FeedbackType::SUGGESTION->value];
-                    $phaseConsentSignals = [ConsentSignal::NO_OBJECTION->value, ConsentSignal::ABSTENTION->value];
-                }
+                $consentAuthors = $v->consents
+                    ->filter(fn($cs) => in_array(
+                        is_object($cs->signal) ? $cs->signal->value : $cs->signal,
+                        $phaseConfig['consent_signals']
+                    ))->pluck('user_id')->toArray();
 
-                $feedbackAuthors = [];
-                foreach ($v->feedbacks as $fb) {
-                    $typeVal = is_object($fb->type) ? $fb->type->value : $fb->type;
-                    if (in_array($typeVal, $phaseFeedbackTypes)) {
-                        $feedbackAuthors[] = $fb->author_id;
-                    }
-                }
-
-                $consentAuthors = [];
-                foreach ($v->consents as $cs) {
-                    $signalVal = is_object($cs->signal) ? $cs->signal->value : $cs->signal;
-                    if (in_array($signalVal, $phaseConsentSignals)) {
-                        $consentAuthors[] = $cs->user_id;
-                    }
-                }
-                
                 $allParticipants = array_unique(array_merge($feedbackAuthors, $consentAuthors));
-                $participated = count(array_intersect($eligible, $allParticipants));
+                $participated    = count(array_intersect($eligible, $allParticipants));
             }
 
             $decision->setAttribute('participation_stats', [
-                'eligible'     => count($eligible),
+                'eligible'    => count($eligible),
                 'participated' => $participated,
             ]);
         }
+    }
+
+    private function attachUserSettings($decisions, $userId): void
+    {
+        $settings = \App\Models\DecisionUserSetting::where('user_id', $userId)
+            ->whereIn('decision_id', $decisions->pluck('id'))
+            ->get()
+            ->keyBy('decision_id');
+
+        foreach ($decisions as $decision) {
+            $decision->setAttribute('my_settings', $settings->get($decision->id));
+        }
+    }
+
+    public function getPendingParticipants(string $id): JsonResponse
+    {
+        $decision = Decision::findOrFail($id);
+        $this->authorize('view', $decision);
+
+        return response()->json([
+            'pending_users' => $this->decisionService->getPendingUsers($decision),
+        ]);
+    }
+
+    public function remind(Request $request, string $id): JsonResponse
+    {
+        $decision = Decision::findOrFail($id);
+
+        $isAuthorOrAnimator = $decision->participants()
+            ->where('user_id', auth()->id())
+            ->whereIn('role', [
+                DecisionParticipantRole::AUTHOR->value,
+                DecisionParticipantRole::ANIMATOR->value,
+            ])->exists();
+
+        if (!$isAuthorOrAnimator && auth()->user()->role->value !== \App\Enums\UserRole::ADMIN->value) {
+            abort(403, "Seul le porteur ou l'animateur peut envoyer des relances.");
+        }
+
+        $this->configService->applyMailConfig();
+
+        $pendingUsers = $this->decisionService->getPendingUsers($decision);
+
+        if ($pendingUsers->isEmpty()) {
+            return response()->json(['message' => "Aucun participant en attente à relancer."], 200);
+        }
+
+        foreach ($pendingUsers as $user) {
+            \Illuminate\Support\Facades\Mail::to($user->email)->queue(
+                new \App\Mail\DecisionReminderMail($decision, $user)
+            );
+        }
+
+        return response()->json([
+            'message' => count($pendingUsers) . " mail(s) de relance envoyés avec succès.",
+        ]);
     }
 }

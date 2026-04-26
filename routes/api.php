@@ -24,6 +24,9 @@ Route::prefix('v1')->group(function () {
         
         Route::get('/auth/me', [ProfileController::class, 'me']);
         Route::put('/auth/me', [ProfileController::class, 'update']);
+        Route::put('/auth/password', [ProfileController::class, 'updatePassword']);
+        Route::get('/auth/notifications', [ProfileController::class, 'getNotificationPreferences']);
+        Route::put('/auth/notifications', [ProfileController::class, 'updateNotificationPreferences']);
 
         Route::post('/auth/email/resend', [AuthController::class, 'resendEmailVerification']);
 
@@ -77,6 +80,11 @@ Route::prefix('v1')->group(function () {
         Route::put('/decisions/{id}', [\App\Http\Controllers\Api\V1\DecisionController::class, 'update']);
         Route::delete('/decisions/{id}', [\App\Http\Controllers\Api\V1\DecisionController::class, 'destroy']);
         Route::put('/decisions/{id}/animator', [\App\Http\Controllers\Api\V1\DecisionController::class, 'updateAnimator']);
+        Route::post('/decisions/{id}/favorite', [\App\Http\Controllers\Api\V1\DecisionUserSettingController::class, 'toggleFavorite']);
+        Route::put('/decisions/{id}/notifications', [\App\Http\Controllers\Api\V1\DecisionUserSettingController::class, 'setNotificationLevel']);
+        Route::get('/decisions/{id}/pending-participants', [\App\Http\Controllers\Api\V1\DecisionController::class, 'getPendingParticipants']);
+        Route::post('/decisions/{id}/remind', [\App\Http\Controllers\Api\V1\DecisionController::class, 'remind'])
+            ->middleware('throttle:5,1'); // 5 relances par minute max
 
         // Lecture et création des versions d'une décision
         Route::get('/decisions/{decision_id}/versions', [\App\Http\Controllers\Api\V1\DecisionVersionController::class, 'index']);
@@ -84,27 +92,43 @@ Route::prefix('v1')->group(function () {
         Route::get('/decisions/{decision_id}/versions/{version_id}', [\App\Http\Controllers\Api\V1\DecisionVersionController::class, 'show']);
 
         // Transitions (Machine à États)
-        Route::post('/decisions/{decision_id}/transition', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'transition']);
-        Route::post('/decisions/{decision_id}/abandon', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'abandon']);
+        Route::post('/decisions/{decision_id}/transition', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'transition'])
+            ->middleware('throttle:20,1');
+        Route::post('/decisions/{decision_id}/abandon', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'abandon'])
+            ->middleware('throttle:20,1');
 
         // Feedback & Joins
         Route::get('/decisions/{id}/feedback', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'index']);
-        Route::post('/decisions/{id}/feedback', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'store']);
+        Route::post('/decisions/{id}/feedback', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'store'])
+            ->middleware('throttle:10,1');
         Route::get('/decisions/{id}/feedback/{feedbackId}', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'show']);
-        Route::put('/decisions/{id}/feedback/{feedbackId}/status', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'updateStatus']);
-        Route::post('/feedback/{feedbackId}/join', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'join']);
+        Route::put('/decisions/{id}/feedback/{feedbackId}/status', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'updateStatus'])
+            ->middleware('throttle:20,1');
+        Route::post('/feedback/{feedbackId}/join', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'join'])
+            ->middleware('throttle:10,1');
+        Route::delete('/feedback/{feedbackId}', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'destroy'])
+            ->middleware('throttle:20,1');
 
         // Feedback Messages
         Route::get('/feedback/{feedbackId}/messages', [\App\Http\Controllers\Api\V1\FeedbackMessageController::class, 'index']);
-        Route::post('/feedback/{feedbackId}/messages', [\App\Http\Controllers\Api\V1\FeedbackMessageController::class, 'store']);
+        Route::post('/feedback/{feedbackId}/messages', [\App\Http\Controllers\Api\V1\FeedbackMessageController::class, 'store'])
+            ->middleware('throttle:30,1');
+        Route::delete('/feedback/messages/{messageId}', [\App\Http\Controllers\Api\V1\FeedbackMessageController::class, 'destroy'])
+            ->middleware('throttle:20,1');
 
         // Consentements
         Route::get('/decisions/{id}/versions/{versionId}/consent', [\App\Http\Controllers\Api\V1\ConsentController::class, 'index']);
-        Route::post('/decisions/{id}/versions/{versionId}/consent', [\App\Http\Controllers\Api\V1\ConsentController::class, 'store']);
+        Route::post('/decisions/{id}/versions/{versionId}/consent', [\App\Http\Controllers\Api\V1\ConsentController::class, 'store'])
+            ->middleware('throttle:10,1');
+        Route::delete('/consents/{consentId}', [\App\Http\Controllers\Api\V1\ConsentController::class, 'destroy'])
+            ->middleware('throttle:20,1');
 
         // Pièces Jointes
-        Route::post('/attachments', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'store']);
+        Route::post('/attachments', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'store'])
+            ->middleware('throttle:20,1');
         Route::post('/decisions/versions/{versionId}/attachments/link', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'link']);
+        Route::get('/attachments/{attachment}/download', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'download'])
+            ->name('attachments.download');
         Route::delete('/attachments/{attachment}', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'destroy']);
 
         // Notifications
@@ -142,6 +166,10 @@ Route::prefix('v1')->group(function () {
             Route::put('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'updateMemberRole']);
 
             // Wiki Admin CRUD
+            Route::get('wiki/categories/search', [\App\Http\Controllers\Api\V1\Admin\WikiController::class, 'searchCategories']);
+            Route::post('wiki/reorder', [\App\Http\Controllers\Api\V1\Admin\WikiController::class, 'reorder']);
+            Route::put('wiki/categories/{category}', [\App\Http\Controllers\Api\V1\Admin\WikiController::class, 'updateCategory']);
+            Route::delete('wiki/categories/{category}', [\App\Http\Controllers\Api\V1\Admin\WikiController::class, 'destroyCategory']);
             Route::apiResource('wiki', \App\Http\Controllers\Api\V1\Admin\WikiController::class);
 
             // Monitoring & Outils

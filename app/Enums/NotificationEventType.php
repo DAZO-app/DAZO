@@ -6,6 +6,7 @@ enum NotificationEventType: string
 {
     case NEW_DECISION = 'new_decision';
     case NEW_VERSION = 'new_version';
+    case PHASE_CHANGE = 'phase_change';
     case DECISION_ADOPTED = 'decision_adopted';
     case DECISION_ADOPTED_OVERRIDE = 'decision_adopted_override';
     case DECISION_ABANDONED = 'decision_abandoned';

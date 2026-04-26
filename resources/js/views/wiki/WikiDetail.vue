@@ -8,29 +8,31 @@
     <div v-else-if="page" class="page-body">
       <!-- HEADER PREMIUM (Title block) -->
       <div class="premium-card mb-32 overflow-hidden shadow-lg border-none">
-        <div class="pc-header pc-header-blue py-20 px-32">
-          <div class="pc-header-icon shadow-none bg-white/20" style="width: 42px; height: 42px; font-size: 18px;">
+        <div class="pc-header pc-header-blue py-24 px-32">
+          <div class="pc-header-icon shadow-none" style="width: 48px; height: 48px; font-size: 20px; background: rgba(255,255,255,0.2); color: white; border: none;">
             <i class="fa-solid fa-file-invoice"></i>
           </div>
           <div class="pc-header-content flex-1">
-             <nav class="breadcrumb-mini mb-4">
-                <router-link to="/wiki">Centre d'aide</router-link>
-                <i class="fa-solid fa-chevron-right mx-6 opacity-30"></i>
-                <span class="opacity-60">{{ page.category || 'Général' }}</span>
+             <nav class="breadcrumb-mini mb-6">
+                <router-link to="/wiki" class="text-white hover:underline opacity-80">Centre d'aide</router-link>
+                <i class="fa-solid fa-chevron-right mx-8 opacity-50 text-white"></i>
+                <span class="text-white opacity-90 font-semibold">{{ page.category?.name || 'Général' }}</span>
              </nav>
-             <h1 class="pc-header-title text-2xl md:text-3xl font-black mb-0">{{ page.title }}</h1>
+             <h1 class="text-2xl md:text-3xl font-black mb-0 text-white">
+               {{ page.title }}
+             </h1>
           </div>
           <div v-if="isAdmin" class="pc-header-actions">
-            <button class="btn btn-secondary btn-sm" @click="$router.push({ name: 'WikiEdit', params: { id: page.id } })">
+            <router-link :to="{ name: 'WikiEdit', params: { id: page.id } }" class="btn btn-secondary btn-sm">
               <i class="fa-solid fa-pen-to-square mr-6"></i> Modifier
-            </button>
+            </router-link>
           </div>
         </div>
-        <div class="pc-footer bg-blue-50/50 px-32 py-10 border-t border-blue-100 flex items-center justify-between">
-           <div class="text-xs text-blue-600 font-medium">
+        <div class="px-32 py-10 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+           <div class="text-xxs text-muted font-bold uppercase tracking-widest">
              <i class="fa-regular fa-clock mr-6"></i> Dernière mise à jour le {{ formatDate(page.updated_at) }}
            </div>
-           <div v-if="!page.is_published" class="badge badge-orange text-xxs">BROUILLON</div>
+           <div v-if="!page.is_published" class="badge badge-amber text-xxs">BROUILLON</div>
         </div>
       </div>
 
@@ -59,7 +61,7 @@
             <div class="premium-card mb-24">
               <div class="pc-header pc-header-blue py-12 px-20">
                 <div class="pc-header-icon" style="width: 28px; height: 28px; font-size: 13px;"><i class="fa-solid fa-layer-group"></i></div>
-                <div class="pc-header-title text-sm">{{ page.category || 'Général' }}</div>
+                <div class="pc-header-title text-sm">{{ page.category?.name || 'Général' }}</div>
               </div>
               <div class="pc-body p-8">
                  <div class="side-nav-list">
@@ -77,18 +79,21 @@
               </div>
             </div>
 
-            <!-- QUICK ACTIONS / HELP (CENTERED) -->
-            <div class="premium-card bg-indigo-900 text-white overflow-hidden text-center">
-               <div class="p-32 relative">
-                  <i class="fa-solid fa-question-circle absolute opacity-5" style="font-size: 100px; left: 50%; top: 50%; transform: translate(-50%, -50%);"></i>
-                  <div class="font-black text-lg mb-8">Besoin d'aide ?</div>
-                  <div class="text-sm text-indigo-100 mb-20 leading-relaxed">
-                    Vous ne trouvez pas de réponse à votre question ? Contactez un administrateur.
-                  </div>
-                  <button @click="showContactModal = true" class="btn btn-secondary w-full py-12 shadow-xl hover:-translate-y-1 transition-transform">
-                    <i class="fa-solid fa-envelope mr-8"></i> Contacter un administrateur
-                  </button>
-               </div>
+            <!-- QUICK ACTIONS / HELP -->
+            <div class="premium-card">
+              <div class="pc-header pc-header-indigo py-12 px-20">
+                <div class="pc-header-icon" style="width: 28px; height: 28px; font-size: 13px;"><i class="fa-solid fa-life-ring"></i></div>
+                <div class="pc-header-title text-sm">Besoin d'aide ?</div>
+              </div>
+              <div class="pc-body p-20 text-center bg-gray-50/50">
+                <i class="fa-solid fa-headset text-indigo-200 text-4xl mb-12"></i>
+                <div class="text-sm text-gray-600 mb-16">
+                  Vous ne trouvez pas de réponse à votre question ?
+                </div>
+                <button @click="showContactModal = true" class="btn btn-secondary w-full shadow-sm hover:shadow-md transition-shadow">
+                  <i class="fa-solid fa-envelope mr-8"></i> Contacter un admin
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -134,7 +139,7 @@ const fetchData = async () => {
     page.value = data.page;
 
     const { data: catData } = await axios.get('/api/v1/wiki');
-    categoryPages.value = catData.pages.filter(p => (p.category || 'Général') === (page.value.category || 'Général'));
+    categoryPages.value = catData.pages.filter(p => (p.category?.name || 'Général') === (page.value.category?.name || 'Général'));
   } catch (err) {
     console.error('Wiki Detail load error', err);
   } finally {

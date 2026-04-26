@@ -48,6 +48,11 @@ const routes = [
                 component: () => import('../views/DecisionList.vue')
             },
             {
+                path: 'favorites',
+                name: 'DecisionFavorites',
+                component: () => import('../views/DecisionList.vue')
+            },
+            {
                 path: 'decisions/create',
                 name: 'DecisionCreate',
                 component: () => import('../views/DecisionCreate.vue')

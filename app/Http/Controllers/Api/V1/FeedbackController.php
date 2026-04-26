@@ -51,7 +51,12 @@ class FeedbackController extends Controller
     {
         $decision = Decision::findOrFail($decisionId);
         
-        $feedback = $this->feedbackService->submitFeedback($decision, $request->validated(), $request->user());
+        $user = $request->user();
+        if ($request->has('acting_as_user_id')) {
+            $user = \App\Models\User::findOrFail($request->acting_as_user_id);
+        }
+        
+        $feedback = $this->feedbackService->submitFeedback($decision, $request->validated(), $user);
 
         return response()->json([
             'message' => 'Feedback soumis.',
@@ -101,5 +106,18 @@ class FeedbackController extends Controller
             'message' => 'Vous soutenez ce feedback.',
             'join' => $join
         ], 201);
+    }
+
+    public function destroy(string $feedbackId): JsonResponse
+    {
+        $feedback = Feedback::findOrFail($feedbackId);
+        
+        $decision = $feedback->version->decision;
+        $userRole = $decision->participants()->where('user_id', request()->user()->id)->first()?->role;
+        abort_unless($userRole === \App\Enums\DecisionParticipantRole::ANIMATOR, 403, 'Seul l\'animateur peut annuler cette action.');
+
+        $feedback->delete();
+
+        return response()->json(['message' => 'Feedback annulé.'], 200);
     }
 }

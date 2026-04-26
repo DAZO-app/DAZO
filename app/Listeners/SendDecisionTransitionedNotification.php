@@ -13,12 +13,34 @@ class SendDecisionTransitionedNotification
     public function handle(DecisionTransitioned $event): void
     {
         $decision = $event->decision;
+        $decision->load('participants.user', 'circle.members.user');
 
-        foreach ($decision->circle->members()->with('user')->get() as $member) {
+        // Notify participants (author, animator, active participants)
+        $participants = $decision->participants->pluck('user_id')->toArray();
+        
+        // Also get anyone who has ever given feedback/consent on this decision
+        $activeUserIds = \App\Models\Feedback::whereHas('decisionVersion', function($q) use ($decision) {
+            $q->where('decision_id', $decision->id);
+        })->pluck('author_id')->toArray();
+
+        $consentUserIds = \App\Models\Consent::whereHas('decisionVersion', function($q) use ($decision) {
+            $q->where('decision_id', $decision->id);
+        })->pluck('user_id')->toArray();
+
+        $allRelevantUserIds = array_unique(array_merge($participants, $activeUserIds, $consentUserIds));
+
+        foreach ($allRelevantUserIds as $userId) {
+            $user = \App\Models\User::find($userId);
+            if (!$user) continue;
+
             $this->notificationService->notify(
-                $member->user,
-                NotificationEventType::NEW_DECISION,
-                ['decision_id' => $decision->id, 'title' => $decision->title, 'status' => $decision->status->value]
+                $user,
+                NotificationEventType::PHASE_CHANGE,
+                [
+                    'decision_id' => $decision->id, 
+                    'title' => $decision->title, 
+                    'status' => $decision->status->value
+                ]
             );
         }
     }

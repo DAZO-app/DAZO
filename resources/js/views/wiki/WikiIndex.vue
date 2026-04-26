@@ -52,7 +52,7 @@
                 <div class="pc-header-title" style="font-size: 14px;">{{ page.title }}</div>
               </div>
               <div class="pc-body p-16">
-                 <div class="text-xs text-muted mb-4 uppercase">{{ page.category || 'Général' }}</div>
+                 <div class="text-xs text-muted mb-4 uppercase">{{ page.category?.name || 'Général' }}</div>
                  <div class="text-sm line-clamp-2" v-html="excerpt(page.content)"></div>
               </div>
            </div>
@@ -60,12 +60,50 @@
         </div>
 
         <!-- THEMATIC NAVIGATION -->
-        <div v-else>
-          <div v-for="(group, category) in groupedPages" :key="category" class="mb-48">
-            <h3 class="section-title mb-16">{{ category === 'null' ? 'Général' : category }}</h3>
+        <div v-else class="wiki-categories-wrap">
+          <div v-for="category in categories" :key="category.id" class="premium-card mb-24 overflow-hidden">
+            <div 
+              class="pc-header pc-header-blue cursor-pointer select-none flex items-center justify-between" 
+              style="padding: 16px 24px;"
+              @click="toggleCategory(category.id)"
+            >
+              <div class="flex items-center gap-12">
+                <div class="pc-header-icon" style="width: 32px; height: 32px; font-size: 14px; background: rgba(255,255,255,0.2);"><i class="fa-solid fa-folder-open"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">{{ category.name }}</div>
+                  <div class="pc-header-sub text-white opacity-80" style="font-size: 11px;">{{ category.pages.length }} article(s) disponible(s)</div>
+                </div>
+              </div>
+              <i class="fa-solid" :class="expandedCategories.includes(category.id) ? 'fa-chevron-up' : 'fa-chevron-down'" style="font-size: 14px; opacity: 0.6;"></i>
+            </div>
+            
+            <div v-if="expandedCategories.includes(category.id)" class="pc-body bg-gray-50/50 p-24">
+              <div class="wiki-grid">
+                <router-link 
+                  v-for="page in category.pages" 
+                  :key="page.id" 
+                  :to="{ name: 'WikiDetail', params: { slug: page.slug } }"
+                  class="wiki-card bg-white"
+                >
+                  <div class="wiki-card-icon">
+                    <i class="fa-solid fa-file-lines"></i>
+                  </div>
+                  <div class="wiki-card-content">
+                    <div class="wiki-card-title">{{ page.title }}</div>
+                    <div class="wiki-card-desc line-clamp-1" v-html="excerpt(page.content, 60)"></div>
+                  </div>
+                  <i class="fa-solid fa-chevron-right wiki-card-arrow"></i>
+                </router-link>
+              </div>
+            </div>
+          </div>
+
+          <!-- STANDALONE PAGES -->
+          <div v-if="standalonePages.length > 0" class="mb-48 mt-32">
+            <h3 class="section-title mb-16">Autres guides</h3>
             <div class="wiki-grid">
               <router-link 
-                v-for="page in group" 
+                v-for="page in standalonePages" 
                 :key="page.id" 
                 :to="{ name: 'WikiDetail', params: { slug: page.slug } }"
                 class="wiki-card"
@@ -81,7 +119,8 @@
               </router-link>
             </div>
           </div>
-          <EmptyState v-if="Object.keys(groupedPages).length === 0" message="Le centre d'aide est en cours de rédaction." />
+
+          <EmptyState v-if="categories.length === 0 && standalonePages.length === 0" message="Le centre d'aide est en cours de rédaction." />
         </div>
       </div>
     </div>
@@ -98,19 +137,43 @@ const authStore = useAuthStore();
 const isAdmin = computed(() => ['admin', 'superadmin'].includes(authStore.user?.role));
 
 const pages = ref([]);
+const categories = ref([]);
+const standalonePages = ref([]);
 const loading = ref(true);
 const searchQuery = ref('');
+const expandedCategories = ref([]);
 let searchTimeout = null;
 
 const fetchPages = async () => {
   loading.value = true;
   try {
     const { data } = await axios.get('/api/v1/wiki', { params: { search: searchQuery.value } });
-    pages.value = data.pages;
+    console.log('Wiki API response:', data);
+    
+    if (searchQuery.value && searchQuery.value.length > 1) {
+      pages.value = data.pages || [];
+    } else {
+      categories.value = data.categories || [];
+      standalonePages.value = data.standalone_pages || [];
+      
+      // Open first category by default if none are expanded
+      if (categories.value.length > 0 && expandedCategories.value.length === 0) {
+        expandedCategories.value.push(categories.value[0].id);
+      }
+    }
   } catch (err) {
     console.error('Wiki load error', err);
   } finally {
     loading.value = false;
+  }
+};
+
+const toggleCategory = (id) => {
+  const index = expandedCategories.value.indexOf(id);
+  if (index > -1) {
+    expandedCategories.value.splice(index, 1);
+  } else {
+    expandedCategories.value.push(id);
   }
 };
 
@@ -121,16 +184,6 @@ const handleSearch = () => {
 
 onMounted(fetchPages);
 
-const groupedPages = computed(() => {
-  if (searchQuery.value) return {};
-  return pages.value.reduce((acc, page) => {
-    const cat = page.category || 'Général';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(page);
-    return acc;
-  }, {});
-});
-
 const excerpt = (content, limit = 100) => {
   if (!content) return '';
   const plainText = content.replace(/<[^>]*>?/gm, '');
@@ -140,7 +193,10 @@ const excerpt = (content, limit = 100) => {
 </script>
 
 <style scoped>
-.section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); border-bottom: 2px solid var(--blue-100); padding-bottom: 8px; display: inline-block; }
+.collapse-enter-active, .collapse-leave-active { transition: all 0.3s ease; max-height: 1000px; opacity: 1; }
+.collapse-enter-from, .collapse-leave-to { max-height: 0; opacity: 0; overflow: hidden; }
+
+.section-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue-700); border-bottom: 3px solid var(--blue-100); padding-bottom: 8px; display: inline-block; }
 
 .wiki-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
 

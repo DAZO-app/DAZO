@@ -126,11 +126,23 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="label">Catégorie</label>
-                    <select v-model="form.category_id" class="select">
-                        <option value="">Aucune</option>
-                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                    </select>
+                    <label class="label">Catégories</label>
+                    <div class="categories-selector mt-8">
+                       <div class="category-chips">
+                          <div 
+                            v-for="cat in categories" 
+                            :key="cat.id"
+                            class="category-chip"
+                            :class="{ active: form.category_ids.includes(cat.id) }"
+                            @click="toggleCategory(cat.id)"
+                            :style="form.category_ids.includes(cat.id) ? { borderColor: cat.color_hex, background: cat.color_hex + '15', color: cat.color_hex } : {}"
+                          >
+                             <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
+                             {{ cat.name }}
+                          </div>
+                       </div>
+                    </div>
+                    <div class="text-xxs text-muted mt-8">Vous pouvez sélectionner plusieurs thématiques.</div>
                 </div>
 
 
@@ -162,12 +174,24 @@ const error = ref('');
 const submitting = ref(false);
 
 const form = ref({
-  circle_id: '',
-  animator_id: '',
   title: '',
-  category_id: '',
-  model_id: '',
+  content: '',
+  circle_id: route.query.circle || '',
+  animator_id: '',
+  category_ids: [],
+  visibility: 'public',
+  priority: 0,
+  emergency_mode: false
 });
+
+const toggleCategory = (id) => {
+  const index = form.value.category_ids.indexOf(id);
+  if (index === -1) {
+    form.value.category_ids.push(id);
+  } else {
+    form.value.category_ids.splice(index, 1);
+  }
+};
 
 let quill = null;
 
@@ -464,4 +488,5 @@ const runLightbox = (index) => {
 .pswp__doc-btn:hover {
   opacity: 0.9;
 }
+.text-xxs { font-size: 10px; }
 </style>

@@ -11,7 +11,7 @@
         
         <h3 class="modal-title-custom">Publication & Notifications</h3>
         <p class="modal-description">
-          Votre proposition est prête. Souhaitez-vous informer les membres du cercle par email pour lancer la phase de <strong>clarification</strong> ?
+          Votre proposition est prête. Souhaitez-vous informer les membres du cercle par email pour lancer la phase de <strong>{{ phaseLabel }}</strong> ?
         </p>
         
         <div class="modal-actions-list">
@@ -34,10 +34,22 @@
 </template>
 
 <script setup>
-defineProps({
-  visible: Boolean
+import { computed } from 'vue';
+
+const props = defineProps({
+  visible: Boolean,
+  targetStatus: {
+    type: String,
+    default: 'clarification'
+  }
 });
-defineEmits(['confirm', 'cancel']);
+
+const emit = defineEmits(['confirm', 'cancel']);
+
+const phaseLabel = computed(() => {
+  if (props.targetStatus === 'objection') return 'objection';
+  return 'clarification';
+});
 </script>
 
 <style scoped>

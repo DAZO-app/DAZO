@@ -37,14 +37,14 @@
             <span class="sub-dot dot-amber"></span> Réactions attendues
           </router-link>
 
-          <template v-if="isAdmin && !isImpersonating">
+          <template v-if="isActuallyAdmin">
             <div class="mobile-menu-divider"></div>
             <div class="sidebar-section" style="padding-left:20px; color:rgba(255,255,255,0.4)">Administration</div>
             <router-link :to="{ name: 'AdminUsers' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-users" style="margin-right: 8px;"></i> Utilisateurs</router-link>
             <router-link :to="{ name: 'AdminCircles' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-circle-nodes" style="margin-right: 8px;"></i> Cercles Admin</router-link>
             <router-link :to="{ name: 'AdminCategories' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-tags" style="margin-right: 8px;"></i> Catégories</router-link>
             
-            <template v-if="isSuperAdmin">
+            <template v-if="isActuallySuperAdmin">
               <div class="mobile-menu-divider"></div>
               <div class="sidebar-section" style="padding-left:20px; color:rgba(255,255,255,0.4)">Système</div>
               <router-link :to="{ name: 'Admin' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gauge-high" style="margin-right: 8px;"></i> Dashboard Admin</router-link>
@@ -78,83 +78,128 @@
           </button>
         </div>
 
-        <!-- Navigation -->
-        <div class="sidebar-section">Navigation</div>
-        <router-link to="/" class="sidebar-item" exact-active-class="active">
-          <span><i class="fa-solid fa-house"></i></span> Tableau de bord
-        </router-link>
-        <router-link to="/decisions" class="sidebar-item" :class="{ active: $route.path === '/decisions' && Object.keys($route.query).length === 0 }">
-          <span><i class="fa-solid fa-list"></i></span> Décisions
-        </router-link>
-        <router-link :to="{ name: 'CircleList' }" class="sidebar-item" active-class="active">
-          <span><i class="fa-solid fa-circle-nodes"></i></span> Cercles
-        </router-link>
-        <router-link to="/wiki" class="sidebar-item" active-class="active">
-          <span><i class="fa-solid fa-book-open"></i></span> Aide
-        </router-link>
+         <!-- Navigation -->
+        <div class="sidebar-section-header" @click="sectionsOpen.navigation = !sectionsOpen.navigation">
+          <span>Navigation</span>
+          <i :class="sectionsOpen.navigation ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
+        </div>
+        <transition name="sidebar-fade">
+          <div v-show="sectionsOpen.navigation" class="sidebar-collapsible">
+            <router-link to="/" class="sidebar-item" exact-active-class="active">
+              <span><i class="fa-solid fa-house"></i></span> Tableau de bord
+            </router-link>
+            <router-link to="/decisions" class="sidebar-item" :class="{ active: $route.name === 'DecisionList' }">
+              <span><i class="fa-solid fa-list"></i></span> Décisions
+            </router-link>
+            <router-link to="/favorites" class="sidebar-item" active-class="active">
+              <span><i class="fa-solid fa-star"></i></span> Mes favoris
+            </router-link>
+            <router-link :to="{ name: 'CircleList' }" class="sidebar-item" active-class="active">
+              <span><i class="fa-solid fa-circle-nodes"></i></span> Cercles
+            </router-link>
+            <router-link to="/wiki" class="sidebar-item" active-class="active">
+              <span><i class="fa-solid fa-book-open"></i></span> Aide
+            </router-link>
+            <router-link to="/settings" class="sidebar-item" active-class="active">
+              <span><i class="fa-solid fa-sliders"></i></span> Paramètres
+            </router-link>
+          </div>
+        </transition>
 
         <!-- Sous-navigation: Mes filtres -->
-        <template v-if="hasMyProposals || hasMyAnimations || pendingTotal > 0">
-          <div class="sidebar-section" style="margin-top: 8px;">Mes Vues</div>
-          <router-link v-if="hasMyProposals" :to="{ path: '/decisions', query: { role: 'author' } }" class="sidebar-subitem" :class="{ active: $route.path === '/decisions' && $route.query.role === 'author' }">
-            <span class="sub-dot" style="background: var(--blue-300)"></span> Mes propositions
-          </router-link>
-          <router-link v-if="hasMyAnimations" :to="{ path: '/decisions', query: { role: 'animator' } }" class="sidebar-subitem" :class="{ active: $route.path === '/decisions' && $route.query.role === 'animator' }">
-            <span class="sub-dot" style="background: var(--teal-400)"></span> Décisions que j'anime
-          </router-link>
-          <router-link v-if="pendingTotal > 0" :to="{ path: '/decisions', query: { action: 'pending' } }" class="sidebar-subitem" :class="{ active: $route.path === '/decisions' && $route.query.action === 'pending' }">
-            <span class="sub-dot dot-amber"></span> Réactions attendues
-            <span v-if="pendingTotal > 0" class="sidebar-badge badge-amber">{{ pendingTotal }}</span>
-          </router-link>
-          <router-link v-if="urgentTotal > 0" :to="{ path: '/decisions', query: { urgency: 'urgent' } }" class="sidebar-subitem" :class="{ active: $route.path === '/decisions' && $route.query.urgency === 'urgent' }">
-            <span class="sub-dot dot-red"></span> Urgentes / Expirées
-            <span class="sidebar-badge badge-red">{{ urgentTotal }}</span>
-          </router-link>
+        <template v-if="user?.custom_views?.length > 0">
+          <div class="sidebar-section-header" style="margin-top: 8px;" @click="sectionsOpen.views = !sectionsOpen.views">
+            <span>Mes Vues</span>
+            <i :class="sectionsOpen.views ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
+          </div>
+          <transition name="sidebar-fade">
+            <div v-show="sectionsOpen.views" class="sidebar-collapsible">
+              <router-link v-for="view in user.custom_views" :key="view.id" 
+                           :to="{ name: 'DecisionList', query: { ...view.filters, view_label: view.label } }" 
+                           class="sidebar-subitem" 
+                           :class="{ active: $route.query.view_label === view.label }">
+                <span class="sub-dot" :class="'dot-' + (view.id.includes('urgent') ? 'red' : view.id.includes('pending') ? 'amber' : 'blue')"></span> 
+                {{ view.label }}
+              </router-link>
+            </div>
+          </transition>
         </template>
 
-        <template v-if="isAdmin && !isImpersonating">
-          <div class="sidebar-section">Administration</div>
-          <router-link :to="{ name: 'AdminUsers' }" class="sidebar-item" active-class="active">
-            <span><i class="fa-solid fa-users"></i></span> Utilisateurs
-          </router-link>
-          <router-link :to="{ name: 'AdminCircles' }" class="sidebar-item" active-class="active">
-            <span><i class="fa-solid fa-circle-nodes"></i></span> Cercles Admin
-          </router-link>
-          <router-link :to="{ name: 'AdminCategories' }" class="sidebar-item" active-class="active">
-            <span><i class="fa-solid fa-tags"></i></span> Catégories
-          </router-link>
-
-          <template v-if="isSuperAdmin">
-             <div class="sidebar-section">Système</div>
-            <router-link :to="{ name: 'Admin' }" class="sidebar-item" active-class="active">
-              <span><i class="fa-solid fa-gauge-high"></i></span> Dashboard Admin
-            </router-link>
-            <router-link :to="{ name: 'AdminConfig' }" class="sidebar-item" active-class="active">
-              <span><i class="fa-solid fa-gears"></i></span> Configuration
-            </router-link>
-            <router-link :to="{ name: 'AdminDatabase' }" class="sidebar-item" active-class="active">
-              <span><i class="fa-solid fa-database"></i></span> BDD
-            </router-link>
-            <router-link :to="{ name: 'AdminServer' }" class="sidebar-item" active-class="active">
-              <span><i class="fa-solid fa-server"></i></span> Serveur
-            </router-link>
-          </template>
+        <template v-if="isActuallyAdmin">
+          <div class="sidebar-section-header" style="margin-top: 8px;" @click="sectionsOpen.admin = !sectionsOpen.admin">
+            <span>Administration</span>
+            <i :class="sectionsOpen.admin ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
+          </div>
+          <transition name="sidebar-fade">
+            <div v-show="sectionsOpen.admin" class="sidebar-collapsible">
+              <router-link :to="{ name: 'AdminUsers' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-users"></i></span> Utilisateurs
+              </router-link>
+              <router-link :to="{ name: 'AdminCircles' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-circle-nodes"></i></span> Cercles Admin
+              </router-link>
+              <router-link :to="{ name: 'AdminCategories' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-tags"></i></span> Catégories
+              </router-link>
+            </div>
+          </transition>
         </template>
 
-        <div style="height: 16px;"></div>
-        <router-link to="/settings" class="sidebar-item" active-class="active">
-          <span><i class="fa-solid fa-sliders"></i></span> Paramètres
-        </router-link>
+        <template v-if="isActuallySuperAdmin">
+          <div class="sidebar-section-header" style="margin-top: 8px;" @click="sectionsOpen.system = !sectionsOpen.system">
+            <span>Système</span>
+            <i :class="sectionsOpen.system ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
+          </div>
+          <transition name="sidebar-fade">
+            <div v-show="sectionsOpen.system" class="sidebar-collapsible">
+              <router-link :to="{ name: 'Admin' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-gauge-high"></i></span> Dashboard Admin
+              </router-link>
+              <router-link :to="{ name: 'AdminConfig' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-gears"></i></span> Configuration
+              </router-link>
+              <router-link :to="{ name: 'AdminDatabase' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-database"></i></span> BDD
+              </router-link>
+              <router-link :to="{ name: 'AdminServer' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-server"></i></span> Serveur
+              </router-link>
+            </div>
+          </transition>
+        </template>
 
         <!-- Pied de barre -->
         <div class="sidebar-footer">
+          <!-- Restore Banner Button -->
+          <button v-if="(isAdmin || isImpersonating) && authStore.bannerHidden" 
+                  @click="authStore.setBannerHidden(false)" 
+                  class="sidebar-item" 
+                  style="margin-bottom: 8px; border-radius: var(--radius-sm); background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);">
+            <span><i class="fa-solid fa-eye"></i></span> Afficher barre admin
+          </button>
+
           <div class="sidebar-user">
             <div class="avatar av-blue">{{ userInitials }}</div>
             <div style="flex:1;min-width:0;">
               <div class="sidebar-user-name truncate">{{ user?.name || 'Utilisateur' }}</div>
               <div class="sidebar-user-role">{{ user?.role || 'Actif' }}</div>
             </div>
-            <button @click="logout" class="btn btn-ghost btn-icon" style="color:rgba(255,255,255,0.4)" title="Déconnexion"><i class="fa-solid fa-power-off"></i></button>
+            
+            <div class="flex gap-4">
+              <button v-if="isImpersonating" 
+                      @click="stopImpersonating" 
+                      class="btn btn-ghost btn-icon" 
+                      style="color:var(--amber-400)" 
+                      title="Arrêter la simulation">
+                <i class="fa-solid fa-user-slash"></i>
+              </button>
+              <button @click="logout" 
+                      class="btn btn-ghost btn-icon" 
+                      style="color:rgba(255,255,255,0.4)" 
+                      title="Déconnexion">
+                <i class="fa-solid fa-power-off"></i>
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -166,7 +211,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { usePendingStore } from '../stores/pending';
 import { useDecisionStore } from '../stores/decision';
@@ -181,11 +226,21 @@ const configStore = useConfigStore();
 const router = useRouter();
 
 const mobileMenuOpen = ref(false);
+const sectionsOpen = ref({
+  navigation: true,
+  views: true,
+  admin: false,
+  system: false
+});
 
 const user = computed(() => authStore.user);
 const isAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
 const isSuperAdmin = computed(() => user.value?.role === 'superadmin');
 const isImpersonating = computed(() => authStore.isImpersonating);
+
+// Persistence of admin access during impersonation
+const isActuallyAdmin = computed(() => isAdmin.value || !!authStore.originalRole);
+const isActuallySuperAdmin = computed(() => isSuperAdmin.value || authStore.originalRole === 'superadmin');
 
 const userInitials = computed(() => {
   if (!user.value) return '?';
@@ -228,17 +283,43 @@ const countClarification = computed(() => decisionStore.decisions.filter(d => d.
 const countReaction = computed(() => decisionStore.decisions.filter(d => d.status === 'reaction').length);
 const countObjection = computed(() => decisionStore.decisions.filter(d => d.status === 'objection').length);
 
-onMounted(() => {
+const refreshAllData = () => {
+  console.log('Refreshing all data for user:', user.value?.id);
   if (authStore.isAuthenticated) {
-    pending.startPolling(); // auto-refresh every 60s
+    pending.fetch();
     decisionStore.fetchDecisions();
     configStore.fetchConfig();
+    
+    // Auto-open admin section for admins if not already explicitly closed
+    if (isActuallyAdmin.value) {
+      sectionsOpen.value.admin = true;
+    }
+    if (isActuallySuperAdmin.value) {
+      sectionsOpen.value.system = true;
+    }
+  }
+};
+
+// Re-fetch data whenever user identity changes (impersonation start/stop)
+watch(() => user.value?.id, (newId) => {
+  if (newId) refreshAllData();
+}, { immediate: true });
+
+onMounted(() => {
+  // Extra safety for Echo registration
+  if (window.Echo && user.value?.id) {
+    pending.startEcho(user.value.id);
   }
 });
 
 const logout = async () => {
   await authStore.logout();
   router.push('/login');
+};
+
+const stopImpersonating = async () => {
+  await authStore.stopImpersonating();
+  window.location.href = '/'; // Redirect to root to ensure fresh start
 };
 </script>
 
@@ -388,11 +469,47 @@ const logout = async () => {
 }
 .btn-new-icon { font-size: 18px; font-weight: 300; line-height: 1; }
 
-.sidebar-section {
-  padding: 4px 20px; font-size: 10px; font-weight: 600;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  color: rgba(255,255,255,0.3); margin: 8px 0 4px;
+.sidebar-section-header {
+  padding: 12px 20px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: color 0.2s;
 }
+
+.sidebar-section-header:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sidebar-section-header i {
+  font-size: 10px;
+  opacity: 0.5;
+}
+
+.sidebar-collapsible {
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-fade-enter-active,
+.sidebar-fade-leave-active {
+  transition: all 0.25s ease-out;
+  max-height: 500px;
+}
+
+.sidebar-fade-enter-from,
+.sidebar-fade-leave-to {
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(-10px);
+}
+
 .sidebar-item {
   display: flex; align-items: center; gap: 8px; padding: 10px 20px;
   font-size: 13px; color: rgba(255,255,255,0.65); cursor: pointer;

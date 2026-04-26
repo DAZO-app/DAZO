@@ -1,11 +1,5 @@
 <x-mail::message>
-# Bonjour {{ $user->name }},
-
-Ceci est un rappel concernant la décision : **{{ $decision->title }}**.
-
-La phase actuelle (**{{ $decision->status->value }}**) arrive bientôt à échéance. Votre participation est attendue afin de faire progresser le processus.
-
-**Échéance :** {{ $deadline }}
+{{ $body }}
 
 <x-mail::button :url="$url">
 Accéder à la décision

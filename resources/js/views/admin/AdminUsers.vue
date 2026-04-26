@@ -347,7 +347,7 @@ const impersonate = async (userToImpersonate) => {
   if (confirm(`Voulez-vous vraiment simuler l'utilisateur ${userToImpersonate.name} ?`)) {
     try {
       await authStore.impersonate(userToImpersonate.id);
-      router.push({ name: 'Dashboard' });
+      window.location.href = '/'; // Force full reload to reset all stores and layout
     } catch (e) {
       alert(e.response?.data?.message || 'Erreur lors de l\'impersonation.');
     }

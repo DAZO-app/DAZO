@@ -28,6 +28,7 @@ class CreateFeedbackMessageRequest extends FormRequest
     {
         return [
             'content' => ['required', 'string'],
+            'acting_as_user_id' => ['nullable', 'exists:users,id'],
         ];
     }
 }

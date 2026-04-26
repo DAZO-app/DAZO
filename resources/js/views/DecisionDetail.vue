@@ -12,12 +12,42 @@
   </main>
 
   <main class="main" v-else-if="decision">
+    <ReminderModal 
+      v-if="showReminderModal" 
+      :decision="decision" 
+      @close="showReminderModal = false" 
+    />
+    
+    <MeetingModeOverlay
+      v-if="showMeetingMode"
+      :decision="decision"
+      :current-version="currentVersion"
+      :attachments="displayAttachments"
+      :is-animator="isAuthorOrAnimator"
+      :participants="decision.participants"
+      @close="handleMeetingModeClose"
+      @open-attachment="openAttachment"
+      @phase-change="fetchDecision"
+      @refresh-data="fetchDecision"
+    />
+
     <div class="page-body">
       <div class="hero-card">
         <div class="hero-flex">
           <div class="flex items-center gap-20">
             <div>
               <div class="hero-title">{{ decision.title }}</div>
+              <div class="flex flex-wrap gap-8 mt-8 mb-4" v-if="decision.categories && decision.categories.length > 0">
+                 <span 
+                    v-for="cat in decision.categories" 
+                    :key="cat.id"
+                    class="category-badge"
+                    :style="{ background: cat.color_hex + '20', color: cat.color_hex, borderColor: cat.color_hex + '40' }"
+                 >
+                    <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
+                    {{ cat.name }}
+                 </span>
+              </div>
               <div class="hero-subtitle">
                 {{ decision.circle?.name }} · Version {{ currentVersion?.version_number || 1 }} ·
                 Porteur: <strong>{{ authorName }}</strong>
@@ -47,7 +77,29 @@
             </div>
           </div>
         </div>
-        <div class="hero-footer-meta mt-16 flex items-center gap-16 text-xs" style="opacity: 0.8;">
+        <div class="hero-footer-meta mt-16 flex items-center gap-16 text-xs" style="opacity: 0.9;">
+          <div class="flex items-center gap-8 mr-4">
+            <button class="btn-setting" :class="{ 'is-fav': isFavorite }" @click="toggleFavorite" :title="isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'">
+              <i :class="isFavorite ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
+            </button>
+            
+            <button class="btn-setting" @click="showNotifLevels = true" title="Préférences de notification">
+              <i :class="notifLevelIcon"></i>
+            </button>
+
+            <!-- Nouvelles actions -->
+            <button class="btn-setting" @click="openMeetingMode" title="Mode réunion">
+              <i class="fa-solid fa-display"></i>
+            </button>
+
+            <button v-if="isAuthorOrAnimator" class="btn-setting" @click="showReminderModal = true" title="Relancer les participants en attente">
+              <i class="fa-solid fa-envelope"></i>
+            </button>
+
+            <button class="btn-setting" @click="printDecision" title="Imprimer / Export PDF">
+              <i class="fa-solid fa-print"></i>
+            </button>
+          </div>
           <span><i class="fa-solid fa-calendar-plus mr-4"></i> Créée le {{ formatDateOnly(decision.created_at) }}</span>
           <span><i class="fa-solid fa-clock mr-4"></i> Actu. le {{ formatDateOnly(decision.updated_at) }}</span>
           <span v-if="decision.current_deadline && !['adopted', 'abandoned'].includes(currentStatus)" :class="{ 'text-red font-bold': isUrgent }">
@@ -307,6 +359,7 @@
             class="mb-16"
           >
             <FeedbackEngine 
+                 :key="feedbackKey"
                  :decision="viewingVersionId ? historicalVersionDecision : decision" 
                  :historical-data="viewingVersionId ? historicalVersionData : null"
                  @refresh="refreshDecision" 
@@ -368,11 +421,22 @@
               </div>
 
               <div class="form-group">
-                <label class="label">Catégorie</label>
-                <select v-model="draftForm.category_id" class="select">
-                  <option value="">Aucune</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                </select>
+                <label class="label">Catégories</label>
+                <div class="categories-selector mt-8">
+                   <div class="category-chips">
+                      <div 
+                        v-for="cat in categories" 
+                        :key="cat.id"
+                        class="category-chip"
+                        :class="{ active: draftForm.category_ids.includes(cat.id) }"
+                        @click="toggleCategory(cat.id)"
+                        :style="draftForm.category_ids.includes(cat.id) ? { borderColor: cat.color_hex, background: cat.color_hex + '15', color: cat.color_hex } : {}"
+                      >
+                         <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
+                         {{ cat.name }}
+                      </div>
+                   </div>
+                </div>
               </div>
 
               <div class="form-group">
@@ -513,8 +577,22 @@
 
     <NotificationPromptModal 
       :visible="showNotificationPrompt" 
+      :targetStatus="pendingPublishType === 'revision' ? targetRevisionStatus : 'clarification'"
       @confirm="handlePublishConfirm" 
       @cancel="showNotificationPrompt = false" 
+    />
+
+    <RevisionPathModal 
+      v-if="showRevisionPathModal" 
+      @close="showRevisionPathModal = false" 
+      @confirm="handlePathChoice"
+    />
+
+    <NotificationLevelModal
+      v-if="showNotifLevels"
+      :currentLevel="currentNotifLevel"
+      @close="showNotifLevels = false"
+      @select="setNotifLevel"
     />
   </main>
 </template>
@@ -524,11 +602,15 @@ import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import AnimatorSelector from '../components/AnimatorSelector.vue';
+import ReminderModal from '../components/ReminderModal.vue';
 import AttachmentPanel from '../components/AttachmentPanel.vue';
 import FeedbackEngine from '../components/FeedbackEngine.vue';
 import ParticipantPhasePanel from '../components/ParticipantPhasePanel.vue';
 import RichTextEditor from '../components/RichTextEditor.vue';
 import NotificationPromptModal from '../components/NotificationPromptModal.vue';
+import RevisionPathModal from '../components/RevisionPathModal.vue';
+import NotificationLevelModal from '../components/NotificationLevelModal.vue';
+import MeetingModeOverlay from '../components/MeetingModeOverlay.vue';
 import { useAuthStore } from '../stores/auth';
 import { useDecisionStore } from '../stores/decision';
 import { usePendingStore } from '../stores/pending';
@@ -620,6 +702,10 @@ const showReactionModal = ref(false);
 const showActionsModal = ref(false);
 const performingAction = ref(false);
 const showNotificationPrompt = ref(false);
+const showRevisionPathModal = ref(false);
+const showNotifLevels = ref(false);
+const showReminderModal = ref(false);
+const targetRevisionStatus = ref('clarification');
 const pendingPublishType = ref(null);
 const revisionAttachments = ref([]);
 
@@ -637,9 +723,19 @@ const draftForm = ref({
   content: '',
   animator_id: '',
   circle_id: '',
-  category_id: '',
-  excluded_members: [],
+  category_ids: [],
+  model_id: '',
+  revision_attachment_ids: [],
 });
+
+const toggleCategory = (id) => {
+  const index = draftForm.value.category_ids.indexOf(id);
+  if (index === -1) {
+    draftForm.value.category_ids.push(id);
+  } else {
+    draftForm.value.category_ids.splice(index, 1);
+  }
+};
 
 const reactionText = ref('');
 const reactionType = ref('objection');
@@ -677,6 +773,71 @@ const isRevision = computed(() => {
   const s = currentStatus.value;
   return s === 'revision';
 });
+
+const isFavorite = computed(() => decisionStore.mySettings?.is_favorite || false);
+const currentNotifLevel = computed(() => decisionStore.mySettings?.notification_level || 'all');
+
+const notifLevels = [
+  { value: 'all', label: 'Toutes les mises à jour', desc: 'Recevoir un mail pour chaque modification ou commentaire.', icon: 'fa-solid fa-bell' },
+  { value: 'relevant', label: 'Mises à jour me concernant', desc: 'Seulement pour vos participations ou si vous êtes porteur.', icon: 'fa-solid fa-bell-concierge' },
+  { value: 'phase_change', label: 'Changements de phase', desc: 'Seulement quand la décision progresse.', icon: 'fa-solid fa-bolt' },
+  { value: 'none', label: 'Aucune', desc: 'Désactiver les notifications par email.', icon: 'fa-regular fa-bell-slash' },
+];
+
+const notifLevelIcon = computed(() => {
+  return notifLevels.find(l => l.value === currentNotifLevel.value)?.icon || 'fa-solid fa-bell';
+});
+
+const toggleFavorite = async () => {
+  try {
+    const { data } = await axios.post(`/api/v1/decisions/${decision.value.id}/favorite`);
+    if (!decisionStore.mySettings) {
+      decisionStore.mySettings = { user_id: authStore.user.id, decision_id: decision.value.id };
+    }
+    decisionStore.mySettings.is_favorite = data.is_favorite;
+  } catch (err) {
+    console.error('Favorite toggle failed', err);
+  }
+};
+
+const showMeetingMode = ref(false);
+
+const openMeetingMode = () => {
+  showMeetingMode.value = true;
+};
+
+const feedbackKey = ref(0);
+
+const handleMeetingModeClose = () => {
+  showMeetingMode.value = false;
+  // We reload the page to ensure all components, stats and feedback engines are 100% synchronized
+  window.location.reload();
+};
+
+const openAttachment = (idx) => {
+  const attachment = displayAttachments.value[idx];
+  if (attachment) {
+    const url = attachment.url || (attachment.s3_path ? `/storage/${attachment.s3_path}` : null);
+    if (url) window.open(url, '_blank');
+  }
+};
+
+const printDecision = () => {
+  window.print();
+};
+
+const setNotifLevel = async (level) => {
+  try {
+    const { data } = await axios.put(`/api/v1/decisions/${decision.value.id}/notifications`, { level });
+    if (!decisionStore.mySettings) {
+      decisionStore.mySettings = { user_id: authStore.user.id, decision_id: decision.value.id };
+    }
+    decisionStore.mySettings.notification_level = data.notification_level;
+    showNotifLevels.value = false;
+  } catch (err) {
+    console.error('Notif level update failed', err);
+  }
+};
 
 const isAuthor = computed(() => {
   return decision.value?.participants?.some(p => p.user_id === authStore.user?.id && p.role === 'author');
@@ -778,21 +939,20 @@ const modalDescription = computed(() => {
 });
 
 const statusLabel = computed(() => {
-  const labels = {
-    draft: 'Brouillon',
-    clarification: 'Clarification',
-    reaction: 'Réaction',
-    objection: 'Objection',
-    revision: 'Révision',
-    adopted: 'Adoptée',
-    adopted_override: 'Adoptée avec override',
-    abandoned: 'Abandonnée',
-    suspended: 'Suspendue (Pause)',
-    lapsed: 'Échue',
-    deserted: 'Désertée',
+  const map = {
+    draft: 'BROUILLON',
+    clarification: 'CLARIFICATION',
+    reaction: 'RÉACTION',
+    objection: 'OBJECTION',
+    revision: 'RÉVISION',
+    adopted: 'ADOPTÉE',
+    adopted_override: 'ADOPTÉE (FORCE)',
+    deserted: 'ABANDONNÉE',
+    abandoned: 'ABANDONNÉE',
+    suspended: 'SUSPENDUE',
+    lapsed: 'EXPIRÉE'
   };
-
-  return labels[currentStatus.value] || 'Inconnue';
+  return map[currentStatus.value] || currentStatus.value?.toUpperCase();
 });
 
 const isUrgent = computed(() => {
@@ -896,7 +1056,8 @@ const updateDraftForm = () => {
     content: status === 'revision' ? (value.revision_content || value.current_version?.content || '') : (value.current_version?.content || ''),
     animator_id: value.participants?.find((p) => p.role === 'animator')?.user_id || '',
     circle_id: value.circle_id || '',
-    category_id: value.category_id || '',
+    category_ids: value.categories ? value.categories.map(c => c.id) : [],
+    model_id: value.model_id || '',
     excluded_members: (value.participants || [])
       .filter((p) => p.role === 'excluded')
       .map((p) => p.user_id),
@@ -1071,6 +1232,12 @@ const saveRevision = async () => {
 const publishRevision = async () => {
   if (!decision.value) return;
   pendingPublishType.value = 'revision';
+  showRevisionPathModal.value = true;
+};
+
+const handlePathChoice = (status) => {
+  targetRevisionStatus.value = status;
+  showRevisionPathModal.value = false;
   showNotificationPrompt.value = true;
 };
 
@@ -1090,6 +1257,7 @@ const executePublishRevision = async (notify = false) => {
       content: draftForm.value.content,
       attachment_ids: revisionAttachments.value.map(a => a.id),
       notify: notify,
+      status: targetRevisionStatus.value,
     });
     
     await refreshDecision();
@@ -1713,5 +1881,43 @@ const handleManualAction = async (type) => {
 }
 .btn-link:hover {
   color: var(--indigo-700);
+}
+
+/* Settings Styles */
+.btn-setting {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.btn-setting:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-setting.is-fav {
+  background: #f59e0b; /* Amber 500 */
+  border-color: #fbbf24; /* Amber 400 */
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.hero-footer-meta {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hero-footer-meta span {
+  display: flex;
+  align-items: center;
 }
 </style>
