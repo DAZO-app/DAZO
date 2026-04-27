@@ -74,7 +74,7 @@ class DecisionService
     /**
      * Machine à États simplifiée.
      */
-    public function transition(Decision $decision, string $toStatus, User $actor, bool $isSystem = false): Decision
+    public function transition(Decision $decision, string $toStatus, User $actor, bool $isSystem = false, bool $notify = true, bool $isMeeting = false): Decision
     {
         $fromStatus = $decision->status->value;
 
@@ -130,7 +130,16 @@ class DecisionService
                     DecisionParticipantRole::ANIMATOR->value,
                 ])->exists();
 
-            if (!$isAuthorOrAnimator && !$actor->is_global_animator) {
+            $isCircleMember = $decision->circle->members()
+                ->where('user_id', $actor->id)
+                ->where('role', '!=', \App\Enums\CircleMemberRole::OBSERVER->value)
+                ->exists();
+
+            // Si c'est en mode meeting, on autorise tous les membres (non-observateurs)
+            // Sinon, on reste sur le porteur, l'animateur ou l'admin global
+            $hasRights = $isAuthorOrAnimator || $actor->is_global_animator || ($isMeeting && $isCircleMember);
+
+            if (!$hasRights) {
                 throw ValidationException::withMessages([
                     'status' => ["Vous n'avez pas les droits pour changer le statut de cette décision."],
                 ]);
@@ -155,9 +164,68 @@ class DecisionService
         }
 
         $decision->save();
-        $this->dispatchEventForTransition($decision, $toStatus);
+
+        // ── Auto-abstention : enregistrer les participants silencieux ──
+        // Quand on quitte une phase active, on marque d'abstention tous les
+        // membres éligibles qui n'ont pas encore exprimé de signal/feedback.
+        $fromPhaseConfig = DecisionStatus::tryFrom($fromStatus)?->getPhaseConfig();
+        if ($fromPhaseConfig && !in_array($toStatus, $globalTransitions)) {
+            $this->recordAbstentionsForPhase($decision, $fromPhaseConfig, $fromStatus);
+        }
+
+        if ($notify) {
+            $this->dispatchEventForTransition($decision, $toStatus);
+        }
 
         return $decision;
+    }
+
+    /**
+     * Enregistre un signal d'abstention pour les participants éligibles
+     * qui ne se sont pas exprimés durant la phase qui se termine.
+     */
+    public function recordAbstentionsForPhase(Decision $decision, array $phaseConfig, string $phase): void
+    {
+        $version = $decision->currentVersion;
+        if (!$version) return;
+
+        $circle = $decision->circle;
+        if (!$circle) return;
+
+        // Membres éligibles (non observateurs, non exclus/porteur/animateur)
+        $allMemberIds = $circle->members()
+            ->where('role', '!=', CircleMemberRole::OBSERVER->value)
+            ->pluck('user_id')->toArray();
+
+        $managingIds = $decision->participants()
+            ->whereIn('role', [
+                DecisionParticipantRole::EXCLUDED->value,
+                DecisionParticipantRole::AUTHOR->value,
+                DecisionParticipantRole::ANIMATOR->value,
+            ])->pluck('user_id')->toArray();
+
+        $eligibleIds = array_diff($allMemberIds, $managingIds);
+
+        // Participants ayant déjà donné un signal ou un feedback sur cette version
+        $hasFeedback = Feedback::where('decision_version_id', $version->id)
+            ->whereIn('type', $phaseConfig['feedback_types'])
+            ->pluck('author_id')->toArray();
+
+        $hasConsent = Consent::where('decision_version_id', $version->id)
+            ->where('phase', $phase)
+            ->pluck('user_id')->toArray();
+
+        $alreadyParticipated = array_unique(array_merge($hasFeedback, $hasConsent));
+        $silentIds = array_diff($eligibleIds, $alreadyParticipated);
+
+        foreach ($silentIds as $uid) {
+            Consent::create([
+                'decision_version_id' => $version->id,
+                'user_id' => $uid,
+                'signal' => ConsentSignal::ABSTENTION,
+                'phase' => $phase,
+            ]);
+        }
     }
 
     /**
@@ -278,31 +346,41 @@ class DecisionService
         $map = ['clarification' => [], 'reaction' => [], 'objection' => []];
 
         $versionFeedbacks = $version->feedbacks()->get(['author_id', 'type']);
-        $versionConsents  = $version->consents()->get(['user_id', 'signal']);
+        $versionConsents  = $version->consents()->get(['user_id', 'signal', 'phase']);
 
         foreach ($versionFeedbacks as $fb) {
             $typeVal = is_object($fb->type) ? $fb->type->value : $fb->type;
             match ($typeVal) {
-                FeedbackType::CLARIFICATION->value => $map['clarification'][$fb->author_id] = true,
-                FeedbackType::REACTION->value      => $map['reaction'][$fb->author_id] = true,
+                FeedbackType::CLARIFICATION->value => $map['clarification'][$fb->author_id] = $typeVal,
+                FeedbackType::REACTION->value      => $map['reaction'][$fb->author_id] = $typeVal,
                 FeedbackType::OBJECTION->value,
-                FeedbackType::SUGGESTION->value    => $map['objection'][$fb->author_id] = true,
+                FeedbackType::SUGGESTION->value    => $map['objection'][$fb->author_id] = $typeVal,
                 default => null,
             };
         }
 
         foreach ($versionConsents as $cs) {
             $signalVal = is_object($cs->signal) ? $cs->signal->value : $cs->signal;
-            match ($signalVal) {
-                ConsentSignal::NO_QUESTIONS->value => $map['clarification'][$cs->user_id] = true,
-                ConsentSignal::NO_REACTION->value  => $map['reaction'][$cs->user_id] = true,
-                ConsentSignal::NO_OBJECTION->value,
-                ConsentSignal::ABSTENTION->value   => $map['objection'][$cs->user_id] = true,
-                default => null,
-            };
+            $phaseVal  = is_object($cs->phase) ? $cs->phase->value : $cs->phase;
+            
+            // Map terminal statuses back to their logical phase for the participation map
+            if (in_array($phaseVal, [DecisionStatus::ADOPTED->value, DecisionStatus::ADOPTED_OVERRIDE->value])) {
+                $phaseVal = 'objection';
+            }
+
+            if (isset($map[$phaseVal])) {
+                $map[$phaseVal][(string)$cs->user_id] = $signalVal;
+            }
         }
 
         return $map;
+    }
+
+    private function mapAbstention(array &$map, string $userId, Decision $decision): void
+    {
+        // Cette méthode devient obsolète car on utilise maintenant la colonne 'phase' en base,
+        // mais on la garde pour compatibilité si besoin ou on la supprime.
+        // On la laisse vide pour l'instant pour éviter les erreurs d'appel.
     }
 
     /**

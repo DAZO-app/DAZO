@@ -10,6 +10,11 @@
   --blue-200: #c5caee;
   --blue-100: #dfe2f7;
   --blue-50:  #f0f2fd;
+  
+  --indigo-900: #1e1b4b;
+  --indigo-800: #312e81;
+  --indigo-700: #4338ca;
+  --indigo-600: #4f46e5;
 
   --teal-600: #0f6e56;
   --teal-500: #10b981;
@@ -213,6 +218,8 @@ body {
 .btn-sm { padding: 5px 10px; font-size: 12px; }
 .btn-icon { width: 30px; height: 30px; padding: 0; justify-content: center; }
 .btn-block { width: 100%; }
+.btn-white { background: white; color: var(--indigo-900); border-color: white; }
+.btn-white:hover:not(:disabled) { background: var(--gray-50); box-shadow: var(--shadow-md); }
 
 /* ── BADGES & STATUS ── */
 .badge {
@@ -224,6 +231,7 @@ body {
 .badge-red    { background: var(--red-50);    color: var(--red-600);    border: 1px solid var(--red-100); }
 .badge-amber  { background: var(--amber-50);  color: var(--amber-600);  border: 1px solid var(--amber-100); }
 .badge-gray   { background: var(--gray-100);  color: var(--gray-600);   border: 1px solid var(--gray-200); }
+.badge-white\/20 { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .dot-blue   { background: var(--blue-600); }
 .dot-teal   { background: var(--teal-600); }
@@ -271,9 +279,106 @@ body {
 .p-20 { padding: 20px; }
 .p-24 { padding: 24px; }
 .text-center { text-align: center; }
+.text-right { text-align: right; }
 .text-muted { color: var(--gray-500); }
 .text-strong { font-weight: 600; }
-.text-xs { font-size: 11px; }
+.text-white { color: white !important; }
+.text-blue-900 { color: var(--blue-900); }
+.text-blue-800 { color: var(--blue-800); }
+.text-blue-700 { color: var(--blue-700); }
+.text-blue-600 { color: var(--blue-600); }
+.text-blue-500 { color: var(--blue-500); }
+.text-blue-400 { color: var(--blue-400); }
+
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+.font-black { font-weight: 900; }
+
+.text-xxs { font-size: 10px; }
+.text-xs { font-size: 12px; }
+.text-sm { font-size: 13px; }
+.text-base { font-size: 14px; }
+.text-lg { font-size: 16px; }
+.text-xl { font-size: 18px; }
+.text-2xl { font-size: 24px; }
+.text-3xl { font-size: 30px; }
+
+.opacity-0 { opacity: 0; }
+.opacity-50 { opacity: 0.5; }
+.opacity-80 { opacity: 0.8; }
+.opacity-90 { opacity: 0.9; }
+.opacity-100 { opacity: 1; }
+
+.p-0 { padding: 0 !important; }
+.p-8 { padding: 8px; }
+.p-12 { padding: 12px; }
+.p-16 { padding: 16px; }
+.p-20 { padding: 20px; }
+.p-24 { padding: 24px; }
+.p-32 { padding: 32px; }
+.p-40 { padding: 40px; }
+.p-48 { padding: 48px; }
+.p-56 { padding: 56px; }
+
+.px-8 { padding-left: 8px; padding-right: 8px; }
+.px-12 { padding-left: 12px; padding-right: 12px; }
+.px-16 { padding-left: 16px; padding-right: 16px; }
+.px-20 { padding-left: 20px; padding-right: 20px; }
+.px-24 { padding-left: 24px; padding-right: 24px; }
+.px-32 { padding-left: 32px; padding-right: 32px; }
+
+.py-8 { padding-top: 8px; padding-bottom: 8px; }
+.py-12 { padding-top: 12px; padding-bottom: 12px; }
+.py-16 { padding-top: 16px; padding-bottom: 16px; }
+.py-20 { padding-top: 20px; padding-bottom: 20px; }
+.py-24 { padding-top: 24px; padding-bottom: 24px; }
+.py-32 { padding-top: 32px; padding-bottom: 32px; }
+
+.m-0 { margin: 0 !important; }
+.mt-4 { margin-top: 4px; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mt-32 { margin-top: 32px; }
+.mt-48 { margin-top: 48px; }
+.mt-64 { margin-top: 64px; }
+
+.mb-4 { margin-bottom: 4px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.mb-32 { margin-bottom: 32px; }
+.mb-48 { margin-bottom: 48px; }
+
+.ml-auto { margin-left: auto; }
+.mr-auto { margin-right: auto; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+.mx-8 { margin-left: 8px; margin-right: 8px; }
+.mr-8 { margin-right: 8px; }
+.ml-8 { margin-left: 8px; }
+.mr-6 { margin-right: 6px; }
+.ml-6 { margin-left: 6px; }
+.mr-10 { margin-right: 10px; }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+.overflow-hidden { overflow: hidden; }
+.cursor-pointer { cursor: pointer; }
+.select-none { user-select: none; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
 
 /* ── ALERTS ── */
 .alert { padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px; display: flex; gap: 8px; align-items: flex-start; }
@@ -364,6 +469,14 @@ body {
 .pc-body {
   flex: 1;
 }
+
+.bg-indigo-900 { background-color: var(--indigo-900) !important; }
+.bg-indigo-800 { background-color: var(--indigo-800) !important; }
+.bg-blue-50 { background-color: var(--blue-50) !important; }
+.bg-blue-100 { background-color: var(--blue-100) !important; }
+.bg-white\/10 { background-color: rgba(255,255,255,0.1) !important; }
+.bg-white\/20 { background-color: rgba(255,255,255,0.2) !important; }
+.bg-gray-50\/50 { background-color: rgba(249, 250, 251, 0.5) !important; }
 
 /* Chips Premium */
 .pc-body.pc-chips {
@@ -462,3 +575,23 @@ body {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+.relative { position: relative; }
+.absolute { position: absolute; }
+.z-10 { z-index: 10; }
+.top-0 { top: 0; }
+.right-0 { right: 0; }
+.bottom-0 { bottom: 0; }
+.left-0 { left: 0; }
+
+.w-64 { width: 64px; }
+.h-64 { height: 64px; }
+.w-24 { width: 24px; }
+.h-24 { height: 24px; }
+.rounded-full { border-radius: 9999px; }
+.rounded-xl { border-radius: var(--radius-xl); }
+.rounded-lg { border-radius: var(--radius-lg); }
+
+.hover\:translate-y-px:hover { transform: translateY(-1px); }
+.transition-all { transition: all 0.2s; }
+.shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); }

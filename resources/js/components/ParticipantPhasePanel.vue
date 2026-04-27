@@ -11,6 +11,7 @@
     <div class="card-body">
       <div class="legend">
         <span class="legend-item"><span class="legend-dot dot-done"></span> Participé</span>
+        <span class="legend-item"><span class="legend-dot dot-abstention"></span> Abstention</span>
         <span class="legend-item"><span class="legend-dot dot-pending"></span> En attente</span>
         <span class="legend-item"><span class="legend-dot dot-missed"></span> Manqué</span>
         <span class="legend-item"><span class="legend-dot dot-na"></span> N/A</span>
@@ -135,12 +136,16 @@ const phaseStateClass = (participant, phaseKey) => {
     return 'state-upcoming';
   }
 
-  const participated = Boolean(props.phaseParticipationMap?.[phaseKey]?.[participant.id]);
+  const participationValue = props.phaseParticipationMap?.[phaseKey]?.[participant.id];
+  const participated = Boolean(participationValue);
+  const isAbstention = participationValue === 'abstention';
 
   if (phaseIndex === currentPhaseIndex.value) {
+    if (isAbstention) return 'state-current-abstention';
     return participated ? 'state-current-done' : 'state-current-pending';
   }
 
+  if (isAbstention) return 'state-abstention';
   return participated ? 'state-done' : 'state-missed';
 };
 </script>
@@ -168,6 +173,7 @@ const phaseStateClass = (participant, phaseKey) => {
 }
 
 .dot-done { background: var(--teal-500); }
+.dot-abstention { background: #fab005; }
 .dot-pending { background: var(--amber-600); }
 .dot-missed { background: var(--red-600); }
 .dot-na { background: var(--gray-300); }
@@ -258,6 +264,11 @@ const phaseStateClass = (participant, phaseKey) => {
 .state-done,
 .state-current-done {
   background: var(--teal-500);
+}
+
+.state-abstention,
+.state-current-abstention {
+  background: #fab005;
 }
 
 .state-current-pending {

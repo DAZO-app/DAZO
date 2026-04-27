@@ -39,6 +39,8 @@ class UserController extends Controller
             ->get();
 
         return response()->json(['users' => $users]);
+    }
+
     /**
      * Liste tous les administrateurs du site.
      */

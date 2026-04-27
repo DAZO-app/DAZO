@@ -18,6 +18,10 @@ Route::prefix('v1')->group(function () {
     // Public Invitation check
     Route::get('/invitations/{token}', [\App\Http\Controllers\Api\V1\InvitationController::class, 'show']);
 
+    // OAuth / SSO (Public — redirects & callbacks)
+    Route::get('/auth/social/{provider}/redirect', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'redirect']);
+    Route::get('/auth/social/{provider}/callback', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'callback']);
+
     // Authentification (Protégé)
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -49,6 +53,10 @@ Route::prefix('v1')->group(function () {
 
         // Contact
         Route::post('/contact/admin', [\App\Http\Controllers\Api\V1\ContactController::class, 'sendToAdmin']);
+
+        // OAuth — Gestion des comptes liés (protégé)
+        Route::get('/auth/social/accounts', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'accounts']);
+        Route::delete('/auth/social/{provider}/unlink', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'unlink']);
 
         // Données de navigation (compteurs en attente)
         Route::get('/pending-counts', [\App\Http\Controllers\Api\V1\PendingCountsController::class, 'index']);

@@ -16,7 +16,7 @@
              <nav class="breadcrumb-mini mb-6">
                 <router-link to="/wiki" class="text-white hover:underline opacity-80">Centre d'aide</router-link>
                 <i class="fa-solid fa-chevron-right mx-8 opacity-50 text-white"></i>
-                <span class="text-white opacity-90 font-semibold">{{ page.category?.name || 'Général' }}</span>
+                <span class="badge badge-white/20 text-white text-xxs font-black px-10 py-4">{{ page.category?.name || 'Général' }}</span>
              </nav>
              <h1 class="text-2xl md:text-3xl font-black mb-0 text-white">
                {{ page.title }}
@@ -80,19 +80,25 @@
             </div>
 
             <!-- QUICK ACTIONS / HELP -->
-            <div class="premium-card">
-              <div class="pc-header pc-header-indigo py-12 px-20">
-                <div class="pc-header-icon" style="width: 28px; height: 28px; font-size: 13px;"><i class="fa-solid fa-life-ring"></i></div>
-                <div class="pc-header-title text-sm">Besoin d'aide ?</div>
-              </div>
-              <div class="pc-body p-20 text-center bg-gray-50/50">
-                <i class="fa-solid fa-headset text-indigo-200 text-4xl mb-12"></i>
-                <div class="text-sm text-gray-600 mb-16">
-                  Vous ne trouvez pas de réponse à votre question ?
+            <div class="premium-card bg-indigo-900 border-none shadow-lg overflow-hidden">
+              <div class="pc-body p-32 text-center relative">
+                <!-- Background decoration -->
+                <div class="absolute top-0 right-0 opacity-10" style="transform: translate(20%, -20%); font-size: 120px; color: white;">
+                  <i class="fa-solid fa-circle-question"></i>
                 </div>
-                <button @click="showContactModal = true" class="btn btn-secondary w-full shadow-sm hover:shadow-md transition-shadow">
-                  <i class="fa-solid fa-envelope mr-8"></i> Contacter un admin
-                </button>
+                
+                <div class="relative z-10">
+                  <div class="w-64 h-64 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-20 shadow-inner">
+                    <i class="fa-solid fa-headset text-white text-3xl"></i>
+                  </div>
+                  <h3 class="text-white font-black text-xl mb-12">Besoin d'aide ?</h3>
+                  <p class="text-white/80 text-sm mb-24">
+                    Vous ne trouvez pas la réponse à votre question ? Nos facilitateurs sont là pour vous accompagner.
+                  </p>
+                  <button @click="showContactModal = true" class="btn btn-white w-full py-12 font-bold shadow-xl hover:translate-y-px transition-all">
+                    <i class="fa-solid fa-paper-plane mr-8"></i> Contacter l'assistance
+                  </button>
+                </div>
               </div>
             </div>
           </div>

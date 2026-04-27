@@ -8,6 +8,7 @@ use App\Http\Requests\Feedback\UpdateFeedbackStatusRequest;
 use App\Models\Decision;
 use App\Models\Feedback;
 use App\Services\FeedbackService;
+use App\Enums\CircleMemberRole;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -26,24 +27,16 @@ class FeedbackController extends Controller
         abort_unless($decision->versions()->whereKey($versionId)->exists(), 404);
 
         $feedbacks = Feedback::where('decision_version_id', $versionId)
-            ->with(['author', 'joins', 'messages.author'])
+            ->with(['author', 'joins.user', 'messages.author'])
             ->get();
 
         $consents = \App\Models\Consent::where('decision_version_id', $versionId)
             ->with('user')
-            ->get()
-            ->groupBy('signal')
-            ->map(function ($group) {
-                return [
-                    'signal' => $group->first()->signal,
-                    'users' => $group->map(fn ($c) => $c->user?->name)->filter()->values()
-                ];
-            })
-            ->values();
+            ->get();
 
         return response()->json([
             'feedbacks' => $feedbacks,
-            'consents' => $consents
+            'consents' => $consents,
         ]);
     }
 
@@ -56,7 +49,12 @@ class FeedbackController extends Controller
             $user = \App\Models\User::findOrFail($request->acting_as_user_id);
         }
         
-        $feedback = $this->feedbackService->submitFeedback($decision, $request->validated(), $user);
+        $feedback = $this->feedbackService->submitFeedback(
+            $decision, 
+            $request->validated(), 
+            $user,
+            $request->boolean('notify', true)
+        );
 
         return response()->json([
             'message' => 'Feedback soumis.',
@@ -86,7 +84,12 @@ class FeedbackController extends Controller
             ->whereHas('version', fn ($query) => $query->where('decision_id', $decision->id))
             ->firstOrFail();
 
-        $feedback = $this->feedbackService->changeStatus($feedback, $request->status, $request->user());
+        $feedback = $this->feedbackService->changeStatus(
+            $feedback, 
+            $request->status, 
+            $request->user(),
+            $request->boolean('notify', true)
+        );
 
         return response()->json([
             'message' => 'Statut du feedback mis à jour.',
@@ -100,7 +103,31 @@ class FeedbackController extends Controller
         $decision = $feedback->version->decision;
         if ($request->user()->cannot('view', $decision)) abort(403);
 
-        $join = $this->feedbackService->joinFeedback($decision, $feedback, $request->user());
+        $user = $request->user();
+        $targetUser = $user;
+        
+        if ($request->has('user_id')) {
+            // Check if requester has animator/author/admin OR circle member rights to act as secretary
+            $isSecretary = $user->is_global_animator 
+                || in_array(optional($user->role)->value, ['superadmin', 'admin'])
+                || $decision->participants()
+                    ->where('user_id', $user->id)
+                    ->whereIn('role', ['animator', 'author'])
+                    ->exists()
+                || $decision->circle->members()
+                    ->where('user_id', $user->id)
+                    ->where('role', '!=', \App\Enums\CircleMemberRole::OBSERVER->value)
+                    ->exists();
+            
+            if ($isSecretary) {
+                $targetId = $request->input('user_id');
+                if ($targetId) {
+                    $targetUser = \App\Models\User::find($targetId) ?? $user;
+                }
+            }
+        }
+
+        $join = $this->feedbackService->joinFeedback($decision, $feedback, $targetUser);
 
         return response()->json([
             'message' => 'Vous soutenez ce feedback.',
@@ -113,8 +140,15 @@ class FeedbackController extends Controller
         $feedback = Feedback::findOrFail($feedbackId);
         
         $decision = $feedback->version->decision;
-        $userRole = $decision->participants()->where('user_id', request()->user()->id)->first()?->role;
-        abort_unless($userRole === \App\Enums\DecisionParticipantRole::ANIMATOR, 403, 'Seul l\'animateur peut annuler cette action.');
+        $user = request()->user();
+        $member = $decision->circle->members()->where('user_id', $user->id)->first();
+        $isAuthorized = ($member && $member->role->value !== \App\Enums\CircleMemberRole::OBSERVER->value) || $user->is_global_animator;
+
+        abort_unless(
+            $isAuthorized, 
+            403, 
+            'Seul un membre du cercle (non observateur) peut annuler cette action.'
+        );
 
         $feedback->delete();
 

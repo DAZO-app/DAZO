@@ -29,11 +29,11 @@ enum DecisionStatus: string
         return match ($this) {
             self::CLARIFICATION => [
                 'feedback_types'  => [FeedbackType::CLARIFICATION->value],
-                'consent_signals' => [ConsentSignal::NO_QUESTIONS->value],
+                'consent_signals' => [ConsentSignal::NO_QUESTIONS->value, ConsentSignal::ABSTENTION->value],
             ],
             self::REACTION => [
                 'feedback_types'  => [FeedbackType::REACTION->value],
-                'consent_signals' => [ConsentSignal::NO_REACTION->value],
+                'consent_signals' => [ConsentSignal::NO_REACTION->value, ConsentSignal::ABSTENTION->value],
             ],
             self::OBJECTION => [
                 'feedback_types'  => [FeedbackType::OBJECTION->value, FeedbackType::SUGGESTION->value],

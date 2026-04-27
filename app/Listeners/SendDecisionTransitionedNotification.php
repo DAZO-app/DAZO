@@ -23,7 +23,7 @@ class SendDecisionTransitionedNotification
             $q->where('decision_id', $decision->id);
         })->pluck('author_id')->toArray();
 
-        $consentUserIds = \App\Models\Consent::whereHas('decisionVersion', function($q) use ($decision) {
+        $consentUserIds = \App\Models\Consent::whereHas('version', function($q) use ($decision) {
             $q->where('decision_id', $decision->id);
         })->pluck('user_id')->toArray();
 

@@ -86,7 +86,7 @@ class DecisionController extends Controller
         $decision->load([
             'currentVersion.attachments',
             'currentVersion.feedbacks',
-            'currentVersion.consents',
+            'currentVersion.consents.user',
             'participants.user',
             'circle.members.user',
             'categories',

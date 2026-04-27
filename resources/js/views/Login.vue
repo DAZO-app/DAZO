@@ -6,6 +6,12 @@
         <div class="login-tagline">Decision At Zero Objection</div>
       </div>
       <div class="card-body">
+        <!-- Pending approval message -->
+        <div v-if="pendingMessage" class="alert alert-warning mb-16">
+          <i class="fa-solid fa-clock"></i>
+          {{ pendingMessage }}
+        </div>
+
         <form @submit.prevent="handleLogin">
           <div v-if="error" class="alert alert-error mb-16">{{ error }}</div>
           <div class="text-sm text-muted mb-16" style="text-align:center;">Compte de démonstration: admin@dazo.test / password</div>
@@ -28,23 +34,75 @@
             <router-link to="/forgot-password" style="font-size: 13px; color: var(--blue-600); text-decoration: none;">Mot de passe oublié ?</router-link>
           </div>
         </form>
+
+        <!-- Social Login Buttons -->
+        <SocialLoginButtons label="ou se connecter avec" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import SocialLoginButtons from '../components/SocialLoginButtons.vue';
 
 const email = ref('admin@dazo.test');
 const password = ref('password');
 const error = ref('');
 const loading = ref(false);
+const pendingMessage = ref('');
 
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
+
+// Handle OAuth callback (token in URL from SocialAuthController)
+onMounted(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const provider = params.get('provider');
+  const errorParam = params.get('error');
+
+  if (errorParam === 'account_pending') {
+    const pendingEmail = params.get('email') || '';
+    pendingMessage.value = `Votre compte (${pendingEmail}) a été créé. Un administrateur doit valider votre inscription avant que vous puissiez vous connecter.`;
+    // Clean the URL
+    window.history.replaceState({}, '', '/login');
+    return;
+  }
+
+  if (errorParam === 'account_inactive') {
+    error.value = 'Ce compte a été désactivé par un administrateur.';
+    window.history.replaceState({}, '', '/login');
+    return;
+  }
+
+  if (errorParam === 'oauth_failed') {
+    error.value = `La connexion via ${provider || 'ce fournisseur'} a échoué. Veuillez réessayer.`;
+    window.history.replaceState({}, '', '/login');
+    return;
+  }
+
+  if (token) {
+    // Store the token and fetch user
+    localStorage.setItem('dazo_token', token);
+    localStorage.setItem('dazo_logged_in', 'true');
+    await authStore.fetchUser();
+
+    // Clean the URL
+    window.history.replaceState({}, '', '/login');
+
+    // Handle invitation redirect
+    const invitationToken = params.get('invitation_token');
+    if (invitationToken) {
+      router.push({ name: 'InvitationAccept', params: { token: invitationToken } });
+    } else {
+      router.push({ name: 'Dashboard' });
+    }
+  }
+});
 
 const handleLogin = async () => {
     loading.value = true;
@@ -72,7 +130,7 @@ const handleLogin = async () => {
 }
 .login-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
 }
 .login-logo {
   width: 160px;

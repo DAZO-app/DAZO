@@ -97,6 +97,15 @@ L'ensemble de la documentation détaillée se trouve dans le dossier [`docs/`](d
 | [docs/domain-model.md](docs/domain-model.md) | Modèle de données |
 | [docs/TODO_TECHNIQUE.md](docs/TODO_TECHNIQUE.md) | Backlog technique détaillé |
 
+## ⚖️ Licence
+
+DAZO est un logiciel en **source-available** (code source accessible), mais n'est pas "Open Source" au sens de l'OSI.
+
+- **Usage Non-Commercial** : Libre et encouragé sous les termes de la [PolyForm Noncommercial License 1.0.0](LICENSE).
+- **Usage Commercial** : Strictement **interdit** sans autorisation écrite préalable. Cela inclut le SaaS, l'hébergement payant, la revente, le white-labeling et l'intégration dans des produits payants.
+
+Pour plus de détails, consultez le fichier [LICENSE](LICENSE) et le document [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md).
+
 ---
 
 Une initiative pour une gouvernance plus fluide et humaine.

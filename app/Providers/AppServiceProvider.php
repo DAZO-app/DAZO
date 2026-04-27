@@ -33,6 +33,20 @@ class AppServiceProvider extends ServiceProvider
             \App\Events\FeedbackSubmitted::class,
             \App\Listeners\SendFeedbackSubmittedNotification::class
         );
+
+        // Register community Socialite providers (OAuth / SSO)
+        \Illuminate\Support\Facades\Event::listen(
+            \SocialiteProviders\Manager\SocialiteWasCalled::class,
+            \SocialiteProviders\Microsoft\MicrosoftExtendSocialite::class
+        );
+        \Illuminate\Support\Facades\Event::listen(
+            \SocialiteProviders\Manager\SocialiteWasCalled::class,
+            \SocialiteProviders\Apple\AppleExtendSocialite::class
+        );
+        \Illuminate\Support\Facades\Event::listen(
+            \SocialiteProviders\Manager\SocialiteWasCalled::class,
+            \SocialiteProviders\FranceConnect\FranceConnectExtendSocialite::class
+        );
     }
 
 }

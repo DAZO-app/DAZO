@@ -90,18 +90,16 @@ trait HasUserActionStatus
         $consents  = $v->relationLoaded('consents')  ? $v->consents  : collect();
 
         $hasFeedback = $feedbacks
-            ->where('author_id', $userId)
-            ->whereIn('type', array_map(
-                fn($t) => is_object($t) ? $t->value : $t,
-                $phaseConfig['feedback_types']
+            ->filter(fn($f) => $f->author_id === $userId && in_array(
+                is_object($f->type) ? $f->type->value : $f->type,
+                array_map(fn($t) => is_object($t) ? $t->value : $t, $phaseConfig['feedback_types'])
             ))
             ->isNotEmpty();
 
         $hasConsent = $consents
-            ->where('user_id', $userId)
-            ->whereIn('signal', array_map(
-                fn($s) => is_object($s) ? $s->value : $s,
-                $phaseConfig['consent_signals']
+            ->filter(fn($c) => $c->user_id === $userId && in_array(
+                is_object($c->signal) ? $c->signal->value : $c->signal,
+                array_map(fn($s) => is_object($s) ? $s->value : $s, $phaseConfig['consent_signals'])
             ))
             ->isNotEmpty();
 

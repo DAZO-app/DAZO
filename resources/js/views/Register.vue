@@ -13,6 +13,12 @@
             {{ error }}
           </div>
 
+          <!-- Social Registration Buttons -->
+          <SocialLoginButtons 
+            label="créer un compte avec" 
+            :invitation-token="route.query.token || null"
+          />
+
           <div class="form-group">
             <label for="name" class="label">Nom complet</label>
             <input 
@@ -105,6 +111,7 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import SocialLoginButtons from '../components/SocialLoginButtons.vue';
 import axios from 'axios';
 
 const router = useRouter();

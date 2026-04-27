@@ -38,7 +38,7 @@
         </div>
 
         <!-- DRAGGABLE CATEGORIES -->
-        <Draggable 
+        <draggable 
           v-model="categories" 
           group="categories" 
           item-key="id"
@@ -78,7 +78,7 @@
               </div>
 
               <div class="pc-body bg-gray-50/50 p-16">
-                <Draggable 
+                <draggable 
                   v-model="category.pages" 
                   group="pages" 
                   item-key="id"
@@ -107,14 +107,14 @@
                       </div>
                     </div>
                   </template>
-                </Draggable>
+                </draggable>
                 <div v-if="category.pages.length === 0" class="text-center py-16 text-muted italic text-xs">
                   Glissez un article ici pour l'ajouter à cette catégorie.
                 </div>
               </div>
             </div>
           </template>
-        </Draggable>
+        </draggable>
 
         <!-- STANDALONE PAGES (No Category) -->
         <div v-if="standalonePages.length > 0 || categories.length > 0" class="premium-card mb-24 border-dashed border-gray-300 bg-transparent shadow-none">
@@ -122,7 +122,7 @@
             <div class="pc-header-title text-sm uppercase letter-spacing-wide">Articles sans catégorie</div>
           </div>
           <div class="pc-body p-16">
-             <Draggable 
+             <draggable 
                 v-model="standalonePages" 
                 group="pages" 
                 item-key="id"
@@ -151,7 +151,7 @@
                     </div>
                   </div>
                 </template>
-              </Draggable>
+              </draggable>
           </div>
         </div>
       </div>
@@ -159,10 +159,11 @@
   </main>
 </template>
 
+// ... (lines 1-161 unchanged)
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import Draggable from 'vuedraggable';
+import draggable from 'vuedraggable';
 
 const categories = ref([]);
 const standalonePages = ref([]);
@@ -174,8 +175,8 @@ const fetchAll = async () => {
   loading.value = true;
   try {
     const { data } = await axios.get('/api/v1/admin/wiki');
-    categories.value = data.categories;
-    standalonePages.value = data.standalone_pages;
+    categories.value = data.categories || [];
+    standalonePages.value = data.standalone_pages || [];
     console.log('Admin Wiki Data:', data);
   } catch (err) {
     console.error('Admin Wiki load error', err);
@@ -183,6 +184,7 @@ const fetchAll = async () => {
     loading.value = false;
   }
 };
+// ...
 
 onMounted(fetchAll);
 

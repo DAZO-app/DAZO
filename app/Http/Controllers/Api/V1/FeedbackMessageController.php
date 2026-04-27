@@ -27,8 +27,22 @@ class FeedbackMessageController extends Controller
 
         $authorId = $request->user()->id;
         if ($request->has('acting_as_user_id')) {
-            // Seul l'animateur peut poster au nom de quelqu'un (généralement le porteur)
-            $authorId = $request->acting_as_user_id;
+            $user = $request->user();
+            $decision = $feedback->version->decision;
+            $isSecretary = $user->is_global_animator 
+                || in_array(optional($user->role)->value, ['superadmin', 'admin'])
+                || $decision->participants()
+                    ->where('user_id', $user->id)
+                    ->whereIn('role', [\App\Enums\DecisionParticipantRole::ANIMATOR->value, \App\Enums\DecisionParticipantRole::AUTHOR->value])
+                    ->exists()
+                || $decision->circle->members()
+                    ->where('user_id', $user->id)
+                    ->where('role', '!=', \App\Enums\CircleMemberRole::OBSERVER->value)
+                    ->exists();
+
+            if ($isSecretary) {
+                $authorId = $request->acting_as_user_id;
+            }
         }
 
         $message = $feedback->messages()->create([

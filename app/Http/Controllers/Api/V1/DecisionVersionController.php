@@ -58,10 +58,12 @@ class DecisionVersionController extends Controller
         }
 
         $stats = $this->decisionService->getParticipationStats($decision, $version, $statusOverride);
+        $map   = $this->decisionService->getPhaseParticipationMap($decision, $version);
 
         return response()->json([
             'version' => $version,
-            'participation_stats' => $stats
+            'participation_stats' => $stats,
+            'phase_participation_map' => $map,
         ]);
     }
 

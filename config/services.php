@@ -35,4 +35,67 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | OAuth / SSO Providers
+    |--------------------------------------------------------------------------
+    */
+
+    'google' => [
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/api/v1/auth/social/google/callback',
+    ],
+
+    'github' => [
+        'client_id'     => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/api/v1/auth/social/github/callback',
+    ],
+
+    'facebook' => [
+        'client_id'     => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/api/v1/auth/social/facebook/callback',
+    ],
+
+    'twitter' => [
+        'client_id'     => env('TWITTER_CLIENT_ID'),
+        'client_secret' => env('TWITTER_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/api/v1/auth/social/twitter/callback',
+    ],
+
+    'linkedin-openid' => [
+        'client_id'     => env('LINKEDIN_CLIENT_ID'),
+        'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/api/v1/auth/social/linkedin-openid/callback',
+    ],
+
+    'gitlab' => [
+        'client_id'     => env('GITLAB_CLIENT_ID'),
+        'client_secret' => env('GITLAB_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/api/v1/auth/social/gitlab/callback',
+    ],
+
+    'microsoft' => [
+        'client_id'     => env('MICROSOFT_CLIENT_ID'),
+        'client_secret' => env('MICROSOFT_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/api/v1/auth/social/microsoft/callback',
+    ],
+
+    'apple' => [
+        'client_id'     => env('APPLE_CLIENT_ID'),
+        'client_secret' => env('APPLE_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/api/v1/auth/social/apple/callback',
+    ],
+
+    'franceconnect' => [
+        'client_id'     => env('FRANCECONNECT_CLIENT_ID'),
+        'client_secret' => env('FRANCECONNECT_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL') . '/api/v1/auth/social/franceconnect/callback',
+        // Sandbox: https://fcp.integ01.dev-franceconnect.fr
+        // Production: https://app.franceconnect.gouv.fr
+        'base_url'      => env('FRANCECONNECT_BASE_URL', 'https://fcp.integ01.dev-franceconnect.fr'),
+    ],
+
 ];

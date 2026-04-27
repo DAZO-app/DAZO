@@ -28,7 +28,10 @@ class DecisionTransitionController extends Controller
         $decision = $this->decisionService->transition(
             $decision, 
             $request->to, 
-            $request->user()
+            $request->user(),
+            false,
+            $request->boolean('notify', true),
+            $request->boolean('is_meeting', false)
         );
 
         return response()->json([
@@ -48,7 +51,10 @@ class DecisionTransitionController extends Controller
         $decision = $this->decisionService->transition(
             $decision, 
             DecisionStatus::ABANDONED->value, 
-            $request->user()
+            $request->user(),
+            false,
+            $request->boolean('notify', true),
+            $request->boolean('is_meeting', false)
         );
 
         return response()->json([

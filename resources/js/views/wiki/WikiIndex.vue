@@ -61,7 +61,7 @@
 
         <!-- THEMATIC NAVIGATION -->
         <div v-else class="wiki-categories-wrap">
-          <div v-for="category in categories" :key="category.id" class="premium-card mb-24 overflow-hidden">
+          <div v-for="category in categoriesWithPages" :key="category.id" class="premium-card mb-24 overflow-hidden shadow-lg">
             <div 
               class="pc-header pc-header-blue cursor-pointer select-none flex items-center justify-between" 
               style="padding: 16px 24px;"
@@ -157,8 +157,9 @@ const fetchPages = async () => {
       standalonePages.value = data.standalone_pages || [];
       
       // Open first category by default if none are expanded
-      if (categories.value.length > 0 && expandedCategories.value.length === 0) {
-        expandedCategories.value.push(categories.value[0].id);
+      const firstWithPages = categories.value.find(c => c.pages && c.pages.length > 0);
+      if (firstWithPages && expandedCategories.value.length === 0) {
+        expandedCategories.value.push(firstWithPages.id);
       }
     }
   } catch (err) {
@@ -167,6 +168,10 @@ const fetchPages = async () => {
     loading.value = false;
   }
 };
+
+const categoriesWithPages = computed(() => {
+  return categories.value.filter(c => c.pages && c.pages.length > 0);
+});
 
 const toggleCategory = (id) => {
   const index = expandedCategories.value.indexOf(id);

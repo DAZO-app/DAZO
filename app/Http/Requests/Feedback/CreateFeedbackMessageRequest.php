@@ -21,7 +21,14 @@ class CreateFeedbackMessageRequest extends FormRequest
             ->whereIn('role', [\App\Enums\DecisionParticipantRole::AUTHOR->value, \App\Enums\DecisionParticipantRole::ANIMATOR->value])
             ->exists();
 
-        return $isFeedbackAuthor || $isDecisionAuthorOrAnimator || $user->is_global_animator;
+        $isAdmin = in_array(optional($user->role)->value, ['superadmin', 'admin']);
+        
+        $isCircleMember = $decision->circle->members()
+            ->where('user_id', $user->id)
+            ->where('role', '!=', \App\Enums\CircleMemberRole::OBSERVER->value)
+            ->exists();
+
+        return $isFeedbackAuthor || $isDecisionAuthorOrAnimator || $user->is_global_animator || $isAdmin || $isCircleMember;
     }
 
     public function rules(): array

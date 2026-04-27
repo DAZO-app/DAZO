@@ -1,7 +1,7 @@
 <template>
   <div 
     class="premium-card secretary-panel-classic"
-    :class="{ 'is-collapsed': isCollapsed }"
+    :class="{ 'is-collapsed': isCollapsed, 'is-docked': isDocked }"
     :style="panelStyle"
   >
     <!-- Header (Zone de drag) -->
@@ -24,6 +24,23 @@
     <!-- Contenu -->
     <div class="card-body" v-show="!isCollapsed" style="padding: 16px; max-height: 70vh; overflow-y: auto;">
       
+      <!-- Sélecteur de version -->
+      <div v-if="allVersions.length > 1" class="mb-24 border-b border-gray-100 pb-16">
+        <div class="flex justify-between items-center mb-8">
+          <span class="text-xs uppercase tracking-wider text-gray-500 font-bold">Version affichée</span>
+          <span v-if="isReadOnly" class="badge badge-sm badge-amber">Historique (Lecture seule)</span>
+        </div>
+        <select 
+          :value="currentVersion.id" 
+          @change="$emit('version-change', $event.target.value)"
+          class="sexy-select"
+        >
+          <option v-for="v in sortedVersions" :key="v.id" :value="v.id">
+            Version {{ v.version_number }} {{ v.id === decision.current_version_id ? '(Actuelle)' : '' }}
+          </option>
+        </select>
+      </div>
+
       <!-- Infos Phase -->
       <div class="mb-24 border-b border-gray-100 pb-16">
         <div class="flex justify-between items-center mb-8">
@@ -32,42 +49,119 @@
         </div>
         
         <!-- Changement de phase rapide -->
-        <div class="flex gap-8 mt-12" v-if="['clarification', 'reaction'].includes(decision.status)">
-          <button class="btn btn-sm btn-primary w-full" @click="nextPhase" :disabled="loading">
-            <i class="fa-solid fa-forward-step mr-8"></i> Passer à l'étape suivante
+        <div class="flex gap-8 mt-12 items-stretch" v-if="!isReadOnly">
+          <button 
+            v-if="['clarification', 'reaction', 'objection'].includes(decision.status?.value || decision.status)"
+            class="btn btn-sm btn-primary flex-1" 
+            @click="nextPhase" 
+            :disabled="loading"
+          >
+            <i class="fa-solid fa-forward-step mr-8"></i> 
+            {{ (decision.status?.value || decision.status) === 'objection' ? 'Adopter la décision' : 'Passer à l\'étape suivante' }}
+          </button>
+
+          <button 
+            class="btn btn-sm btn-secondary" 
+            @click.stop="showQuickActions = !showQuickActions" 
+            title="Actions rapides"
+            :class="{ 'btn-indigo': showQuickActions }"
+            :disabled="loading"
+          >
+            <i class="fa-solid fa-gear"></i>
           </button>
         </div>
       </div>
 
-      <!-- Tour de table (Actions Rapides) -->
-      <div class="mb-24 border-b border-gray-100 pb-16" v-if="['clarification', 'reaction', 'objection'].includes(decision.status)">
+      <!-- Actions Rapides (Remplace le tour de table si actif) -->
+      <div v-if="showQuickActions" class="mb-24 border-b border-gray-100 pb-16 animate-slide-in">
+        <div class="flex justify-between items-center mb-12">
+          <h4 class="text-sm font-bold text-gray-800">Actions rapides</h4>
+          <button class="btn btn-xs btn-ghost text-gray-400" @click="showQuickActions = false">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        
+        <div class="flex flex-col gap-8">
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="handleQuickAction('suspend')" v-if="(decision.status?.value || decision.status) !== 'suspended'">
+              <i class="fa-solid fa-pause mr-12 text-amber-500 w-16"></i>
+              <div class="flex flex-col items-start">
+                <span class="font-bold">Mettre en pause</span>
+                <span class="text-[10px] text-gray-500">Suspendre le processus temporairement</span>
+              </div>
+           </button>
+           
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="handleQuickAction('resume')" v-if="(decision.status?.value || decision.status) === 'suspended'">
+              <i class="fa-solid fa-play mr-12 text-emerald-500 w-16"></i>
+              <div class="flex flex-col items-start">
+                <span class="font-bold">Reprendre</span>
+                <span class="text-[10px] text-gray-500">Relancer la phase actuelle</span>
+              </div>
+           </button>
+
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="handleQuickAction('revision')" v-if="!['revision', 'adopted', 'abandoned'].includes(decision.status?.value || decision.status)">
+              <i class="fa-solid fa-file-signature mr-12 text-indigo-500 w-16"></i>
+              <div class="flex flex-col items-start">
+                <span class="font-bold">Créer une révision</span>
+                <span class="text-[10px] text-gray-500">Proposer une nouvelle version du texte</span>
+              </div>
+           </button>
+
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12 border-red-100 hover:bg-red-50" @click="handleQuickAction('abandon')">
+              <i class="fa-solid fa-trash-can mr-12 text-red-500 w-16"></i>
+              <div class="flex flex-col items-start">
+                <span class="font-bold text-red-600">Abandonner définitivement</span>
+                <span class="text-[10px] text-gray-500">Clore ce dossier sans suite</span>
+              </div>
+           </button>
+        </div>
+      </div>
+
+      <!-- Tour de table (Actions Rapides) - Masqué si Quick Actions ou Formulaire ouvert -->
+      <div v-if="!isReadOnly && !showForm && !showQuickActions && ['clarification', 'reaction', 'objection'].includes(decision.status)" class="mb-24 border-b border-gray-100 pb-16">
         <h4 class="text-sm font-bold text-gray-800 mb-12">Tour de table (restants)</h4>
         
         <div v-if="remainingParticipants.length === 0" class="text-xs text-gray-500 italic">
           Tous les participants ont interagi.
         </div>
-        <div v-else class="flex flex-col gap-8">
-          <div v-for="p in remainingParticipants" :key="p.user.id" class="flex justify-between items-center p-8 bg-gray-50 rounded-md border border-gray-100">
-            <div class="flex flex-col">
-              <span class="text-sm font-bold text-gray-800">{{ p.user.name }}</span>
-              <span class="text-xs text-indigo-500 font-medium">{{ translateRole(p.role) }}</span>
+        <div v-else class="flex flex-col gap-8 participant-list-scrollable">
+          <div v-for="p in remainingParticipants" :key="p.user.id" class="flex flex-col gap-8 p-12 bg-white rounded-lg border border-gray-100 shadow-sm">
+            <div class="flex items-center gap-12">
+              <div class="w-32 h-32 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                :class="getRoleColor(p.role)">
+                <i :class="getRoleIcon(p.role)"></i>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-sm font-bold text-gray-800">{{ p.user.name }}</span>
+                <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{{ translateRole(p.role) }}</span>
+              </div>
             </div>
-            <div class="flex gap-4">
+            <div class="flex gap-4 w-full">
               <button 
-                class="btn btn-xs btn-outline" 
+                class="btn btn-xs btn-outline flex-1 flex flex-col sm:flex-row items-center justify-center gap-4 py-8 h-auto" 
                 title="Valider / Rien à signaler"
                 @click="sendQuickSignal(p.user.id)"
-                :disabled="loading"
+                :disabled="loading || isReadOnly"
               >
                 <i class="fa-solid fa-check text-emerald-500"></i>
+                <span class="text-[9px]" v-if="!isDocked">Clair</span>
               </button>
               <button 
-                class="btn btn-xs btn-outline" 
+                class="btn btn-xs btn-outline flex-1 flex flex-col sm:flex-row items-center justify-center gap-4 py-8 h-auto" 
                 title="Saisir un retour pour cette personne"
                 @click="prepareFeedbackFor(p.user.id)"
-                :disabled="loading"
+                :disabled="loading || isReadOnly"
               >
                 <i class="fa-solid fa-comment-dots text-indigo-500"></i>
+                <span class="text-[9px]" v-if="!isDocked">Parole</span>
+              </button>
+              <button 
+                class="btn btn-xs btn-outline flex-1 flex flex-col sm:flex-row items-center justify-center gap-4 py-8 h-auto" 
+                title="Abandonner / Ne se prononce pas"
+                @click="sendQuickSignal(p.user.id, 'abstention')"
+                :disabled="loading || isReadOnly"
+              >
+                <i class="fa-solid fa-xmark text-red-500"></i>
+                <span class="text-[9px]" v-if="!isDocked">Passe</span>
               </button>
             </div>
           </div>
@@ -75,59 +169,96 @@
       </div>
 
       <!-- Formulaire de réponse / saisie -->
-      <div>
-        <div class="flex justify-between items-center mb-12">
+      <div v-if="showForm" class="form-container-meeting">
+        <div class="flex justify-between items-center mb-16 pb-12 border-b border-gray-100">
           <h4 class="text-sm font-bold text-gray-800">
             <span v-if="replyToFeedback">Répondre à {{ replyToFeedback.author?.name }}</span>
             <span v-else>Saisir un retour</span>
           </h4>
+          <button class="btn btn-xs btn-ghost text-gray-400" @click="cancelFeedback">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
 
-        <div v-if="replyToFeedback" class="text-xs text-gray-500 italic border-l-2 border-indigo-200 pl-8 mb-12">
-          "{{ replyToFeedback.content.substring(0, 50) }}..."
-        </div>
+
         
-        <div class="form-group mb-12">
-          <select v-model="actingAsUserId" class="form-control form-control-sm">
-            <option :value="authStore.user.id">Moi-même ({{ authStore.user.name }})</option>
-            <option v-for="p in allowedActingParticipants" :key="'act-'+p.user.id" :value="p.user.id">
-              Au nom de : {{ p.user.name }} ({{ translateRole(p.role) }})
+        <div class="form-group mb-16">
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 block">Au nom de</label>
+          <select v-model="actingAsUserId" class="sexy-select">
+            <option v-for="p in finalActingParticipants" :key="'act-'+p.user_id" :value="p.user_id">
+              {{ p.user?.name }} ({{ translateRole(p.role) }})
             </option>
           </select>
         </div>
 
-        <div class="form-group mb-12">
+        <div class="form-group mb-16" v-if="!replyToFeedback && (decision.status?.value || decision.status) === 'objection'">
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-8 block">Type de retour</label>
+          <div class="flex flex-col gap-8">
+            <label class="flex items-center gap-8 cursor-pointer bg-amber-50 border border-amber-200 p-8 rounded-md">
+              <input type="radio" v-model="selectedFeedbackType" value="objection" class="text-amber-600 focus:ring-amber-500">
+              <span class="text-sm font-medium text-amber-800">Objection bloquante</span>
+            </label>
+            <label class="flex items-center gap-8 cursor-pointer bg-teal-50 border border-teal-200 p-8 rounded-md">
+              <input type="radio" v-model="selectedFeedbackType" value="suggestion" class="text-teal-600 focus:ring-teal-500">
+              <span class="text-sm font-medium text-teal-800">Suggestion / Mineure</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group mb-24">
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 block">Commentaire / Réponse</label>
           <textarea 
+            ref="textareaRef"
             v-model="feedbackContent" 
-            class="form-control form-control-sm" 
-            rows="5" 
-            placeholder="Saisir la remarque ou réponse..."
+            class="sexy-textarea" 
+            rows="6" 
+            placeholder="Écrivez ici ce que l'utilisateur souhaite exprimer..."
           ></textarea>
         </div>
 
-        <div class="flex gap-8">
-          <template v-if="replyToFeedback">
-            <button class="btn btn-sm btn-outline flex-1" @click="$emit('cancel-reply')">
-              Annuler
-            </button>
-            <button class="btn btn-sm btn-primary flex-1" @click="submitReply" :disabled="loading || !feedbackContent">
-              <i class="fa-solid fa-paper-plane mr-4"></i> Publier
-            </button>
-          </template>
-          <template v-else>
-            <button class="btn btn-sm btn-primary flex-1" @click="submitFeedback(getFeedbackTypeForPhase())" :disabled="loading || !feedbackContent">
-              <i class="fa-solid fa-paper-plane mr-4"></i> Publier la réaction
-            </button>
-          </template>
-        </div>
-      </div>
+        <div class="flex flex-col gap-12">
+          <!-- Boutons de résolution (Pleine largeur, Vert) -->
+          <div class="flex flex-col gap-8" v-if="replyToFeedback && ['clarification', 'objection'].includes(replyToFeedback.type?.value || replyToFeedback.type)">
+              <button 
+                v-if="(replyToFeedback.type?.value || replyToFeedback.type) === 'clarification'"
+                class="btn btn-sm btn-emerald w-full" 
+                @click="resolveFeedback('treated')"
+                :disabled="loading || isReadOnly"
+              >
+                  <i class="fa-solid fa-check mr-8"></i> Marquer comme "C'est clair"
+              </button>
+              <button 
+                v-if="(replyToFeedback.type?.value || replyToFeedback.type) === 'objection'"
+                class="btn btn-sm btn-emerald w-full" 
+                @click="resolveFeedback('withdrawn')"
+                :disabled="loading || isReadOnly"
+              >
+                  <i class="fa-solid fa-check mr-8"></i> Lever l'objection
+              </button>
+          </div>
 
-    </div>
-  </div>
+          <!-- Annuler / Publier -->
+          <div class="flex justify-between items-center w-full mt-12">
+            <button class="btn btn-sm btn-outline" @click="cancelFeedback">
+              <i class="fa-solid fa-rotate-left mr-8"></i> Annuler
+            </button>
+            <button 
+              class="btn btn-sm btn-primary" 
+              @click="replyToFeedback ? submitReply() : submitFeedback(getFeedbackTypeForPhase())" 
+              :disabled="loading || !feedbackContent"
+            >
+              <i class="fa-solid fa-paper-plane mr-8"></i> Publier
+            </button>
+          </div>
+        </div> <!-- Fin de flex-col (170) -->
+      </div> <!-- Fin de showForm (116) -->
+
+    </div> <!-- Fin de card-body (25) -->
+  </div> <!-- Fin de panel (2) -->
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 
@@ -136,29 +267,58 @@ const props = defineProps({
   currentVersion: Object,
   participants: Array,
   replyToFeedback: Object, 
-  feedbacks: { type: Array, default: () => [] }, // Added to filter
-  consents: { type: Array, default: () => [] }
+  feedbacks: { type: Array, default: () => [] },
+  consents: { type: Array, default: () => [] },
+  allVersions: { type: Array, default: () => [] },
+  isDocked: { type: Boolean, default: false },
+  replyTrigger: { type: Number, default: 0 }
 });
 
-const emit = defineEmits(['refresh-data', 'phase-change', 'cancel-reply', 'action-logged']);
+const emit = defineEmits(['refresh-data', 'phase-change', 'cancel-reply', 'action-logged', 'version-change', 'dock', 'undock', 'drag-start', 'drag-end']);
 
 const authStore = useAuthStore();
 
 const isCollapsed = ref(false);
 const loading = ref(false);
+const showForm = ref(false);
+const showQuickActions = ref(false);
+
+const isReadOnly = computed(() => {
+  if (!props.decision || !props.currentVersion) return false;
+  // Comparaison rigoureuse des IDs
+  const decisionCurrentId = props.decision.current_version?.id || props.decision.current_version_id;
+  return String(props.currentVersion.id) !== String(decisionCurrentId);
+});
+
+const sortedVersions = computed(() => {
+  return [...props.allVersions].sort((a, b) => b.version_number - a.version_number);
+});
 
 const actingAsUserId = ref(authStore.user.id);
 const feedbackContent = ref('');
+const textareaRef = ref(null);
+const selectedFeedbackType = ref('objection');
 
-// Expand panel if reply targets changes
-watch(() => props.replyToFeedback, (val) => {
-  if (val) {
+// Watches moved down to resolve initialization issues
+
+
+
+watch(() => props.replyTrigger, () => {
+  if (props.replyToFeedback) {
+    showForm.value = true;
     isCollapsed.value = false;
   }
 });
 
+const cancelFeedback = () => {
+  showForm.value = false;
+  feedbackContent.value = '';
+  selectedFeedbackType.value = 'objection';
+  emit('cancel-reply');
+};
+
 const getSignalTypeForPhase = () => {
-  const status = props.decision.status;
+  const status = props.decision.status?.value || props.decision.status;
   if (status === 'clarification') return 'no_questions';
   if (status === 'reaction') return 'no_reaction';
   if (status === 'objection') return 'no_objection';
@@ -166,75 +326,158 @@ const getSignalTypeForPhase = () => {
 };
 
 const getFeedbackTypeForPhase = () => {
-  const status = props.decision.status;
-  if (status === 'clarification') return 'Clarification';
-  if (status === 'reaction') return 'Reaction';
-  if (status === 'objection') return 'Objection';
-  return 'Reaction';
+  const status = props.decision.status?.value || props.decision.status;
+  if (status === 'clarification') return 'clarification';
+  if (status === 'reaction') return 'reaction';
+  if (status === 'objection') return selectedFeedbackType.value;
+  return 'reaction';
 };
 
-// Compute remaining participants
-const remainingParticipants = computed(() => {
-  const allParts = props.participants.filter(p => p.role !== 'excluded' && p.role !== 'author' && p.role !== 'animator');
+const getTransitionAction = () => {
+  let status = props.decision.status?.value || props.decision.status;
+  if (typeof status === 'object') status = status.value;
+  status = String(status).toLowerCase();
   
-  // Phase logic
-  let types = [];
-  if (props.decision.status === 'clarification') types = ['clarification'];
-  else if (props.decision.status === 'reaction') types = ['reaction'];
-  else if (props.decision.status === 'objection') types = ['objection'];
-  else return allParts;
+  if (status === 'clarification') return 'reaction';
+  if (status === 'reaction') return 'objection';
+  if (status === 'objection') return 'adopted';
+  return null;
+};
 
-  // Has feedback in phase
-  const userHasFeedback = new Set();
-  props.feedbacks.forEach(fb => {
+const participatedUserIds = computed(() => {
+  const ids = new Set();
+  
+  // Feedbacks
+  const feedbacks = props.feedbacks || [];
+  feedbacks.forEach(fb => {
+    const status = props.decision.status?.value || props.decision.status;
     const t = fb.type?.value || fb.type;
-    if (types.includes(t)) {
-      userHasFeedback.add(fb.author_id);
+    if (t === status || (status === 'objection' && t === 'suggestion')) {
+      ids.add(fb.author_id);
     }
-    // Also include those who joined
-    if (fb.joins && types.includes(t)) {
-      fb.joins.forEach(j => userHasFeedback.add(j.user_id));
+    // Joins count as participation in objection phase
+    if (fb.joins && status === 'objection') {
+      fb.joins.forEach(j => ids.add(j.user_id));
     }
   });
 
-  // Has consent in phase
+  // Consents
   const consents = props.consents || [];
   const expectedSignal = getSignalTypeForPhase();
   consents.forEach(c => {
     const sig = typeof c.signal === 'object' && c.signal !== null ? c.signal.value : c.signal;
     if (sig === expectedSignal || (expectedSignal === 'no_objection' && sig === 'abstention')) {
-      userHasFeedback.add(c.user_id);
+      ids.add(c.user_id);
     }
   });
 
-  return allParts.filter(p => !userHasFeedback.has(p.user.id));
+  return ids;
 });
 
-const allowedActingParticipants = computed(() => {
+const allEligibleUsers = computed(() => {
+  if (!props.decision?.circle?.members) return [];
+  
+  // Map roles from participants list (snapshot)
+  const participantRoles = {};
+  props.participants.forEach(p => {
+    participantRoles[p.user_id] = p.role?.value || p.role;
+  });
+
+  return props.decision.circle.members
+    .filter(m => {
+      const circleRole = m.role?.value || m.role;
+      if (circleRole === 'observer') return false;
+      
+      const decisionRole = participantRoles[m.user_id];
+      // On exclut ceux qui ont un rôle spécial bloquant la participation directe
+      if (['excluded', 'author', 'animator'].includes(decisionRole)) return false;
+      
+      return true;
+    })
+    .map(m => ({
+      user_id: m.user_id,
+      user: m.user,
+      role: participantRoles[m.user_id] || 'participant'
+    }));
+});
+
+// Compute remaining participants
+const remainingParticipants = computed(() => {
+  return allEligibleUsers.value.filter(p => !participatedUserIds.value.has(p.user_id));
+});
+
+// Compute participants eligible to act (for "Au nom de")
+const finalActingParticipants = computed(() => {
   let list = [];
   if (props.replyToFeedback) {
+    // Restriction demandée : Animateur, Porteur, ou auteur du feedback original
     list = props.participants.filter(p => {
-      return p.role === 'animator' || 
-             p.role === 'author' || 
-             p.user.id === props.replyToFeedback.author_id;
+      const r = p.role?.value || p.role;
+      return r === 'animator' || 
+             r === 'author' || 
+             String(p.user_id) === String(props.replyToFeedback.author_id);
     });
   } else {
-    // For new feedbacks, anyone who hasn't submitted a feedback yet can be selected.
-    // So we rebuild the list without filtering out 'author' and 'animator' like remainingParticipants does.
-    const userHasFeedback = new Set();
-    const types = props.decision.status === 'clarification' ? ['clarification'] : 
-                 (props.decision.status === 'reaction' ? ['reaction'] : 
-                 (props.decision.status === 'objection' ? ['objection'] : []));
+    // Nouveau feedback : participants n'ayant pas encore interagi
+    list = [...allEligibleUsers.value.filter(p => !participatedUserIds.value.has(p.user_id))];
     
-    props.feedbacks.forEach(fb => {
-      const t = fb.type?.value || fb.type;
-      if (types.includes(t)) userHasFeedback.add(fb.author_id);
-    });
-
-    list = props.participants.filter(p => !userHasFeedback.has(p.user.id));
+    // Ajouter l'utilisateur courant s'il n'est pas déjà dans la liste et qu'il peut encore participer
+    if (!list.some(p => String(p.user_id) === String(authStore.user.id))) {
+      const myParticipant = props.participants.find(p => String(p.user_id) === String(authStore.user.id));
+      if (myParticipant && !participatedUserIds.value.has(authStore.user.id)) {
+        list.unshift(myParticipant);
+      }
+    }
   }
-  return list.filter(p => p.user.id !== authStore.user.id && p.role !== 'excluded');
+  return list;
 });
+
+// Expand panel if reply targets changes
+watch(() => props.replyToFeedback, (val) => {
+  console.log("SecretaryPanel: replyToFeedback changed", val?.id);
+  if (val) {
+    showForm.value = true;
+    isCollapsed.value = false;
+    
+    if (props.isDocked) {
+      emit('dock'); 
+    }
+
+    // Auto-select animator or author when replying
+    const participants = props.participants || [];
+    const animator = participants.find(p => {
+      const r = p.role?.value || p.role;
+      return r === 'animator';
+    });
+    const author = participants.find(p => {
+      const r = p.role?.value || p.role;
+      return r === 'author';
+    });
+    const feedbackAuthor = participants.find(p => String(p.user_id) === String(val.author_id));
+
+    nextTick(() => {
+      if (animator) {
+        actingAsUserId.value = animator.user_id;
+      } else if (author) {
+        actingAsUserId.value = author.user_id;
+      } else if (feedbackAuthor) {
+        actingAsUserId.value = feedbackAuthor.user_id;
+      }
+    });
+  }
+}, { immediate: true });
+
+// Auto-select first available if current selection becomes invalid
+watch(finalActingParticipants, (newList) => {
+  if (newList.length > 0) {
+    const stillValid = newList.find(p => String(p.user_id) === String(actingAsUserId.value));
+    if (!stillValid) {
+      // Prioritize animator in the new list if possible
+      const animator = newList.find(p => (p.role?.value || p.role) === 'animator');
+      actingAsUserId.value = animator ? animator.user_id : newList[0].user_id;
+    }
+  }
+}, { immediate: true });
 
 // --- Draggable Logic ---
 const position = ref({ x: window.innerWidth - 380, y: 100 });
@@ -242,6 +485,7 @@ const isDragging = ref(false);
 const dragOffset = ref({ x: 0, y: 0 });
 
 const panelStyle = computed(() => {
+  if (props.isDocked) return {}; // Pas de position absolue quand docké
   return {
     left: `${position.value.x}px`,
     top: `${position.value.y}px`
@@ -250,7 +494,18 @@ const panelStyle = computed(() => {
 
 const startDrag = (e) => {
   if (e.target.closest('button')) return;
+  
+  if (props.isDocked) {
+    emit('undock');
+    // On repositionne approximativement au curseur pour une transition fluide
+    position.value = {
+      x: e.clientX - 100,
+      y: e.clientY - 20
+    };
+  }
+
   isDragging.value = true;
+  emit('drag-start');
   dragOffset.value = {
     x: e.clientX - position.value.x,
     y: e.clientY - position.value.y
@@ -270,10 +525,16 @@ const onDrag = (e) => {
   position.value = { x: newX, y: newY };
 };
 
-const stopDrag = () => {
+const stopDrag = (e) => {
   isDragging.value = false;
+  emit('drag-end');
   document.removeEventListener('mousemove', onDrag);
   document.removeEventListener('mouseup', stopDrag);
+  
+  // Si on lâche le panneau sur la partie gauche de l'écran, on le dock
+  if (!props.isDocked && e.clientX < 280) {
+    emit('dock');
+  }
 };
 
 onUnmounted(() => {
@@ -283,6 +544,17 @@ onUnmounted(() => {
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
+};
+
+const prepareFeedbackFor = (userId) => {
+  emit('cancel-reply'); // Important: sortir du mode réponse
+  actingAsUserId.value = userId;
+  feedbackContent.value = '';
+  showForm.value = true;
+  isCollapsed.value = false;
+  setTimeout(() => {
+    textareaRef.value?.focus();
+  }, 100);
 };
 
 // --- Actions ---
@@ -318,14 +590,15 @@ const translateRole = (role) => {
   return map[role] || role;
 };
 
-const sendQuickSignal = async (userId) => {
+const sendQuickSignal = async (userId, signalType = null) => {
   if (loading.value) return;
   loading.value = true;
   
   try {
-    const res = await axios.post(`/api/v1/decisions/${props.decision.id}/versions/${props.currentVersion.id}/consents`, {
-      type: getSignalTypeForPhase(),
-      acting_as_user_id: userId
+    const res = await axios.post(`/api/v1/decisions/${props.decision.id}/versions/${props.currentVersion.id}/consent`, {
+      type: signalType || getSignalTypeForPhase(),
+      acting_as_user_id: userId,
+      notify: false
     });
     emit('action-logged', { type: 'consent', id: res.data.consent.id });
     emit('refresh-data');
@@ -344,11 +617,13 @@ const submitFeedback = async (type) => {
     const res = await axios.post(`/api/v1/decisions/${props.decision.id}/feedback`, {
       type: type,
       content: feedbackContent.value,
-      acting_as_user_id: actingAsUserId.value
+      acting_as_user_id: actingAsUserId.value,
+      notify: false
     });
     
     emit('action-logged', { type: 'feedback', id: res.data.feedback.id });
     feedbackContent.value = '';
+    showForm.value = false;
     emit('refresh-data');
   } catch (err) {
     alert(err.response?.data?.message || "Erreur lors de la publication.");
@@ -369,6 +644,7 @@ const submitReply = async () => {
     
     emit('action-logged', { type: 'message', id: res.data.feedback_message.id });
     feedbackContent.value = '';
+    showForm.value = false;
     emit('refresh-data');
     emit('cancel-reply');
   } catch (err) {
@@ -378,33 +654,119 @@ const submitReply = async () => {
   }
 };
 
-const nextPhase = async () => {
-  if (!confirm("Voulez-vous clôturer cette phase et passer à la suivante ?")) return;
+const resolveFeedback = async (status) => {
+  if (!props.replyToFeedback || loading.value) return;
   loading.value = true;
-  
   try {
-    let action = 'start_reactions';
-    if (props.decision.status === 'reaction') action = 'start_objections';
-    
-    await axios.post(`/api/v1/decisions/${props.decision.id}/transition`, { action });
-    emit('phase-change');
+    await axios.put(`/api/v1/decisions/${props.decision.id}/feedback/${props.replyToFeedback.id}/status`, {
+      status: status,
+      notify: false
+    });
+    emit('refresh-data');
+    cancelFeedback();
   } catch (err) {
-    alert(err.response?.data?.message || "Erreur.");
+    alert(err.response?.data?.message || "Erreur lors de la mise à jour.");
   } finally {
     loading.value = false;
   }
+};
+
+const transitionError = ref(null);
+
+const nextPhase = async () => {
+  transitionError.value = null;
+  const action = getTransitionAction();
+  
+  console.log('Meeting Mode - Attempting transition from:', props.decision.status, 'to:', action);
+
+  if (!action) {
+    transitionError.value = "Impossible de déterminer l'étape suivante.";
+    return;
+  }
+
+  loading.value = true;
+  try {
+    await axios.post(`/api/v1/decisions/${props.decision.id}/transition`, { 
+      to: action,
+      notify: false,
+      is_meeting: true
+    });
+    emit('refresh-data');
+    emit('action-logged', `Phase passée à : ${action}`);
+  } catch (err) {
+    console.error('Transition Error:', err);
+    transitionError.value = err.response?.data?.message || "Erreur lors du changement de phase.";
+  } finally {
+    loading.value = false;
+  }
+};
+const handleQuickAction = async (type) => {
+  if (type === 'abandon' && !confirm('Êtes-vous sûr de vouloir abandonner définitivement cette décision ?')) return;
+  
+  showQuickActions.value = false;
+  loading.value = true;
+  transitionError.value = null;
+
+  try {
+    let endpoint = `/api/v1/decisions/${props.decision.id}/transition`;
+    let data = {};
+
+    if (type === 'suspend') {
+      data = { to: 'suspended' };
+    } else if (type === 'resume') {
+      data = { to: props.decision.status_before_suspension || 'clarification' };
+    } else if (type === 'revision') {
+      data = { to: 'revision' };
+    } else if (type === 'abandon') {
+      endpoint = `/api/v1/decisions/${props.decision.id}/abandon`;
+    }
+
+    await axios.post(endpoint, data);
+    emit('refresh-data');
+    emit('action-logged', `Action rapide : ${type}`);
+  } catch (err) {
+    console.error('Quick Action Error:', err);
+    transitionError.value = err.response?.data?.message || "Erreur lors de l'action.";
+  } finally {
+    loading.value = false;
+  }
+};
+
+const getRoleIcon = (role) => {
+  const r = role?.value || role;
+  if (r === 'author') return 'fa-solid fa-bullhorn';
+  if (r === 'animator') return 'fa-solid fa-user-tie';
+  return 'fa-solid fa-user';
+};
+
+const getRoleColor = (role) => {
+  const r = role?.value || role;
+  if (r === 'author') return 'bg-blue-500';
+  if (r === 'animator') return 'bg-amber-500';
+  return 'bg-gray-400';
 };
 </script>
 
 <style scoped>
 .secretary-panel-classic {
-  position: absolute;
+  position: fixed;
   width: 350px;
-  z-index: 10000;
+  z-index: 9990;
   overflow: hidden;
   transition: width 0.3s ease, height 0.3s ease;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   margin-bottom: 0;
+}
+
+.secretary-panel-classic.is-docked {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
 }
 
 .secretary-panel-classic.is-collapsed {
@@ -417,5 +779,87 @@ const nextPhase = async () => {
 .card-body::-webkit-scrollbar-thumb {
   background: var(--gray-300);
   border-radius: 3px;
+}
+
+.participant-list-scrollable {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.participant-list-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+.participant-list-scrollable::-webkit-scrollbar-thumb {
+  background: var(--indigo-200);
+  border-radius: 3px;
+}
+
+.sexy-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+  background-color: var(--gray-50);
+  font-size: 13px;
+  color: var(--gray-800);
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: all 0.2s;
+}
+.sexy-select:focus {
+  outline: none;
+  border-color: var(--indigo-400);
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.sexy-textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+  background-color: white;
+  font-size: 13px;
+  color: var(--gray-800);
+  line-height: 1.5;
+  resize: vertical;
+  transition: all 0.2s;
+}
+.sexy-textarea:focus {
+  outline: none;
+  border-color: var(--indigo-400);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-container-meeting {
+  animation: slide-in 0.3s ease-out;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.btn-outline-gray {
+  background: white;
+  border: 1px solid var(--gray-100);
+  color: var(--gray-700);
+  transition: all 0.2s;
+}
+
+.btn-outline-gray:hover {
+  border-color: var(--indigo-200);
+  background: var(--gray-50);
+  color: var(--indigo-700);
 }
 </style>

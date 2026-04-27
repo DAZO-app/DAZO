@@ -53,8 +53,13 @@ resources/js/
 └── components/
     ├── AttachmentPanel.vue      # Upload + aperçu des pièces jointes
     ├── FeedbackEngine.vue       # Threads d'objections, clarifications, suggestions
+    ├── MeetingModeOverlay.vue   # Interface plein écran immersive pour les réunions
+    ├── MeetingSecretaryPanel.vue # Panel secrétaire flottant (pilotage réunion)
+    ├── FloatingWindow.vue       # Gestion des pièces jointes flottantes (drag, resize, maximize)
+    ├── DecisionPrintModal.vue   # Impression PDF (filtrage par version, tris objections/suggestions)
     ├── ParticipantPhasePanel.vue # Progression des phases + liste participants
     ├── ImpersonationBanner.vue  # Bandeau mode impersonation
+    ├── SocialLoginButtons.vue   # Boutons de connexion OAuth (Google, Microsoft)
     └── EmptyState.vue           # États vides génériques
 ```
 

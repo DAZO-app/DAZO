@@ -8,6 +8,7 @@ use App\Models\Consent;
 use App\Models\Decision;
 use App\Models\Feedback;
 use App\Models\FeedbackJoin;
+use App\Enums\CircleMemberRole;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -70,10 +71,17 @@ class ConsentController extends Controller
             }
         }
 
-        $consent = Consent::updateOrCreate(
-            ['decision_version_id' => $versionId, 'user_id' => $user->id],
-            ['signal' => $request->type]
+        $consent = \App\Models\Consent::updateOrCreate(
+            ['decision_version_id' => $versionId, 'user_id' => $user->id, 'phase' => $status],
+            [
+                'signal' => $request->type,
+                'acting_as_user_id' => $request->acting_as_user_id,
+            ]
         );
+
+        if ($request->boolean('notify', true)) {
+            // event(new \App\Events\ConsentSubmitted($consent));
+        }
 
         // Assure que l'utilisateur est bien listé comme participant
         $exists = $decision->participants()->where('user_id', $user->id)->exists();
@@ -94,10 +102,15 @@ class ConsentController extends Controller
     {
         $consent = Consent::findOrFail($consentId);
         
-        // Authorization: animator can delete
-        $decision = $consent->decisionVersion->decision;
-        $userRole = $decision->participants()->where('user_id', request()->user()->id)->first()?->role;
-        abort_unless($userRole === \App\Enums\DecisionParticipantRole::ANIMATOR, 403, 'Seul l\'animateur peut annuler cette action.');
+        $user = request()->user();
+        $member = $consent->decisionVersion->decision->circle->members()->where('user_id', $user->id)->first();
+        $isAuthorized = ($member && $member->role->value !== \App\Enums\CircleMemberRole::OBSERVER->value) || $user->is_global_animator;
+
+        abort_unless(
+            $isAuthorized, 
+            403, 
+            'Seul un membre du cercle (non observateur) peut annuler cette action.'
+        );
 
         $consent->delete();
 

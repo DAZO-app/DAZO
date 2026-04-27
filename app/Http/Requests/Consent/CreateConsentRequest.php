@@ -4,6 +4,7 @@ namespace App\Http\Requests\Consent;
 
 use App\Models\Decision;
 use App\Models\DecisionVersion;
+use App\Enums\CircleMemberRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,17 +22,18 @@ class CreateConsentRequest extends FormRequest
         $user = $this->user();
 
         $member = $decision->circle->members()->where('user_id', $user->id)->first();
-        if (!$member || $member->role->value === \App\Enums\CircleMemberRole::OBSERVER->value) {
-            return false;
+        if (!$user->is_global_animator && (!$member || $member->role->value === CircleMemberRole::OBSERVER->value)) {
+            return false; // Pas membre ou observer
         }
-
         $participant = $decision->participants()->where('user_id', $user->id)->first();
         $role = $participant?->role->value;
         
         // Si l'utilisateur agit au nom de quelqu'un d'autre
         if ($this->has('acting_as_user_id')) {
-            // Seul l'animateur (ou le porteur ?) peut agir au nom de quelqu'un
-            if (!in_array($role, [\App\Enums\DecisionParticipantRole::ANIMATOR->value])) {
+            // Un membre du cercle (non observateur) ou un animateur global peut agir au nom de quelqu'un
+            $isSecretary = ($member && $member->role->value !== CircleMemberRole::OBSERVER->value) || $user->is_global_animator;
+            
+            if (!$isSecretary) {
                 return false;
             }
             return true;

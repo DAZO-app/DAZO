@@ -21,14 +21,16 @@
     <MeetingModeOverlay
       v-if="showMeetingMode"
       :decision="decision"
-      :current-version="currentVersion"
+      :current-version="displayedVersion"
       :attachments="displayAttachments"
-      :is-animator="isAuthorOrAnimator"
+      :is-animator="true"
       :participants="decision.participants"
+      :all-versions="allVersions"
       @close="handleMeetingModeClose"
       @open-attachment="openAttachment"
-      @phase-change="fetchDecision"
-      @refresh-data="fetchDecision"
+      @phase-change="refreshDecision"
+      @refresh-data="refreshDecision"
+      @version-change="handleMeetingVersionChange"
     />
 
     <div class="page-body">
@@ -88,7 +90,7 @@
             </button>
 
             <!-- Nouvelles actions -->
-            <button class="btn-setting" @click="openMeetingMode" title="Mode réunion">
+            <button v-if="canOpenMeetingMode" class="btn-setting" @click="showMeetingMode = true" title="Mode réunion">
               <i class="fa-solid fa-display"></i>
             </button>
 
@@ -302,8 +304,8 @@
             </div>
           </div>
 
-          <div v-if="showParticipationCard && !hasAlreadyParticipated" class="premium-card mb-16">
-            <div class="pc-header" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-amber'">
+          <div v-if="showParticipationCard" class="premium-card mb-16 border-2" :class="hasAlreadyParticipated ? 'border-teal-500' : 'border-red-500'">
+            <div class="pc-header" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-red'">
               <div class="pc-header-icon"><i class="fa-solid fa-comments"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">{{ participationCardTitle }}</div>
@@ -391,6 +393,17 @@
               <button v-if="isAuthorOrAnimator" class="btn btn-icon btn-sm" style="color: white; background: rgba(255,255,255,0.15); border: none; position: relative; z-index: 10;" title="Actions rapides" @click="showActionsModal = true">
                 <i class="fa-solid fa-gear"></i>
               </button>
+            </div>
+          </div>
+          <div v-else-if="myRole === 'participant'" class="premium-card mb-16">
+            <div class="pc-header pc-header-teal" style="padding: 12px;">
+              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-user-group"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title" style="font-size: 14px;">Participant</div>
+                <div class="pc-header-sub" style="font-size: 12px;">
+                  {{ hasAlreadyParticipated ? 'Participation validée pour cette phase.' : 'Vous participez à cette décision.' }}
+                </div>
+              </div>
             </div>
           </div>
           <div v-else-if="hasAlreadyParticipated" class="premium-card mb-16">
@@ -594,6 +607,13 @@
       @close="showNotifLevels = false"
       @select="setNotifLevel"
     />
+    <!-- Modal impression / PDF -->
+    <DecisionPrintModal
+      v-if="showPrintModal"
+      :decision="decision"
+      :current-version="currentVersion"
+      @close="showPrintModal = false"
+    />
   </main>
 </template>
 
@@ -611,6 +631,7 @@ import NotificationPromptModal from '../components/NotificationPromptModal.vue';
 import RevisionPathModal from '../components/RevisionPathModal.vue';
 import NotificationLevelModal from '../components/NotificationLevelModal.vue';
 import MeetingModeOverlay from '../components/MeetingModeOverlay.vue';
+import DecisionPrintModal from '../components/DecisionPrintModal.vue';
 import { useAuthStore } from '../stores/auth';
 import { useDecisionStore } from '../stores/decision';
 import { usePendingStore } from '../stores/pending';
@@ -644,6 +665,13 @@ const error = computed(() => decisionStore.error);
 
 const currentVersion = computed(() => decision.value?.current_version || null);
 
+const displayedVersion = computed(() => {
+  if (viewingVersionId.value && historicalVersionData.value) {
+    return historicalVersionData.value;
+  }
+  return currentVersion.value;
+});
+
 const displayContent = computed(() => {
   if (viewingVersionId.value && historicalVersionData.value) {
     return historicalVersionData.value.content;
@@ -670,6 +698,12 @@ const historicalVersionDecision = computed(() => {
 const historicalPhaseParticipationMap = computed(() => {
   if (!viewingVersionId.value || !historicalVersionData.value) return phaseParticipationMap.value;
   
+  // Si l'API nous a déjà fourni la map calculée, on l'utilise directement
+  if (historicalVersionData.value.phase_participation_map) {
+    return historicalVersionData.value.phase_participation_map;
+  }
+
+  // Fallback (ancien code)
   const map = { clarification: {}, reaction: {}, objection: {} };
   const v = historicalVersionData.value;
   
@@ -685,9 +719,15 @@ const historicalPhaseParticipationMap = computed(() => {
   if (v.consents) {
     v.consents.forEach(c => {
       const signal = c.signal?.value || c.signal;
-      if (signal === 'no_questions') map.clarification[c.user_id] = true;
-      if (signal === 'no_reaction') map.reaction[c.user_id] = true;
-      if (['no_objection', 'abstention'].includes(signal)) map.objection[c.user_id] = true;
+      const phase = c.phase?.value || c.phase;
+      if (phase && map[phase]) {
+        map[phase][c.user_id] = signal;
+      } else {
+        // Fallback si la phase n'est pas renseignée
+        if (signal === 'no_questions') map.clarification[c.user_id] = true;
+        if (signal === 'no_reaction') map.reaction[c.user_id] = true;
+        if (signal === 'no_objection') map.objection[c.user_id] = true;
+      }
     });
   }
   
@@ -759,7 +799,15 @@ const explicitParticipant = computed(() => {
 });
 
 const myRole = computed(() => {
-  return explicitParticipant.value?.role || currentCircleMember.value?.role || 'participant';
+  let r = explicitParticipant.value?.role || currentCircleMember.value?.role || 'participant';
+  
+  // Handle potential enum object { value: '...', label: '...' }
+  if (r && typeof r === 'object' && r.value) {
+    r = r.value;
+  }
+  
+  // Normalize 'member' (from circle) to 'participant' (for display)
+  return r === 'member' ? 'participant' : r;
 });
 
 const myRoleInfo = computed(() => roleMeta[myRole.value] || roleMeta.participant);
@@ -801,10 +849,7 @@ const toggleFavorite = async () => {
 };
 
 const showMeetingMode = ref(false);
-
-const openMeetingMode = () => {
-  showMeetingMode.value = true;
-};
+const showPrintModal = ref(false);
 
 const feedbackKey = ref(0);
 
@@ -823,7 +868,7 @@ const openAttachment = (idx) => {
 };
 
 const printDecision = () => {
-  window.print();
+  showPrintModal.value = true;
 };
 
 const setNotifLevel = async (level) => {
@@ -840,13 +885,28 @@ const setNotifLevel = async (level) => {
 };
 
 const isAuthor = computed(() => {
-  return decision.value?.participants?.some(p => p.user_id === authStore.user?.id && p.role === 'author');
+  return decision.value?.participants?.some(p => {
+    const r = (typeof p.role === 'object' && p.role !== null) ? p.role.value : p.role;
+    return p.user_id === authStore.user?.id && r === 'author';
+  });
 });
 const isAnimator = computed(() => {
-  return decision.value?.participants?.some(p => p.user_id === authStore.user?.id && p.role === 'animator');
+  return decision.value?.participants?.some(p => {
+    const r = (typeof p.role === 'object' && p.role !== null) ? p.role.value : p.role;
+    return p.user_id === authStore.user?.id && r === 'animator';
+  });
 });
 
+const isCircleMember = computed(() => {
+  const member = decision.value?.circle?.members?.find(m => m.user_id === authStore.user?.id);
+  return member && member.role?.value !== 'observer' && member.role !== 'observer';
+});
+
+// Droits de gestion (vue classique, boutons de changement de phase sidebar)
 const isAuthorOrAnimator = computed(() => isAuthor.value || isAnimator.value || authStore.user?.is_global_animator);
+
+// Droits d'ouvrir le mode meeting (élargis aux membres du cercle)
+const canOpenMeetingMode = computed(() => isAuthorOrAnimator.value || isCircleMember.value);
 
 const draftCircleMembers = ref([]);
 const loadingCircleMembers = ref(false);
@@ -871,9 +931,25 @@ const excludableMembers = computed(() => {
 });
 
 const hasAlreadyParticipated = computed(() => {
+  const userId = authStore.user?.id;
+  const status = currentStatus.value;
+
+  // Source 1 : user_status calculé côté serveur (le plus fiable)
   if (decision.value?.user_status) {
-    return !decision.value.user_status.needs_action;
+    const needs = decision.value.user_status.needs_action;
+    // Pour les porteurs/animateurs, needs_action concerne les réponses à donner, pas la participation
+    if (!['author', 'animator'].includes(myRole.value)) {
+      return !needs;
+    }
   }
+
+  // Source 2 : phaseParticipationMap du serveur (mis à jour à chaque refreshDecision)
+  if (userId && status && phaseParticipationMap.value) {
+    const phaseMap = phaseParticipationMap.value[status] || {};
+    if (phaseMap[userId] === true) return true;
+  }
+
+  // Source 3 : has_participated du store (fallback)
   return Boolean(decisionStore.hasParticipated || myConsent.value?.has_participated);
 });
 
@@ -1305,7 +1381,8 @@ const handleVersionChange = async () => {
     const { data } = await axios.get(`/api/v1/decisions/${decision.value.id}/versions/${selectedVersionNavId.value}`);
     historicalVersionData.value = {
       ...data.version,
-      participation_stats: data.participation_stats
+      participation_stats: data.participation_stats,
+      phase_participation_map: data.phase_participation_map
     };
   } catch (e) {
     window.alert("Erreur lors du chargement de la version historique.");
@@ -1345,6 +1422,11 @@ const refreshDecision = async () => {
     await decisionStore.fetchDecisions();
   }
   await fetchAllVersions();
+};
+
+const handleMeetingVersionChange = async (versionId) => {
+  selectedVersionNavId.value = versionId;
+  await handleVersionChange();
 };
 
 const goToDecision = (id) => {
@@ -1474,18 +1556,24 @@ const handleManualAction = async (type) => {
     if (type === 'suspend') {
       data = { to: 'suspended' };
     } else if (type === 'resume') {
-      // Reprendre selon le status sauvegardé
       data = { to: decision.value.status_before_suspension || 'clarification' };
     } else if (type === 'revision') {
       data = { to: 'revision' };
     } else if (type === 'abandon') {
       endpoint = `/api/v1/decisions/${decision.value.id}/abandon`;
+    } else {
+      // Cas générique pour les transitions (reaction, objection, adopted)
+      data = { to: type };
     }
 
     const { data: responseData } = await axios.post(endpoint, data);
     decisionStore.setCurrentDecision(responseData.decision);
     showActionsModal.value = false;
-    alert('Action effectuée avec succès.');
+    
+    // Pas d'alerte en mode meeting pour éviter de casser le fullscreen
+    if (!showMeetingMode.value) {
+      alert('Action effectuée avec succès.');
+    }
   } catch (e) {
     console.error(e);
     alert('Erreur lors de l\'exécution de l\'action.');

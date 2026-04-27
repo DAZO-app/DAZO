@@ -61,3 +61,15 @@ Toutes les briques fondamentales du moteur de décision sociocratique, de l'inte
 - [x] **Centre d'Aide Intégré** : Wiki thématique avec moteur de recherche.
 - [x] **Administration du contenu** : Éditeur riche pour la rédaction de guides par les admins.
 - [x] **Design Premium** : Layout bi-colonne pour une lecture fluide des ressources.
+
+## ✅ Bloc 18 — Mode Réunion & Expérience Avancée
+- [x] **Interface plein écran épurée** : Immersion totale pour les réunions de décision.
+- [x] **Panneau Secrétaire intelligent** : Pilotage centralisé des feedbacks et transitions.
+- [x] **Pièces jointes flottantes** : Gestion multi-fenêtres (déplacement, redimensionnement, maximisation) intégrée au plein écran.
+- [x] **Saisie par procuration** : Possibilité pour le secrétaire de saisir les retours au nom des participants.
+- [x] **Impression PDF avancée** : Filtrage par version, séparation claire objections/suggestions, et affichage des soutiens ("rejoint par").
+- [x] **Design Harmonisé** : En-têtes à dégradés dynamiques selon la phase et bordures de rôles stylisées.
+
+## ✅ Bloc 19 — Authentification & Accès (Évolutions)
+- [x] **Social Login** : Connexion via fournisseurs tiers (Google, Microsoft, Github).
+- [x] Maintien du support de mot de passe par défaut.

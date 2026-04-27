@@ -18,12 +18,28 @@ class FeedbackService
     /**
      * Submit a new feedback. Validates mutual exclusivity.
      */
-    public function submitFeedback(Decision $decision, array $data, User $user): Feedback
+    public function submitFeedback(Decision $decision, array $data, User $user, bool $notify = true): Feedback
     {
-        return DB::transaction(function () use ($decision, $data, $user) {
+        return DB::transaction(function () use ($decision, $data, $user, $notify) {
             $versionId = $decision->currentVersion->id;
 
             $this->ensureExclusiveAction($versionId, $user->id, $data['type']);
+
+            // Clear any simple consent (RAS/Abstention) for this phase
+            // We also clear NULL phase records for safety with old data
+            $phase = $this->mapTypeToPhase($data['type']);
+            $phaseEnum = DecisionStatus::tryFrom($phase);
+            
+            Consent::where('decision_version_id', $versionId)
+                ->where('user_id', $user->id)
+                ->where(function($q) use ($phase, $phaseEnum) {
+                    $q->where('phase', $phase)
+                      ->orWhereNull('phase');
+                    if ($phaseEnum) {
+                        $q->orWhere('phase', $phaseEnum);
+                    }
+                })
+                ->delete();
 
             $feedback = Feedback::create([
                 'decision_version_id' => $versionId,
@@ -36,7 +52,9 @@ class FeedbackService
             // Add participant record automatically if this is first action
             $this->ensureParticipant($decision, $user);
 
-            event(new \App\Events\FeedbackSubmitted($feedback));
+            if ($notify) {
+                event(new \App\Events\FeedbackSubmitted($feedback));
+            }
 
             return $feedback;
         });
@@ -46,6 +64,21 @@ class FeedbackService
     {
         return DB::transaction(function () use ($decision, $feedback, $user) {
             $this->ensureExclusiveAction($feedback->decision_version_id, $user->id, $feedback->type->value);
+
+            // Clear any simple consent (RAS/Abstention) for this phase
+            $phase = $this->mapTypeToPhase($feedback->type->value);
+            $phaseEnum = DecisionStatus::tryFrom($phase);
+
+            Consent::where('decision_version_id', $feedback->decision_version_id)
+                ->where('user_id', $user->id)
+                ->where(function($q) use ($phase, $phaseEnum) {
+                    $q->where('phase', $phase)
+                      ->orWhereNull('phase');
+                    if ($phaseEnum) {
+                        $q->orWhere('phase', $phaseEnum);
+                    }
+                })
+                ->delete();
 
             $join = FeedbackJoin::create([
                 'feedback_id' => $feedback->id,
@@ -58,7 +91,7 @@ class FeedbackService
         });
     }
 
-    public function changeStatus(Feedback $feedback, string $newStatus, User $actor): Feedback
+    public function changeStatus(Feedback $feedback, string $newStatus, User $actor, bool $notify = true): Feedback
     {
         $feedback->loadMissing('version.decision.participants');
         $decision = $feedback->version->decision;
@@ -81,11 +114,13 @@ class FeedbackService
         $feedback->save();
 
         if (in_array($newStatus, [FeedbackStatus::TREATED->value, FeedbackStatus::REJECTED->value])) {
-            event(new \App\Events\FeedbackResolved($feedback));
+            if ($notify) {
+                event(new \App\Events\FeedbackResolved($feedback));
+            }
         }
 
         // Auto-check for Adoption (Bloc 8)
-        $this->checkAndAdoptIfNoBlockingObjections($decision);
+        $this->checkAndAdoptIfNoBlockingObjections($decision, $notify);
 
         return $feedback;
     }
@@ -93,7 +128,7 @@ class FeedbackService
     /**
      * Automatically transitions decision to ADOPTED if 0 blocking objections
      */
-    public function checkAndAdoptIfNoBlockingObjections(Decision $decision): void
+    public function checkAndAdoptIfNoBlockingObjections(Decision $decision, bool $notify = true): void
     {
         if ($decision->status->value !== DecisionStatus::OBJECTION->value) return;
 
@@ -103,7 +138,9 @@ class FeedbackService
             // Adopt logic
             $decision->status = DecisionStatus::ADOPTED->value;
             $decision->save();
-            event(new \App\Events\DecisionAdopted($decision));
+            if ($notify) {
+                event(new \App\Events\DecisionAdopted($decision));
+            }
         }
     }
 
@@ -116,6 +153,16 @@ class FeedbackService
                 FeedbackStatus::CLARIFICATION_REQUESTED->value,
                 FeedbackStatus::IN_TREATMENT->value,
             ])->exists();
+    }
+
+    private function mapTypeToPhase(string $type): string
+    {
+        return match($type) {
+            'clarification' => 'clarification',
+            'reaction' => 'reaction',
+            'objection', 'suggestion' => 'objection',
+            default => $type
+        };
     }
 
     private function ensureExclusiveAction(string $versionId, string $userId, ?string $type = null): void

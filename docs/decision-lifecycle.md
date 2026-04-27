@@ -138,14 +138,12 @@ Une décision peut passer à l'état `adopted` si :
 
 ## 📌 Exemple de cycle complet
 
-```
-[draft] → [clarification] → [reaction] → [objection]
-              ↑                                |
-              |                    objections résolues ?
-              |                        /         \
-              |                      oui          non
-              |                       ↓            ↓
-              |                  [adopted]     [revision]
-              |                              (nouvelle version)
-              └──────────────────────────────────┘
-```
+## 🖥️ Mode Réunion (Meeting Mode)
+
+Le Mode Réunion est une interface immersive permettant de piloter une séance de décision en direct (synchrone).
+
+- **Immersion** : Interface plein écran masquant les distractions.
+- **Pilotage centralisé** : Un secrétaire (souvent l'animateur) peut saisir les retours et valider les consentements au nom des participants présents physiquement ou en visioconférence.
+- **Tour de table assisté** : Liste dynamique des participants n'ayant pas encore pris la parole dans la phase actuelle.
+- **Fluidité** : Transitions d'états et saisies de messages facilitées pour maintenir le rythme de la séance.
+- **Synchronisation** : Toutes les actions effectuées en mode réunion sont immédiatement répercutées dans le moteur de décision standard dès la fermeture du mode.

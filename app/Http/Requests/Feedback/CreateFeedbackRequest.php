@@ -44,6 +44,7 @@ class CreateFeedbackRequest extends FormRequest
             
         abort_if($existingFeedback, 422, "Vous avez déjà soumis un retour de ce type pour cette version.");
 
+        $member = $decision->circle->members()->where('user_id', $user->id)->first();
         $participant = $decision->participants()->where('user_id', $user->id)->first();
         $role = $participant?->role->value;
 
@@ -51,7 +52,9 @@ class CreateFeedbackRequest extends FormRequest
         // L'animateur ne crée jamais de feedback : il répond aux fils ouverts.
         // SAUF s'il agit au nom d'un autre participant
         if ($this->has('acting_as_user_id')) {
-            if ($role !== \App\Enums\DecisionParticipantRole::ANIMATOR->value) {
+            $isSecretary = ($member && $member->role->value !== CircleMemberRole::OBSERVER->value) || $user->is_global_animator;
+
+            if (!$isSecretary) {
                 return false;
             }
             $targetUser = \App\Models\User::findOrFail($this->acting_as_user_id);
@@ -71,8 +74,7 @@ class CreateFeedbackRequest extends FormRequest
             return false;
         }
 
-        $member = $decision->circle->members()->where('user_id', $user->id)->first();
-        if (!$member || $member->role->value === CircleMemberRole::OBSERVER->value) {
+        if (!$user->is_global_animator && (!$member || $member->role->value === CircleMemberRole::OBSERVER->value)) {
             return false; // Pas membre ou observer
         }
 

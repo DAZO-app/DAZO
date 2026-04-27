@@ -109,6 +109,57 @@
             </div>
           </div>
 
+          <!-- SECTION COMPTES LIÉS (OAuth) -->
+          <div v-if="activeSection === 'social'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-purple">
+              <div class="pc-header-icon"><i class="fa-solid fa-link"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Comptes liés</div>
+                <div class="pc-header-sub">Connectez vos comptes externes pour vous connecter plus rapidement</div>
+              </div>
+            </div>
+            <div class="pc-body p-24">
+              <div v-if="socialLoading" class="text-center py-32">
+                <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500"></i>
+              </div>
+              <div v-else>
+                <div v-if="socialSuccessMsg" class="alert alert-success mb-24">{{ socialSuccessMsg }}</div>
+                <div v-if="socialErrorMsg" class="alert alert-error mb-24">{{ socialErrorMsg }}</div>
+
+                <div class="social-accounts-list">
+                  <div v-for="p in socialProviders" :key="p.provider" class="social-account-row">
+                    <div class="social-account-info">
+                      <div class="social-account-icon">
+                        <i :class="socialIcons[p.provider]"></i>
+                      </div>
+                      <div>
+                        <div class="social-account-name">{{ p.label }}</div>
+                        <div class="social-account-status" :class="p.linked ? 'linked' : 'unlinked'">
+                          {{ p.linked ? 'Connecté' : 'Non connecté' }}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <button v-if="p.linked" class="btn btn-danger btn-sm" @click="unlinkSocial(p.provider)" :disabled="socialActionLoading === p.provider">
+                        <i v-if="socialActionLoading === p.provider" class="fa-solid fa-spinner fa-spin"></i>
+                        <template v-else><i class="fa-solid fa-unlink mr-6"></i> Délier</template>
+                      </button>
+                      <button v-else class="btn btn-blue btn-sm" @click="linkSocial(p.provider)" :disabled="socialActionLoading === p.provider">
+                        <i v-if="socialActionLoading === p.provider" class="fa-solid fa-spinner fa-spin"></i>
+                        <template v-else><i class="fa-solid fa-link mr-6"></i> Lier</template>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="!socialHasPassword" class="alert alert-warning mt-24">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  <span>Vous n'avez pas de mot de passe défini. Vous devez conserver au moins un compte lié pour pouvoir vous connecter.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- SECTION NOTIFICATIONS -->
           <div v-if="activeSection === 'notifications'" class="premium-card animate-fade-in">
             <div class="pc-header pc-header-blue">
@@ -226,6 +277,7 @@ const activeSection = ref('profile');
 const sections = [
   { id: 'profile', label: 'Mon profil', icon: 'fa-solid fa-user-circle' },
   { id: 'password', label: 'Mot de passe', icon: 'fa-solid fa-key' },
+  { id: 'social', label: 'Comptes liés', icon: 'fa-solid fa-link' },
   { id: 'notifications', label: 'Notifications', icon: 'fa-solid fa-bell' },
   { id: 'views', label: 'Mes vues', icon: 'fa-solid fa-layer-group' },
 ];
@@ -344,6 +396,7 @@ onMounted(() => {
     }
     decisionStore.fetchDecisions();
     fetchNotifPrefs();
+    fetchSocialAccounts();
 });
 
 const updateProfile = async () => {
@@ -386,6 +439,67 @@ const updatePassword = async () => {
     } finally {
         pwdLoading.value = false;
     }
+};
+
+// Social Accounts
+const socialProviders = ref([]);
+const socialHasPassword = ref(true);
+const socialLoading = ref(false);
+const socialSuccessMsg = ref('');
+const socialErrorMsg = ref('');
+const socialActionLoading = ref(null);
+
+const socialIcons = {
+  'google': 'fa-brands fa-google',
+  'github': 'fa-brands fa-github',
+  'facebook': 'fa-brands fa-facebook',
+  'twitter': 'fa-brands fa-x-twitter',
+  'linkedin-openid': 'fa-brands fa-linkedin',
+  'gitlab': 'fa-brands fa-gitlab',
+  'microsoft': 'fa-brands fa-microsoft',
+  'apple': 'fa-brands fa-apple',
+  'franceconnect': 'fa-solid fa-flag',
+};
+
+const fetchSocialAccounts = async () => {
+  socialLoading.value = true;
+  try {
+    const { data } = await axios.get('/api/v1/auth/social/accounts');
+    socialProviders.value = data.providers || [];
+    socialHasPassword.value = data.has_password;
+  } catch (e) {
+    console.error('Fetch social accounts error', e);
+  } finally {
+    socialLoading.value = false;
+  }
+};
+
+const linkSocial = async (provider) => {
+  socialActionLoading.value = provider;
+  socialErrorMsg.value = '';
+  try {
+    const { data } = await axios.get(`/api/v1/auth/social/${provider}/redirect`);
+    window.location.href = data.url;
+  } catch (e) {
+    socialErrorMsg.value = e.response?.data?.message || 'Impossible de lier ce compte.';
+    socialActionLoading.value = null;
+  }
+};
+
+const unlinkSocial = async (provider) => {
+  socialActionLoading.value = provider;
+  socialSuccessMsg.value = '';
+  socialErrorMsg.value = '';
+  try {
+    const { data } = await axios.delete(`/api/v1/auth/social/${provider}/unlink`);
+    socialSuccessMsg.value = data.message;
+    await fetchSocialAccounts();
+    setTimeout(() => socialSuccessMsg.value = '', 3000);
+  } catch (e) {
+    socialErrorMsg.value = e.response?.data?.message || 'Impossible de délier ce compte.';
+  } finally {
+    socialActionLoading.value = null;
+  }
 };
 </script>
 
@@ -481,5 +595,68 @@ const updatePassword = async () => {
   .config-nav { width: 100%; position: static; flex-direction: row; display: flex; overflow-x: auto; gap: 8px; padding-bottom: 8px; }
   .nav-item { width: auto; white-space: nowrap; margin-bottom: 0; }
   .nav-group-title { display: none; }
+}
+
+/* Social Accounts */
+.social-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.social-account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: 12px;
+  transition: all 0.15s;
+}
+
+.social-account-row:hover {
+  border-color: var(--gray-200);
+  background: white;
+}
+
+.social-account-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.social-account-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: white;
+  border: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--gray-600);
+  flex-shrink: 0;
+}
+
+.social-account-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.social-account-status {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.social-account-status.linked {
+  color: var(--teal-600);
+}
+
+.social-account-status.unlinked {
+  color: var(--gray-400);
 }
 </style>

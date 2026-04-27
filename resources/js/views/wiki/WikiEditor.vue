@@ -34,23 +34,27 @@
         <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500"></i>
       </div>
 
-      <div v-else class="wiki-editor-layout">
+      <div v-else class="wiki-editor-layout mt-16">
          <!-- LEFT: MAIN CONTENT -->
          <div class="editor-main">
-            <div class="premium-card">
-               <div class="pc-body p-32">
-                  <div class="form-group mb-32">
-                    <label class="label text-blue-900 font-black text-xs uppercase letter-spacing-wide mb-12 flex items-center">
-                      <i class="fa-solid fa-font mr-8 opacity-50"></i> Titre de l'article
+            <div class="premium-card shadow-lg">
+               <div class="pc-body p-48">
+                  <div class="form-group mb-48">
+                    <label class="label text-blue-900 font-black text-xs uppercase letter-spacing-wide mb-16 flex items-center">
+                      <div class="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mr-10 shadow-sm"><i class="fa-solid fa-font"></i></div>
+                      Titre de l'article
                     </label>
-                    <input v-model="form.title" class="input input-lg border-blue-100 focus:border-blue-400 focus:ring-4 focus:ring-blue-100" placeholder="Ex: Comment voter une décision ?" required>
+                    <input v-model="form.title" class="input input-lg border-blue-100 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 shadow-sm" placeholder="Ex: Comment voter une décision ?" required>
                   </div>
 
                   <div class="form-group">
-                    <label class="label text-blue-900 font-black text-xs uppercase letter-spacing-wide mb-12 flex items-center">
-                      <i class="fa-solid fa-align-left mr-8 opacity-50"></i> Contenu de l'aide
+                    <label class="label text-blue-900 font-black text-xs uppercase letter-spacing-wide mb-16 flex items-center">
+                      <div class="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mr-10 shadow-sm"><i class="fa-solid fa-align-left"></i></div>
+                      Contenu de l'aide
                     </label>
-                    <RichTextEditor v-model="form.content" placeholder="Rédigez l'article ici..." />
+                    <div class="editor-wrapper border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                       <RichTextEditor v-model="form.content" placeholder="Rédigez l'article ici..." />
+                    </div>
                   </div>
                </div>
             </div>
@@ -58,8 +62,8 @@
 
          <!-- RIGHT: SETTINGS -->
          <div class="editor-sidebar">
-            <div class="premium-card">
-               <div class="pc-header pc-header-blue" style="padding: 16px 24px;">
+            <div class="premium-card shadow-lg mb-24">
+               <div class="pc-header pc-header-blue py-16 px-24">
                   <div class="pc-header-icon" style="width: 28px; height: 28px; font-size: 13px;"><i class="fa-solid fa-sliders"></i></div>
                   <div class="pc-header-title text-sm">Paramètres</div>
                </div>

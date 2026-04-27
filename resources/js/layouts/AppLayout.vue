@@ -216,7 +216,7 @@ import { useAuthStore } from '../stores/auth';
 import { usePendingStore } from '../stores/pending';
 import { useDecisionStore } from '../stores/decision';
 import { useConfigStore } from '../stores/config';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import ImpersonationBanner from '../components/ImpersonationBanner.vue';
 
 const authStore = useAuthStore();
@@ -224,6 +224,7 @@ const pending = usePendingStore();
 const decisionStore = useDecisionStore();
 const configStore = useConfigStore();
 const router = useRouter();
+const route = useRoute();
 
 const mobileMenuOpen = ref(false);
 const sectionsOpen = ref({
@@ -301,8 +302,14 @@ const refreshAllData = () => {
 };
 
 // Re-fetch data whenever user identity changes (impersonation start/stop)
-watch(() => user.value?.id, (newId) => {
-  if (newId) refreshAllData();
+watch(() => user.value?.id, (newId, oldId) => {
+  if (newId) {
+    refreshAllData();
+    // Si on est sur une décision, recharger les données de participation pour le nouvel utilisateur
+    if (route.name === 'DecisionDetail' && route.params.id) {
+      decisionStore.fetchDecisionById(route.params.id);
+    }
+  }
 }, { immediate: true });
 
 onMounted(() => {
@@ -319,7 +326,7 @@ const logout = async () => {
 
 const stopImpersonating = async () => {
   await authStore.stopImpersonating();
-  window.location.href = '/'; // Redirect to root to ensure fresh start
+  window.location.reload(); // Recharger la page courante avec l'identité originale
 };
 </script>
 

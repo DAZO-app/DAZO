@@ -79,5 +79,26 @@ class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordC
     {
         return $this->hasMany(\App\Models\DecisionUserSetting::class);
     }
+
+    public function socialAccounts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\SocialAccount::class);
+    }
+
+    /**
+     * Check if the user has a linked social account for a given provider.
+     */
+    public function hasSocialAccount(string $provider): bool
+    {
+        return $this->socialAccounts()->where('provider', $provider)->exists();
+    }
+
+    /**
+     * Check if the user has a local password set (not OAuth-only).
+     */
+    public function hasPassword(): bool
+    {
+        return !empty($this->password);
+    }
 }
 

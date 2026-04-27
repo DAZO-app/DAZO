@@ -14,32 +14,46 @@
       </div>
       
       <div v-else class="p-16">
+        <!-- Validations simples : Abstention (Global car s'applique à tout le processus) -->
+        <div v-if="consentsBySignal.abstention.length > 0" class="phase-group mb-24">
+          <div class="feedback-card" style="border-left: 3px solid var(--gray-400)">
+            <div class="feedback-card-header">
+              <span class="badge badge-gray">ABSTENTION</span>
+              <span style="font-size:12px; color:var(--gray-600)">{{ consentsBySignal.abstention.length }} personne(s)</span>
+              <span class="badge badge-gray text-xs" style="margin-left:auto">S'abstient</span>
+            </div>
+            <div class="feedback-card-body" style="padding:8px 14px 12px; font-size:12px; color:var(--gray-600)">
+               <span class="text-muted">Se sont abstenus pour cette version :</span> {{ consentsBySignal.abstention.map(c => c.user?.name).join(', ') }}
+            </div>
+          </div>
+        </div>
+
         <!-- Section Clarifications -->
-        <div v-if="groupedFeedbacks.clarifications.length > 0 || getConsentGroup('no_questions') || (currentStatus === 'objection' && !isHistorical)" class="phase-group mb-24">
+        <div v-if="groupedFeedbacks.clarifications.length > 0 || consentsBySignal.no_questions.length > 0 || acknowledgedUsers.length > 0 || (currentStatus === 'objection' && !isHistorical)" class="phase-group mb-24">
           <div class="phase-header mb-12" style="display: flex; justify-content: space-between; align-items: center;">
-             <span class="phase-badge badge-amber">Clarifications</span>
+             <span class="phase-badge" :class="groupNeedsIntervention('clarifications') ? 'badge-red' : 'badge-amber'">Clarifications</span>
              <button v-if="groupedFeedbacks.clarifications.length > 0" class="btn btn-xs btn-outline" style="padding: 2px 8px; font-size: 10px;" @click="toggleAll('clarifications')">
                <i :class="areAllExpanded('clarifications') ? 'fa-solid fa-compress' : 'fa-solid fa-expand'"></i> {{ areAllExpanded('clarifications') ? 'Tout réduire' : 'Tout ouvrir' }}
              </button>
           </div>
 
-          <div v-if="groupedFeedbacks.clarifications.length === 0 && !getConsentGroup('no_questions') && currentStatus === 'objection'" class="alert-skip mb-12">
+          <div v-if="groupedFeedbacks.clarifications.length === 0 && consentsBySignal.no_questions.length === 0 && currentStatus === 'objection'" class="alert-skip mb-12">
             <i class="fa-solid fa-forward mr-8"></i>
             Cette phase a été considérée comme traitée lors de la publication de la révision.
           </div>
           
           <!-- Validations simples -->
-          <div v-if="getConsentGroup('no_questions') || acknowledgedUsers.length > 0" class="feedback-card feedback-ok">
+          <div v-if="consentsBySignal.no_questions.length > 0 || acknowledgedUsers.length > 0" class="feedback-card feedback-ok">
             <div class="feedback-card-header">
               <span class="badge badge-teal">C'EST CLAIR</span>
-              <span style="font-size:12px; color:var(--gray-600)">{{ (getConsentGroup('no_questions')?.users.length || 0) + acknowledgedUsers.length }} personne(s)</span>
+              <span style="font-size:12px; color:var(--gray-600)">{{ consentsBySignal.no_questions.length + acknowledgedUsers.length }} personne(s)</span>
               <span class="badge badge-gray text-xs" style="margin-left:auto">Validé</span>
             </div>
             <div class="feedback-card-body" style="padding:8px 14px 12px; font-size:12px; color:var(--gray-600)">
-               <div v-if="getConsentGroup('no_questions')">
-                 <span class="text-muted">Ont validé immédiatement :</span> {{ getConsentGroup('no_questions').users.join(', ') }}
+               <div v-if="consentsBySignal.no_questions.length > 0">
+                 <span class="text-muted">Ont validé immédiatement :</span> {{ consentsBySignal.no_questions.map(c => c.user?.name).join(', ') }}
                </div>
-               <div v-if="acknowledgedUsers.length > 0" :class="{'mt-8 pt-8 border-t': getConsentGroup('no_questions')}">
+               <div v-if="acknowledgedUsers.length > 0" :class="{'mt-8 pt-8 border-t': consentsBySignal.no_questions.length > 0}">
                  <span class="text-muted">Validé après clarification :</span> {{ acknowledgedUsers.join(', ') }}
                </div>
             </div>
@@ -88,67 +102,40 @@
           </div>
         </div>
 
-        <!-- Section Réactions -->
-        <div v-if="groupedFeedbacks.reactions.length > 0 || getConsentGroup('no_reaction') || (currentStatus === 'objection' && !isHistorical)" class="phase-group mb-24">
-          <div class="phase-header mb-12" style="display: flex; justify-content: space-between; align-items: center;">
-             <span class="phase-badge badge-blue">Réactions</span>
-             <button v-if="groupedFeedbacks.reactions.length > 0" class="btn btn-xs btn-outline" style="padding: 2px 8px; font-size: 10px;" @click="toggleAll('reactions')">
-               <i :class="areAllExpanded('reactions') ? 'fa-solid fa-compress' : 'fa-solid fa-expand'"></i> {{ areAllExpanded('reactions') ? 'Tout réduire' : 'Tout ouvrir' }}
-             </button>
-          </div>
-
-          <div v-if="groupedFeedbacks.reactions.length === 0 && !getConsentGroup('no_reaction') && currentStatus === 'objection'" class="alert-skip mb-12">
-            <i class="fa-solid fa-forward mr-8"></i>
-            Cette phase a été considérée comme traitée lors de la publication de la révision.
-          </div>
-
-          <!-- Validations simples -->
-          <div v-if="getConsentGroup('no_reaction')" class="feedback-card feedback-ok">
-            <div class="feedback-card-header">
-              <span class="badge badge-teal">RAS</span>
-              <span style="font-size:12px; color:var(--gray-600)">{{ getConsentGroup('no_reaction').users.length }} personne(s)</span>
-              <span class="badge badge-gray text-xs" style="margin-left:auto">Validé</span>
+          <!-- Section Réactions -->
+          <div v-if="groupedFeedbacks.reactions.length > 0 || consentsBySignal.no_reaction.length > 0 || (currentStatus === 'objection' && !isHistorical)" class="phase-group mb-24">
+            <div class="phase-header mb-12">
+               <span class="phase-badge" :class="groupNeedsIntervention('reactions') ? 'badge-red' : 'badge-blue'">Réactions</span>
             </div>
-            <div class="feedback-card-body" style="padding:8px 14px 12px; font-size:12px; color:var(--gray-600)">
-               <span class="text-muted">Ont validé :</span> {{ getConsentGroup('no_reaction').users.join(', ') }}
-            </div>
-          </div>
 
-          <div v-for="fb in groupedFeedbacks.reactions" :key="fb.id" class="feedback-card" :class="{'fb-closed': isClosed(fb)}">
-            <div class="feedback-card-header" style="cursor:pointer;" @click="toggleExpand(fb.id)">
-              <span v-if="isMyTurn(fb)" class="pulse-dot" title="À votre tour de répondre"></span>
-              <span class="badge" :class="typeBadge(fb.type)">{{ getVal(fb.type).toUpperCase() }}</span>
-              <span style="font-size:13px; font-weight:600">{{ fb.author?.name }}</span>
-              <span class="badge badge-gray text-xs" style="margin-left:auto">{{ statusLabel(fb.status) }}</span>
-              <span class="text-xs text-muted ml-8"><i :class="isExpanded(fb.id) ? 'fa-solid fa-caret-down' : 'fa-solid fa-caret-right'"></i></span>
+            <div v-if="groupedFeedbacks.reactions.length === 0 && consentsBySignal.no_reaction.length === 0 && currentStatus === 'objection'" class="alert-skip mb-12">
+              <i class="fa-solid fa-forward mr-8"></i>
+              Cette phase a été considérée comme traitée lors de la publication de la révision.
             </div>
-            <div v-if="isExpanded(fb.id)" class="feedback-card-body">
-              <div class="thread-section">
-                <div v-for="msg in allMessages(fb)" :key="msg.id" class="msg-row" :class="isMe(msg.author_id) ? 'msg-me' : 'msg-other'">
-                  <div class="msg-avatar">
-                    <i :class="getRoleIcon(msg.author_id)" :title="isMe(msg.author_id) ? 'Moi' : getRoleLabel(msg.author_id)"></i>
-                  </div>
-                  <div class="msg-bubble-container">
-                    <div class="msg-bubble" :style="getMsgStyle(msg.author_id)">
-                      <div class="msg-author-name" v-if="!isMe(msg.author_id)">{{ msg.author?.name }}</div>
-                      <div class="msg-text">{{ msg.content }}</div>
-                      <div class="msg-meta">{{ new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</div>
-                    </div>
-                  </div>
-                </div>
+
+            <!-- Validations simples -->
+            <div v-if="consentsBySignal.no_reaction.length > 0" class="feedback-card feedback-ok">
+              <div class="feedback-card-header">
+                <span class="badge badge-teal">RAS</span>
+                <span style="font-size:12px; color:var(--gray-600)">{{ consentsBySignal.no_reaction.length }} personne(s)</span>
+                <span class="badge badge-gray text-xs" style="margin-left:auto">Validé</span>
               </div>
-              <form v-if="!isHistorical && !isClosed(fb) && canPostMessage(fb) && isPhaseActiveFor(fb)" @submit.prevent="submitMessage(fb)" class="msg-form mt-12">
-                <input type="text" v-model="newMessages[fb.id]" class="input input-sm" placeholder="Votre réponse..." required>
-                <button type="submit" class="btn btn-primary btn-sm" :disabled="sendingMsg">
-                   <i class="fa-solid fa-paper-plane"></i>
-                </button>
-              </form>
+              <div class="feedback-card-body" style="padding:8px 14px 12px; font-size:12px; color:var(--gray-600)">
+                 <span class="text-muted">Ont validé :</span> {{ consentsBySignal.no_reaction.map(c => c.user?.name).join(', ') }}
+              </div>
+            </div>
+
+            <!-- Affichage direct des réactions -->
+            <div v-if="groupedFeedbacks.reactions.length > 0" class="mt-12 p-8" style="background: var(--gray-50); border-radius: var(--radius-md); border: 1px solid var(--gray-100);">
+              <div v-for="fb in groupedFeedbacks.reactions" :key="fb.id" class="mb-8" style="font-size: 13px; line-height: 1.4;">
+                <span style="font-weight: 700; color: var(--gray-900);">{{ fb.author?.name }}</span>
+                <span class="ml-8" style="color: var(--gray-700);">{{ fb.content }}</span>
+              </div>
             </div>
           </div>
-        </div>
 
         <!-- Section Objections -->
-        <div v-if="groupedFeedbacks.objections.length > 0 || getConsentGroup('no_objection') || getConsentGroup('abstention')" class="phase-group">
+        <div v-if="groupedFeedbacks.objections.length > 0 || consentsBySignal.no_objection.length > 0" class="phase-group">
           <div class="phase-header mb-12" style="display: flex; justify-content: space-between; align-items: center;">
              <span class="phase-badge badge-red">Objections & Suggestions</span>
              <button v-if="groupedFeedbacks.objections.length > 0" class="btn btn-xs btn-outline" style="padding: 2px 8px; font-size: 10px;" @click="toggleAll('objections')">
@@ -157,31 +144,19 @@
           </div>
 
           <!-- Validations simples : Pas d'objection -->
-          <div v-if="getConsentGroup('no_objection') || withdrawnUsers.length > 0" class="feedback-card feedback-ok">
+          <div v-if="consentsBySignal.no_objection.length > 0 || withdrawnUsers.length > 0" class="feedback-card feedback-ok">
             <div class="feedback-card-header">
               <span class="badge badge-teal">PAS D'OBJECTION</span>
-              <span style="font-size:12px; color:var(--gray-600)">{{ (getConsentGroup('no_objection')?.users.length || 0) + withdrawnUsers.length }} personne(s)</span>
+              <span style="font-size:12px; color:var(--gray-600)">{{ consentsBySignal.no_objection.length + withdrawnUsers.length }} personne(s)</span>
               <span class="badge badge-gray text-xs" style="margin-left:auto">Validé</span>
             </div>
             <div class="feedback-card-body" style="padding:8px 14px 12px; font-size:12px; color:var(--gray-600)">
-               <div v-if="getConsentGroup('no_objection')">
-                 <span class="text-muted">Pas d'objection immédiate :</span> {{ getConsentGroup('no_objection').users.join(', ') }}
+               <div v-if="consentsBySignal.no_objection.length > 0">
+                 <span class="text-muted">Pas d'objection immédiate :</span> {{ consentsBySignal.no_objection.map(c => c.user?.name).join(', ') }}
                </div>
-               <div v-if="withdrawnUsers.length > 0" :class="{'mt-8 pt-8 border-t': getConsentGroup('no_objection')}">
+               <div v-if="withdrawnUsers.length > 0" :class="{'mt-8 pt-8 border-t': consentsBySignal.no_objection.length > 0}">
                  <span class="text-muted">Plus d'objection :</span> {{ withdrawnUsers.join(', ') }}
                </div>
-            </div>
-          </div>
-
-          <!-- Validations simples : Abstention -->
-          <div v-if="getConsentGroup('abstention')" class="feedback-card" style="border-left: 3px solid var(--gray-400)">
-            <div class="feedback-card-header">
-              <span class="badge badge-gray">ABSTENTION</span>
-              <span style="font-size:12px; color:var(--gray-600)">{{ getConsentGroup('abstention').users.length }} personne(s)</span>
-              <span class="badge badge-gray text-xs" style="margin-left:auto">S'abstient</span>
-            </div>
-            <div class="feedback-card-body" style="padding:8px 14px 12px; font-size:12px; color:var(--gray-600)">
-               <span class="text-muted">Se sont abstenus :</span> {{ getConsentGroup('abstention').users.join(', ') }}
             </div>
           </div>
 
@@ -279,11 +254,44 @@ const isReactionPhase = computed(() => currentStatus.value === 'reaction');
 const isObjectionPhase = computed(() => currentStatus.value === 'objection');
 
 const groupedFeedbacks = computed(() => {
+    const fbs = feedbacks.value || [];
     return {
-        clarifications: feedbacks.value.filter(fb => getVal(fb.type) === 'clarification'),
-        reactions: feedbacks.value.filter(fb => getVal(fb.type) === 'reaction'),
-        objections: feedbacks.value.filter(fb => ['objection', 'suggestion'].includes(getVal(fb.type)))
+        clarifications: fbs.filter(fb => getVal(fb.type) === 'clarification'),
+        reactions: fbs.filter(fb => getVal(fb.type) === 'reaction'),
+        objections: fbs.filter(fb => ['objection', 'suggestion'].includes(getVal(fb.type)))
     };
+});
+
+const consentsBySignal = computed(() => {
+    const list = consents.value || [];
+    const map = {
+        no_questions: [],
+        no_reaction: [],
+        no_objection: [],
+        abstention: []
+    };
+    list.forEach(c => {
+        const s = getVal(c.signal);
+        const p = getVal(c.phase);
+        
+        // On ne garde que les consentements dont la phase correspond au signal
+        // pour éviter que des vieux signaux (sans phase) n'apparaissent partout.
+        if (s === 'no_questions' && p !== 'clarification') return;
+        if (s === 'no_reaction' && p !== 'reaction') return;
+        if (s === 'no_objection' && p !== 'objection') return;
+        
+        // Sécurité supplémentaire : si l'utilisateur a déjà un feedback dans cette phase,
+        // on ne l'affiche pas dans le bloc RAS (même si le backend n'a pas encore fini le ménage)
+        const hasFeedbackInPhase = feedbacks.value.some(fb => {
+            const fbType = getVal(fb.type);
+            const fbPhase = (fbType === 'suggestion' ? 'objection' : fbType);
+            return fb.author_id === c.user_id && fbPhase === p;
+        });
+        if (hasFeedbackInPhase) return;
+
+        if (map[s]) map[s].push(c);
+    });
+    return map;
 });
 
 const acknowledgedUsers = computed(() => {
@@ -299,6 +307,12 @@ const withdrawnUsers = computed(() => {
         .map(fb => fb.author?.name)
         .filter(Boolean);
 });
+
+const groupNeedsIntervention = (groupName) => {
+    const group = groupedFeedbacks.value[groupName];
+    if (!group) return false;
+    return group.some(fb => isMyTurn(fb));
+};
 
 const headerClass = computed(() => {
     if (isClarificationPhase.value) return 'pc-header-amber';
@@ -377,6 +391,7 @@ const fetchFeedbacks = async () => {
 
 watch(() => props.historicalData, () => fetchFeedbacks(), { deep: true });
 watch(() => props.decision.current_version?.id, () => fetchFeedbacks());
+watch(() => props.decision.updated_at, () => fetchFeedbacks());
 
 onMounted(() => fetchFeedbacks());
 

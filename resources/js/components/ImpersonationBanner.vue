@@ -82,7 +82,7 @@ const switchImpersonation = async () => {
   try {
     await authStore.impersonate(targetId);
     // Full redirect to ensure all stores and layout are fresh
-    window.location.href = '/';
+    window.location.reload();
   } catch (e) {
     console.error(e);
     const msg = e.response?.data?.message || 'Erreur lors du changement d’utilisateur.';

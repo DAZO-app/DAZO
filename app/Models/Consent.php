@@ -12,12 +12,13 @@ class Consent extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = ['decision_version_id', 'user_id', 'signal'];
+    protected $fillable = ['decision_version_id', 'user_id', 'signal', 'phase'];
 
     protected function casts(): array
     {
         return [
             'signal' => ConsentSignal::class,
+            'phase' => \App\Enums\DecisionStatus::class,
         ];
     }
 
