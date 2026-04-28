@@ -14,8 +14,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             CategorySeeder::class,
+            LabelSeeder::class,
             DecisionModelSeeder::class,
             CircleSeeder::class,
+            DecisionSeeder::class,
+            WikiPageSeeder::class,
         ]);
     }
 }

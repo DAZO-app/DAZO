@@ -119,9 +119,9 @@
               <i class="fa-solid" :class="isDocSidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
             </button>
             
-            <div class="sidebar-content h-full flex flex-col" v-show="!isDocSidebarCollapsed">
+            <div class="sidebar-content" v-show="!isDocSidebarCollapsed">
               <!-- Prose en affichage fluide (Mode Flat) -->
-              <div class="meeting-prose-container flex-1 pr-12 overflow-y-auto custom-scrollbar">
+              <div class="meeting-prose-container flex-1">
                 <div class="meeting-prose prose-sm" v-html="displayContent"></div>
               </div>
 
@@ -902,11 +902,11 @@ onUnmounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #ffffff; 
+  background-color: #ffffff;
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden; /* IMPORTANT: doit être hidden pour que les scrolls internes fonctionnent */
 }
 
 /* Scrollbar */
@@ -1162,6 +1162,7 @@ onUnmounted(() => {
 
 .meeting-content-wrapper {
   flex: 1;
+  min-height: 0; /* Permet au flex enfant de rétrécir et scroller */
   display: flex;
   overflow: hidden;
   width: 100%;
@@ -1170,8 +1171,8 @@ onUnmounted(() => {
 .meeting-main-layout {
   display: flex;
   flex: 1;
+  min-height: 0; /* Permet au flex enfant de rétrécir et scroller */
   width: 100%;
-  height: 100%;
   overflow: hidden;
   background: var(--gray-50);
 }
@@ -1189,6 +1190,8 @@ onUnmounted(() => {
   gap: 32px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  height: 100%;
+  padding: 0; /* On déplace le padding dans sidebar-content pour le scroll */
 }
 
 .meeting-left-sidebar {
@@ -1200,13 +1203,14 @@ onUnmounted(() => {
   width: 32%;
   min-width: 380px;
   max-width: 500px;
-  padding: 32px;
+  padding: 0; /* On déplace le padding dans sidebar-content */
   background: white;
   border-right: 1px solid var(--gray-200);
 }
 
 .meeting-doc-sidebar .btn-toggle-sidebar {
-  top: 64px; /* En dessous de celui de la première barre (16px) */
+  top: 64px;
+  z-index: 1000; /* Assure la visibilité au-dessus des contenus */
 }
 
 .meeting-left-sidebar.is-collapsed, .meeting-doc-sidebar.is-collapsed {
@@ -1224,19 +1228,6 @@ onUnmounted(() => {
   overflow-y: auto;
   background: white;
   width: 100%;
-}
-
-.meeting-feedbacks {
-  width: 100%;
-  max-width: 100%;
-}
-
-.meeting-left-sidebar.is-collapsed, .meeting-doc-sidebar.is-collapsed {
-  width: 0;
-  min-width: 0;
-  max-width: 0;
-  padding: 48px 0;
-  border-right: none;
 }
 
 .meeting-left-sidebar.is-collapsed .btn-toggle-sidebar, 
@@ -1261,7 +1252,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 20;
+  z-index: 1000;
   color: var(--gray-500);
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   transition: all 0.2s;
@@ -1279,6 +1270,39 @@ onUnmounted(() => {
   min-width: 212px;
   opacity: 1;
   transition: opacity 0.2s;
+  padding: 32px;
+}
+
+.meeting-left-sidebar .sidebar-content {
+  padding: 48px 24px;
+}
+
+/* Scroll via position absolute — garanti sans dépendance aux utilitaires flex */
+.meeting-doc-sidebar .sidebar-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  padding: 32px 20px 32px 32px;
+}
+
+.meeting-doc-sidebar .sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.meeting-doc-sidebar .sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.meeting-doc-sidebar .sidebar-content::-webkit-scrollbar-thumb {
+  background: var(--gray-200);
+  border-radius: 10px;
+}
+
+.meeting-doc-sidebar .sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-300);
 }
 
 .is-collapsed .sidebar-content {
@@ -1288,7 +1312,8 @@ onUnmounted(() => {
 
 .meeting-body-flex {
   display: flex;
-  height: 100%;
+  flex: 1;
+  min-height: 0; /* Chaîne flex: doit rétrécir pour que les enfants scrollent */
   width: 100%;
   overflow: hidden;
 }

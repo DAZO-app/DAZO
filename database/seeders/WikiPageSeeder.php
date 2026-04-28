@@ -35,12 +35,22 @@ class WikiPageSeeder extends Seeder
                 'content' => '<h1>Paramètres et Notifications</h1><p>Pour rester informé sans être submergé, DAZO vous permet de configurer vos préférences.</p><ul><li><strong>Réactions attendues</strong> : Vous recevez un mail lorsqu\'une décision nécessite votre attention immédiate.</li><li><strong>Suivi de cercle</strong> : Abonnez-vous à un cercle pour voir toutes ses actualités.</li></ul><p>Vous pouvez modifier ces réglages dans l\'onglet <strong>Paramètres</strong> de votre profil.</p>',
             ]
         ];
+        $categories = [];
 
         foreach ($pages as $p) {
+            $catName = $p['category'];
+            if (!isset($categories[$catName])) {
+                $categories[$catName] = \App\Models\WikiCategory::create([
+                    'name' => $catName,
+                    'slug' => Str::slug($catName),
+                    'order' => count($categories),
+                ]);
+            }
+
             WikiPage::create([
                 'title' => $p['title'],
                 'slug' => Str::slug($p['title']),
-                'category' => $p['category'],
+                'wiki_category_id' => $categories[$catName]->id,
                 'content' => $p['content'],
                 'is_published' => true,
             ]);

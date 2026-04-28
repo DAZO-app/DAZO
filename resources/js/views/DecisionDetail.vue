@@ -34,275 +34,70 @@
     />
 
     <div class="page-body">
-      <div class="hero-card">
-        <div class="hero-flex">
-          <div class="flex items-center gap-20">
-            <div>
-              <div class="hero-title">{{ decision.title }}</div>
-              <div class="flex flex-wrap gap-8 mt-8 mb-4" v-if="decision.categories && decision.categories.length > 0">
-                 <span 
-                    v-for="cat in decision.categories" 
-                    :key="cat.id"
-                    class="category-badge"
-                    :style="{ background: cat.color_hex + '20', color: cat.color_hex, borderColor: cat.color_hex + '40' }"
-                 >
-                    <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
-                    {{ cat.name }}
-                 </span>
-              </div>
-              <div class="hero-subtitle">
-                {{ decision.circle?.name }} · Version {{ currentVersion?.version_number || 1 }} ·
-                Porteur: <strong>{{ authorName }}</strong>
-              </div>
-            </div>
-          </div>
-          <div class="hero-action flex items-center gap-12">
-            <span class="badge" :class="statusClass" style="font-size: 14px; padding: 6px 16px;">{{ statusLabel }}</span>
-            
-            <div class="header-nav">
-               <template v-if="isRevision && isAuthorOrAnimator">
-                 <button class="btn btn-secondary" :disabled="savingDraft || publishing" @click="saveRevision">
-                   {{ savingDraft ? 'Enregistrer' : 'Enregistrer' }}
-                 </button>
-                 <button class="btn btn-primary" :disabled="savingDraft || publishing" @click="publishRevision">
-                   {{ publishing ? 'Publier...' : 'Publier' }}
-                 </button>
-               </template>
-               <template v-else>
-                 <button class="btn btn-white btn-icon" :disabled="!previousDecisionId" @click="goToDecision(previousDecisionId)">
-                   <i class="fa-solid fa-chevron-left"></i>
-                 </button>
-                 <button class="btn btn-white btn-icon" :disabled="!nextDecisionId" @click="goToDecision(nextDecisionId)">
-                   <i class="fa-solid fa-chevron-right"></i>
-                 </button>
-               </template>
-            </div>
-          </div>
-        </div>
-        <div class="hero-footer-meta mt-16 flex items-center gap-16 text-xs" style="opacity: 0.9;">
-          <div class="flex items-center gap-8 mr-4">
-            <button class="btn-setting" :class="{ 'is-fav': isFavorite }" @click="toggleFavorite" :title="isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'">
-              <i :class="isFavorite ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
-            </button>
-            
-            <button class="btn-setting" @click="showNotifLevels = true" title="Préférences de notification">
-              <i :class="notifLevelIcon"></i>
-            </button>
+      <DecisionHero 
+        :decision="decision"
+        :current-version="currentVersion"
+        :current-status="currentStatus"
+        :previous-decision-id="previousDecisionId"
+        :next-decision-id="nextDecisionId"
+        :is-revision="isRevision"
+        :saving-draft="savingDraft"
+        :publishing="publishing"
+        @save-revision="saveRevision"
+        @publish-revision="publishRevision"
+        @go-to-decision="goToDecision"
+        @toggle-favorite="toggleFavorite"
+        @show-notif-levels="showNotifLevels = true"
+        @open-meeting-mode="showMeetingMode = true"
+        @show-reminder="showReminderModal = true"
+        @print-decision="printDecision"
+        @refresh="refreshDecision"
+      />
 
-            <!-- Nouvelles actions -->
-            <button v-if="canOpenMeetingMode" class="btn-setting" @click="showMeetingMode = true" title="Mode réunion">
-              <i class="fa-solid fa-display"></i>
-            </button>
-
-            <button v-if="isAuthorOrAnimator" class="btn-setting" @click="showReminderModal = true" title="Relancer les participants en attente">
-              <i class="fa-solid fa-envelope"></i>
-            </button>
-
-            <button class="btn-setting" @click="printDecision" title="Imprimer / Export PDF">
-              <i class="fa-solid fa-print"></i>
-            </button>
-          </div>
-          <span><i class="fa-solid fa-calendar-plus mr-4"></i> Créée le {{ formatDateOnly(decision.created_at) }}</span>
-          <span><i class="fa-solid fa-clock mr-4"></i> Actu. le {{ formatDateOnly(decision.updated_at) }}</span>
-          <span v-if="decision.current_deadline && !['adopted', 'abandoned'].includes(currentStatus)" :class="{ 'text-red font-bold': isUrgent }">
-            <i class="fa-solid fa-hourglass-half mr-4"></i> {{ deadlineLabel }}
-          </span>
-          <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="refreshDecision" style="margin-left: auto;" />
-        </div>
-      </div>
-
-      <div class="steps-bar">
-        <div class="steps">
-          <div class="step" :class="getStepClass('clarification')">
-            <div class="step-num">1</div>
-            <span class="step-label hidden-mobile-text">Clarification</span>
-          </div>
-          <div class="step-sep"></div>
-          <div class="step" :class="getStepClass('reaction')">
-            <div class="step-num">2</div>
-            <span class="step-label hidden-mobile-text">Réaction</span>
-          </div>
-          <div class="step-sep"></div>
-          <div class="step" :class="getStepClass('objection')">
-            <div class="step-num">3</div>
-            <span class="step-label hidden-mobile-text">Objection</span>
-          </div>
-          <div class="step-sep"></div>
-          <div class="step" :class="getStepClass('adopted')">
-            <div class="step-num"><i class="fa-solid fa-check"></i></div>
-            <span class="step-label hidden-mobile-text">Adopté</span>
-          </div>
-        </div>
-
-        <div class="status-actions" v-if="isAuthorOrAnimator">
-          <button
-            v-for="action in stepActions"
-            :key="action.key"
-            class="btn btn-sm"
-            :class="action.primary ? 'btn-primary' : 'btn-secondary'"
-            :disabled="transitioning || publishing || savingDraft"
-            @click="action.run"
-          >
-            {{ action.label }}
-          </button>
-        </div>
-      </div>
+      <DecisionPhaseActions 
+        :current-status="currentStatus"
+        :is-author-or-animator="isAuthorOrAnimator"
+        :step-actions="stepActions"
+        :disabled="transitioning || publishing || savingDraft"
+      />
       <div class="grid-layout">
         <div class="col-main">
-          <div v-if="isDraft" class="premium-card mb-16">
-            <div class="pc-header pc-header-amber">
-              <div class="pc-header-icon"><i class="fa-solid fa-file-pen"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title">Mode brouillon</div>
-                <div class="pc-header-sub">Édition active</div>
-              </div>
-            </div>
+          <DecisionEditForm
+            v-if="isDraft || (isRevision && isAuthorOrAnimator)"
+            :is-draft="isDraft"
+            :is-revision="isRevision"
+            :is-author-or-animator="isAuthorOrAnimator"
+            :form="draftForm"
+            :current-version="currentVersion"
+            :excludable-members="excludableMembers"
+            :saving-draft="savingDraft"
+            :deleting-draft="deletingDraft"
+            :publishing="publishing"
+            :reused-attachment-ids="reusedAttachmentIds"
+            :revision-attachments="revisionAttachments"
+            @save-draft="saveDraft"
+            @delete-draft="deleteDraft"
+            @refresh="refreshDecision"
+            @toggle-all-attachments="toggleAllPreviousAttachments"
+            @toggle-attachment="toggleAttachmentReuse"
+            @upload-revision-file="handleRevisionFileUpload"
+            @remove-revision-file="handleRevisionFileRemove"
+            @save-revision="saveRevision"
+            @publish-revision="publishRevision"
+          />
 
-            <div class="card-body">
-              <form @submit.prevent="saveDraft">
-                <div class="form-group">
-                  <label class="label">Titre</label>
-                  <input v-model="draftForm.title" class="input" required>
-                </div>
-
-                <div class="form-group">
-                  <label class="label">Contenu de la proposition</label>
-                  <RichTextEditor
-                    v-model="draftForm.content"
-                    placeholder="Rédigez la décision avec mise en forme, liens et listes…"
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label class="label">Exclure des membres de ce processus</label>
-                  <div class="checkbox-panel">
-                    <label
-                      v-for="member in excludableMembers"
-                      :key="member.user_id"
-                      class="checkbox-row"
-                    >
-                      <input v-model="draftForm.excluded_members" type="checkbox" :value="member.user_id">
-                      <span>{{ member.user?.name }}</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="mb-16">
-                  <AttachmentPanel
-                    :attachments="currentVersion?.attachments || []"
-                    :editable="true"
-                    :version-id="currentVersion?.id || ''"
-                    @changed="refreshDecision"
-                  />
-                </div>
-
-                <div class="draft-actions">
-                  <button type="button" class="btn btn-danger" :disabled="deletingDraft" @click="deleteDraft">
-                    {{ deletingDraft ? 'Suppression…' : 'Supprimer le brouillon' }}
-                  </button>
-                  <button type="submit" class="btn btn-primary" :disabled="savingDraft">
-                    {{ savingDraft ? 'Enregistrement…' : 'Enregistrer le brouillon' }}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          <div v-if="isRevision && isAuthorOrAnimator" class="premium-card mb-16">
-            <div class="pc-header pc-header-amber">
-              <div class="pc-header-icon"><i class="fa-solid fa-pen-to-square"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title">Révision de la proposition</div>
-                <div class="pc-header-sub">Préparez la nouvelle version suite aux retours</div>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="form-group">
-                <label class="label">Contenu de la nouvelle proposition</label>
-                <RichTextEditor
-                  v-model="draftForm.content"
-                  placeholder="Appliquez les modifications nécessaires ici..."
-                />
-              </div>
-
-              <!-- Sélection des pièces jointes précédentes -->
-              <div v-if="currentVersion?.attachments?.length > 0" class="mb-16 p-12 bg-gray-50 border-radius-sm">
-                <div class="flex items-center justify-between mb-8">
-                  <label class="label mb-0" style="font-size: 13px;">Conserver des pièces jointes de la version précédente</label>
-                  <button type="button" class="btn btn-link btn-sm" @click="toggleAllPreviousAttachments" style="font-size: 12px;">
-                    {{ (currentVersion?.attachments || []).every(a => isAttachmentReused(a.id)) ? 'Tout décocher' : 'Tout cocher' }}
-                  </button>
-                </div>
-                <div class="flex flex-wrap gap-12">
-                  <div v-for="att in currentVersion.attachments" :key="att.id" class="flex items-center gap-8">
-                    <input 
-                      type="checkbox" 
-                      :id="'prev-att-' + att.id"
-                      :checked="isAttachmentReused(att.id)"
-                      @change="toggleAttachmentReuse(att)"
-                      class="checkbox-sm"
-                    >
-                    <label :for="'prev-att-' + att.id" class="text-sm cursor-pointer" style="margin-bottom: 0;">{{ att.filename }}</label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mb-16">
-                <AttachmentPanel
-                  :attachments="revisionAttachments"
-                  :editable="true"
-                  version-id=""
-                  @uploaded="handleRevisionFileUpload"
-                  @removed="handleRevisionFileRemove"
-                />
-              </div>
-
-              <div class="draft-actions">
-                <button class="btn btn-secondary" :disabled="savingDraft" @click="saveRevision">
-                  {{ savingDraft ? 'Enregistrement...' : 'Enregistrer le brouillon' }}
-                </button>
-                <button class="btn btn-primary" :disabled="publishing || savingDraft" @click="publishRevision">
-                  {{ publishing ? 'Publication...' : 'Publier cette version' }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="!isRevision && !isDraft" class="premium-card mb-16">
-            <div class="pc-header pc-header-blue">
-              <div class="pc-header-icon"><i :class="viewingVersionId ? 'fa-solid fa-clock-rotate-left' : 'fa-solid fa-file-lines'"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title">{{ viewingVersionId ? 'Version ' + historicalVersionData.version_number : 'Contenu de la décision' }}</div>
-                <div class="pc-header-sub">{{ viewingVersionId ? 'Version historique' : 'Version actuelle de la proposition' }}</div>
-              </div>
-            </div>
-            <div class="card-body">
-              <div v-if="displayContent" class="decision-prose" v-html="displayContent"></div>
-              <div v-else class="text-muted text-sm">Aucun contenu disponible pour cette version.</div>
-            </div>
-          </div>
-
-          <div v-if="!((isDraft || isRevision) && isAuthorOrAnimator)" class="mb-16">
-            <AttachmentPanel
-              :attachments="displayAttachments"
-              :editable="false"
-              :version-id="viewingVersionId || currentVersion?.id || ''"
-            />
-          </div>
-          
-          <div v-if="isRevision && !isDraft" class="premium-card mb-16">
-            <div class="pc-header pc-header-blue" style="opacity: 0.9;">
-              <div class="pc-header-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title">{{ isAuthorOrAnimator ? 'Proposition à réviser' : 'Proposition actuelle' }}</div>
-                <div class="pc-header-sub">Version {{ currentVersion?.version_number }} en cours de révision</div>
-              </div>
-            </div>
-            <div class="card-body" style="background: var(--gray-50); border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
-              <div v-if="currentVersion?.content" class="decision-prose" v-html="currentVersion.content"></div>
-              <div v-else class="text-muted text-sm">Aucun contenu disponible pour cette version.</div>
-            </div>
-          </div>
+          <DecisionContentView
+            :is-draft="isDraft"
+            :is-revision="isRevision"
+            :is-author-or-animator="isAuthorOrAnimator"
+            :viewing-version-id="viewingVersionId"
+            :historical-version-number="historicalVersionData?.version_number"
+            :current-version-number="currentVersion?.version_number"
+            :current-version-id="currentVersion?.id"
+            :display-content="displayContent"
+            :current-content="currentVersion?.content"
+            :display-attachments="displayAttachments"
+          />
 
           <div v-if="showParticipationCard" class="premium-card mb-16 border-2" :class="hasAlreadyParticipated ? 'border-teal-500' : 'border-red-500'">
             <div class="pc-header" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-red'">
@@ -622,6 +417,10 @@ import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import AnimatorSelector from '../components/AnimatorSelector.vue';
+import DecisionHero from '../components/decision/DecisionHero.vue';
+import DecisionPhaseActions from '../components/decision/DecisionPhaseActions.vue';
+import DecisionEditForm from '../components/decision/DecisionEditForm.vue';
+import DecisionContentView from '../components/decision/DecisionContentView.vue';
 import ReminderModal from '../components/ReminderModal.vue';
 import AttachmentPanel from '../components/AttachmentPanel.vue';
 import FeedbackEngine from '../components/FeedbackEngine.vue';
@@ -1172,16 +971,7 @@ watch(() => route.params.id, async (id) => {
   }
 });
 
-const getStepClass = (step) => {
-  const status = decision.value?.status;
-  const order = ['draft', 'clarification', 'reaction', 'objection', 'adopted'];
-  const currentIndex = order.indexOf(status);
-  const stepIndex = order.indexOf(step);
 
-  if (status === step) return 'step-active';
-  if (currentIndex > stepIndex && stepIndex !== -1) return 'step-done';
-  return 'step-pending';
-};
 
 const formatDateOnly = (value) => {
   if (!value) return '';

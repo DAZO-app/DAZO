@@ -107,18 +107,18 @@
         </transition>
 
         <!-- Sous-navigation: Mes filtres -->
-        <template v-if="user?.custom_views?.length > 0">
+        <template v-if="normalizedCustomViews.length > 0">
           <div class="sidebar-section-header" style="margin-top: 8px;" @click="sectionsOpen.views = !sectionsOpen.views">
             <span>Mes Vues</span>
             <i :class="sectionsOpen.views ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
           </div>
           <transition name="sidebar-fade">
             <div v-show="sectionsOpen.views" class="sidebar-collapsible">
-              <router-link v-for="view in user.custom_views" :key="view.id" 
+              <router-link v-for="view in normalizedCustomViews" :key="view.id" 
                            :to="{ name: 'DecisionList', query: { ...view.filters, view_label: view.label } }" 
                            class="sidebar-subitem" 
                            :class="{ active: $route.query.view_label === view.label }">
-                <span class="sub-dot" :class="'dot-' + (view.id.includes('urgent') ? 'red' : view.id.includes('pending') ? 'amber' : 'blue')"></span> 
+                <span class="sub-dot" :class="'dot-' + view.color"></span> 
                 {{ view.label }}
               </router-link>
             </div>
@@ -252,6 +252,28 @@ const userInitials = computed(() => {
     .map((part) => part[0])
     .join('')
     .toUpperCase() || '?';
+});
+
+const normalizedCustomViews = computed(() => {
+  return (user.value?.custom_views || []).map((view, index) => {
+    const label = view.label || view.name || `Vue ${index + 1}`;
+    const viewId = String(view.id || label || index).toLowerCase();
+    const filters = view.filters && typeof view.filters === 'object' ? view.filters : {};
+
+    let color = 'blue';
+    if (viewId.includes('urgent') || label.toLowerCase().includes('urgence')) {
+      color = 'red';
+    } else if (viewId.includes('pending') || label.toLowerCase().includes('attente')) {
+      color = 'amber';
+    }
+
+    return {
+      id: viewId || `view-${index}`,
+      label,
+      filters,
+      color,
+    };
+  });
 });
 
 const pendingTotal = computed(() => {
