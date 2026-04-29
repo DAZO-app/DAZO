@@ -110,6 +110,7 @@ class DecisionService
             ],
             DecisionStatus::REVISION->value => [
                 DecisionStatus::CLARIFICATION->value,
+                DecisionStatus::OBJECTION->value,
                 DecisionStatus::SUSPENDED->value,
             ],
         ];

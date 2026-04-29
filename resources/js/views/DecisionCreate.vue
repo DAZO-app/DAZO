@@ -145,6 +145,22 @@
                     <div class="text-xxs text-muted mt-8">Vous pouvez sélectionner plusieurs thématiques.</div>
                 </div>
 
+                <div class="form-group mt-16 pt-16 border-t border-gray-100">
+                    <label class="label mb-8">Visibilité de la décision</label>
+                    <div class="radio-group" style="display: flex; gap: 16px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" v-model="form.visibility" value="public">
+                            <span>Publique</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" v-model="form.visibility" value="private">
+                            <span>Privée</span>
+                        </label>
+                    </div>
+                    <div class="text-xs text-muted mt-8">
+                        Une décision privée ne sera jamais exposée sur l'API publique (CMS tiers), même si son cercle l'est.
+                    </div>
+                </div>
 
             </div>
           </div>
@@ -311,8 +327,9 @@ const submit = async () => {
             title: form.value.title,
             content: content,
             animator_id: form.value.animator_id || undefined,
-            category_id: form.value.category_id || undefined,
+            category_ids: form.value.category_ids.length ? form.value.category_ids : undefined,
             model_id: form.value.model_id || undefined,
+            visibility: form.value.visibility,
         });
 
         const decision = data.decision;

@@ -85,8 +85,28 @@
                    <div class="color-option disabled" style="--c: #8b5cf6"><span>Améthyste</span></div>
                    <div class="color-option disabled" style="--c: #f59e0b"><span>Ambre</span></div>
                 </div>
-                <p class="help-text mt-8">Les thèmes personnalisés seront disponibles dans une future mise à jour.</p>
+                <p class="help-text mt-8 mb-32">Les thèmes personnalisés seront disponibles dans une future mise à jour.</p>
               </div>
+
+              <hr class="mb-32" style="border: none; border-top: 1px solid var(--gray-200);" />
+              <h3 class="font-bold text-gray-800 mb-16"><i class="fa-solid fa-link mr-8 text-blue-500"></i> Liens Légaux (Pied de page)</h3>
+              
+              <div class="form-group mb-24">
+                <label class="config-label">Mentions Légales (URL)</label>
+                <input v-model="config.legal_mentions_url" class="input" placeholder="https://...">
+                <div class="config-key">variable : <code>legal_mentions_url</code></div>
+              </div>
+              <div class="form-group mb-24">
+                <label class="config-label">Politique de Confidentialité (URL)</label>
+                <input v-model="config.privacy_policy_url" class="input" placeholder="https://...">
+                <div class="config-key">variable : <code>privacy_policy_url</code></div>
+              </div>
+              <div class="form-group mb-24">
+                <label class="config-label">CGU / Conditions d'utilisation (URL)</label>
+                <input v-model="config.terms_of_service_url" class="input" placeholder="https://...">
+                <div class="config-key">variable : <code>terms_of_service_url</code></div>
+              </div>
+
             </div>
           </div>
 
@@ -139,11 +159,24 @@
               <div class="pc-header-icon"><i class="fa-solid fa-user-shield"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Sécurité & Accès</div>
-                <div class="pc-header-sub">Gestion des inscriptions et politique d'accès</div>
+                <div class="pc-header-sub">Gestion des inscriptions, du front public et des protections</div>
               </div>
             </div>
             <div class="pc-body p-24">
-              <div class="toggle-card mb-32">
+
+              <div class="toggle-card mb-24">
+                <div class="toggle-content">
+                   <div class="toggle-title">Front Public Activé</div>
+                   <div class="toggle-description">Active la page d'accueil publique pour consulter les décisions sans connexion.</div>
+                   <div class="config-key inverse">variable : <code>enable_public_front</code></div>
+                </div>
+                <label class="switch-lg">
+                  <input type="checkbox" v-model="enablePublicFrontBool">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-card mb-24">
                 <div class="toggle-content">
                    <div class="toggle-title">Inscriptions ouvertes</div>
                    <div class="toggle-description">Permettre à n'importe quel internaute de créer un compte.</div>
@@ -155,12 +188,43 @@
                 </label>
               </div>
 
-              <div class="form-group">
+              <div class="toggle-card mb-32" v-if="publicRegistrationBool">
+                <div class="toggle-content">
+                   <div class="toggle-title">Approbation Administrateur Requise</div>
+                   <div class="toggle-description">Les nouveaux comptes doivent être validés manuellement par un administrateur avant de pouvoir se connecter.</div>
+                   <div class="config-key inverse">variable : <code>require_admin_approval</code></div>
+                </div>
+                <label class="switch-lg">
+                  <input type="checkbox" v-model="requireAdminApprovalBool">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="form-group mb-32">
                 <label class="config-label">Domaines de confiance</label>
                 <input v-model="config.allowed_domains" class="input" placeholder="ex: mon-asso.org, coop.fr">
                 <div class="config-key">variable : <code>allowed_domains</code></div>
                 <p class="help-text">Restreindre les inscriptions à certains domaines (séparés par des virgules). Laisser vide pour tout autoriser.</p>
               </div>
+
+              <hr class="mb-32" style="border: none; border-top: 1px solid var(--gray-200);" />
+
+              <h3 class="font-bold text-gray-800 mb-16"><i class="fa-brands fa-google mr-8 text-blue-500"></i> Protection Google reCAPTCHA (v2 ou v3)</h3>
+              <p class="help-text mb-24">Si les clés sont renseignées, le reCAPTCHA sera exigé sur les formulaires de connexion et d'inscription publics.</p>
+
+              <div class="grid-2 gap-24">
+                <div class="form-group">
+                  <label class="config-label">Clé du Site (Site Key)</label>
+                  <input v-model="config.recaptcha_site_key" class="input" placeholder="Clé publique">
+                  <div class="config-key">variable : <code>recaptcha_site_key</code></div>
+                </div>
+                <div class="form-group">
+                  <label class="config-label">Clé Secrète (Secret Key)</label>
+                  <input type="password" v-model="config.recaptcha_secret_key" class="input" placeholder="Clé privée sécurisée">
+                  <div class="config-key">variable : <code>recaptcha_secret_key</code></div>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -323,6 +387,16 @@ const sections = [
 const publicRegistrationBool = computed({
   get: () => config.value.public_registration === 'true',
   set: (val) => config.value.public_registration = val ? 'true' : 'false'
+});
+
+const enablePublicFrontBool = computed({
+  get: () => config.value.enable_public_front === 'true',
+  set: (val) => config.value.enable_public_front = val ? 'true' : 'false'
+});
+
+const requireAdminApprovalBool = computed({
+  get: () => config.value.require_admin_approval === 'true',
+  set: (val) => config.value.require_admin_approval = val ? 'true' : 'false'
 });
 
 const maintenanceModeBool = computed({

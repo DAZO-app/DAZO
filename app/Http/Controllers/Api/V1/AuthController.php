@@ -13,17 +13,54 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function __construct(private \App\Services\ConfigService $configService) {}
+
+    private function verifyRecaptcha(?string $token): bool
+    {
+        $secret = $this->configService->get('recaptcha_secret_key');
+        if (empty($secret)) {
+            return true; // No recaptcha configured, skip
+        }
+
+        if (empty($token)) {
+            return false;
+        }
+
+        $response = \Illuminate\Support\Facades\Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => $secret,
+            'response' => $token,
+        ]);
+
+        return $response->json('success') === true;
+    }
+
     public function register(RegisterRequest $request): JsonResponse
     {
+        if (filter_var($this->configService->get('public_registration', 'true'), FILTER_VALIDATE_BOOLEAN) !== true) {
+            return response()->json(['message' => 'Les inscriptions sont actuellement fermées.'], 403);
+        }
+
+        if (!$this->verifyRecaptcha($request->input('recaptcha_token'))) {
+            throw ValidationException::withMessages(['recaptcha' => ['La validation reCAPTCHA a échoué.']]);
+        }
+
+        $requireApproval = filter_var($this->configService->get('require_admin_approval', 'false'), FILTER_VALIDATE_BOOLEAN);
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            // 'role' is 'user' by default
-            // 'is_active' is true by default
+            'is_active' => !$requireApproval,
         ]);
 
         $user->sendEmailVerificationNotification();
+
+        if ($requireApproval) {
+            return response()->json([
+                'message' => 'Votre compte a bien été créé, mais doit être approuvé par un administrateur avant de pouvoir vous connecter.',
+                'require_approval' => true
+            ], 201);
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -36,6 +73,10 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
+        if (!$this->verifyRecaptcha($request->input('recaptcha_token'))) {
+            throw ValidationException::withMessages(['recaptcha' => ['La validation reCAPTCHA a échoué.']]);
+        }
+
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
@@ -46,7 +87,7 @@ class AuthController extends Controller
 
         if (! $user->is_active) {
             return response()->json([
-                'message' => 'Ce compte a été désactivé.'
+                'message' => 'Ce compte est inactif ou en attente d\'approbation par un administrateur.'
             ], 403);
         }
 

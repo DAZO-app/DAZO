@@ -28,7 +28,15 @@
           <div v-if="validationErrors.email" class="error-text">{{ validationErrors.email[0] }}</div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block p-12 mt-4" :disabled="loading">
+        <Recaptcha 
+          v-if="configStore.config.recaptcha_site_key"
+          :site-key="configStore.config.recaptcha_site_key"
+          @verify="onRecaptchaVerify"
+          @expire="onRecaptchaExpire"
+          @error="onRecaptchaError"
+        />
+
+        <button type="submit" class="btn btn-primary btn-block p-12 mt-4" :disabled="loading || (configStore.config.recaptcha_site_key && !recaptchaToken)">
           {{ loading ? 'Envoi en cours...' : 'Envoyer le lien' }}
         </button>
       </form>
@@ -43,21 +51,45 @@
 <script setup>
 import { ref } from 'vue';
 import axios from 'axios';
+import { useConfigStore } from '../stores/config';
+import Recaptcha from '../components/Recaptcha.vue';
 
 const email = ref('');
 const loading = ref(false);
 const successMsg = ref('');
 const errorMsg = ref('');
 const validationErrors = ref({});
+const recaptchaToken = ref('');
+
+const configStore = useConfigStore();
+
+const onRecaptchaVerify = (token) => {
+  recaptchaToken.value = token;
+};
+const onRecaptchaExpire = () => {
+  recaptchaToken.value = '';
+};
+const onRecaptchaError = () => {
+  errorMsg.value = "Erreur avec reCAPTCHA, veuillez réessayer.";
+  recaptchaToken.value = '';
+};
 
 const sendResetLink = async () => {
+    if (configStore.config.recaptcha_site_key && !recaptchaToken.value) {
+        errorMsg.value = "Veuillez valider le reCAPTCHA.";
+        return;
+    }
+
     loading.value = true;
     successMsg.value = '';
     errorMsg.value = '';
     validationErrors.value = {};
 
     try {
-        const { data } = await axios.post('/api/v1/auth/forgot-password', { email: email.value });
+        const { data } = await axios.post('/api/v1/auth/forgot-password', { 
+            email: email.value,
+            recaptcha_token: recaptchaToken.value
+        });
         successMsg.value = "Un lien a été envoyé à votre adresse email. Veuillez vérifier votre boîte de réception.";
     } catch (error) {
         if (error.response && error.response.status === 422) {

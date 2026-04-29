@@ -28,6 +28,22 @@ const routes = [
         component: () => import('../views/ResetPassword.vue')
     },
     {
+        path: '/public',
+        component: () => import('../layouts/PublicLayout.vue'),
+        children: [
+            {
+                path: '',
+                name: 'PublicFront',
+                component: () => import('../views/public/PublicFront.vue')
+            },
+            {
+                path: 'decision/:id',
+                name: 'PublicDecision',
+                component: () => import('../views/public/PublicDecisionDetail.vue')
+            }
+        ]
+    },
+    {
         path: '/',
         component: () => import('../layouts/AppLayout.vue'),
         meta: { requiresAuth: true },
@@ -95,6 +111,11 @@ const routes = [
                 component: () => import('../views/admin/AdminCategories.vue')
             },
             {
+                path: 'admin/publication',
+                name: 'AdminPublication',
+                component: () => import('../views/admin/AdminPublication.vue')
+            },
+            {
                 path: 'admin/config',
                 name: 'AdminConfig',
                 component: () => import('../views/admin/AdminConfig.vue')
@@ -145,12 +166,28 @@ const router = createRouter({
     routes
 });
 
+import { useConfigStore } from '../stores/config';
+
 // Guard global
+let isConfigLoaded = false;
+
 router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore();
+    const configStore = useConfigStore();
+
+    if (!isConfigLoaded) {
+        await configStore.fetchInit();
+        isConfigLoaded = true;
+    }
     
     if (!authStore.user && localStorage.getItem('dazo_logged_in') === 'true') {
         await authStore.fetchUser();
+    }
+
+    if (to.path === '/' && !authStore.isAuthenticated) {
+        if (configStore.config.enable_public_front === 'true' || configStore.config.enable_public_front === true) {
+            return next({ name: 'PublicFront' });
+        }
     }
 
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
@@ -159,6 +196,16 @@ router.beforeEach(async (to, from, next) => {
     
     if (to.name === 'Login' && authStore.isAuthenticated) {
         return next({ name: 'Dashboard' });
+    }
+
+    if (to.name === 'PublicFront' && authStore.isAuthenticated) {
+        return next({ name: 'Dashboard' });
+    }
+
+    if (to.name === 'PublicFront' || to.name === 'PublicDecision') {
+        if (configStore.config.enable_public_front !== 'true' && configStore.config.enable_public_front !== true) {
+            return next({ name: 'Login' });
+        }
     }
 
     next();

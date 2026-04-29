@@ -26,7 +26,15 @@
             <input type="password" v-model="password" class="input" required>
           </div>
           
-          <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading">
+          <Recaptcha 
+            v-if="configStore.config.recaptcha_site_key"
+            :site-key="configStore.config.recaptcha_site_key"
+            @verify="onRecaptchaVerify"
+            @expire="onRecaptchaExpire"
+            @error="onRecaptchaError"
+          />
+
+          <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading || (configStore.config.recaptcha_site_key && !recaptchaToken)">
             {{ loading ? 'Connexion en cours...' : 'Se connecter' }}
           </button>
           
@@ -45,18 +53,33 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
+import { useConfigStore } from '../stores/config';
 import { useRouter, useRoute } from 'vue-router';
 import SocialLoginButtons from '../components/SocialLoginButtons.vue';
+import Recaptcha from '../components/Recaptcha.vue';
 
 const email = ref('admin@dazo.test');
 const password = ref('password');
 const error = ref('');
 const loading = ref(false);
 const pendingMessage = ref('');
+const recaptchaToken = ref('');
 
 const authStore = useAuthStore();
+const configStore = useConfigStore();
 const router = useRouter();
 const route = useRoute();
+
+const onRecaptchaVerify = (token) => {
+  recaptchaToken.value = token;
+};
+const onRecaptchaExpire = () => {
+  recaptchaToken.value = '';
+};
+const onRecaptchaError = () => {
+  error.value = "Erreur avec reCAPTCHA, veuillez réessayer.";
+  recaptchaToken.value = '';
+};
 
 // Handle OAuth callback (token in URL from SocialAuthController)
 onMounted(async () => {
@@ -105,10 +128,15 @@ onMounted(async () => {
 });
 
 const handleLogin = async () => {
+    if (configStore.config.recaptcha_site_key && !recaptchaToken.value) {
+        error.value = "Veuillez valider le reCAPTCHA.";
+        return;
+    }
+
     loading.value = true;
     error.value = '';
     try {
-        await authStore.login(email.value, password.value);
+        await authStore.login(email.value, password.value, recaptchaToken.value);
         router.push({ name: 'Dashboard' });
     } catch (e) {
         error.value = e.response?.data?.message || 'Identifiants invalides';

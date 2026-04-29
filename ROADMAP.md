@@ -30,6 +30,12 @@
 - [ ] Automated Rolling Backups (Engine implementation)
 - [ ] Table Repair & Optimization tools (CLI & UI)
 
+### Intégration & API Publique
+- [x] API XML publique pour intégration CMS tiers (WP, Drupal)
+- [x] Sécurisation par Clé d'API (générée via interface Admin)
+- [x] Configuration fine de publication (Cercles, Catégories, Statuts)
+- [x] Toggle public/privé sur les décisions individuelles
+
 ### Social Features & Onboarding
 - [x] Re-designed Invitation Bridge
 - [x] Batch invitations (CSV/Separator upload)

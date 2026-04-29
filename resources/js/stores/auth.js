@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', {
     },
     
     actions: {
-        async login(email, password) {
+        async login(email, password, recaptcha_token = null) {
             // Demande du cookie CSRF Sanctum
             await axios.get('/sanctum/csrf-cookie');
             
@@ -28,6 +28,7 @@ export const useAuthStore = defineStore('auth', {
             const response = await axios.post('/api/v1/auth/login', {
                 email,
                 password,
+                recaptcha_token
             });
             
             localStorage.setItem('dazo_logged_in', 'true');

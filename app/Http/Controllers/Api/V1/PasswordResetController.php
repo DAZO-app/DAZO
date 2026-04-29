@@ -12,9 +12,34 @@ use Illuminate\Auth\Events\PasswordReset;
 
 class PasswordResetController extends Controller
 {
+    public function __construct(private \App\Services\ConfigService $configService) {}
+
+    private function verifyRecaptcha(?string $token): bool
+    {
+        $secret = $this->configService->get('recaptcha_secret_key');
+        if (empty($secret)) {
+            return true;
+        }
+
+        if (empty($token)) {
+            return false;
+        }
+
+        $response = \Illuminate\Support\Facades\Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => $secret,
+            'response' => $token,
+        ]);
+
+        return $response->json('success') === true;
+    }
+
     public function sendResetLinkEmail(Request $request): JsonResponse
     {
         $request->validate(['email' => 'required|email']);
+
+        if (!$this->verifyRecaptcha($request->input('recaptcha_token'))) {
+            throw ValidationException::withMessages(['recaptcha' => ['La validation reCAPTCHA a échoué.']]);
+        }
 
         $status = Password::broker()->sendResetLink(
             $request->only('email')

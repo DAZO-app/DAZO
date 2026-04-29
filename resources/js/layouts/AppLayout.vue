@@ -43,6 +43,7 @@
             <router-link :to="{ name: 'AdminUsers' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-users" style="margin-right: 8px;"></i> Utilisateurs</router-link>
             <router-link :to="{ name: 'AdminCircles' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-circle-nodes" style="margin-right: 8px;"></i> Cercles Admin</router-link>
             <router-link :to="{ name: 'AdminCategories' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-tags" style="margin-right: 8px;"></i> Catégories</router-link>
+            <router-link :to="{ name: 'AdminPublication' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-globe" style="margin-right: 8px;"></i> Publication API</router-link>
             
             <template v-if="isActuallySuperAdmin">
               <div class="mobile-menu-divider"></div>
@@ -140,6 +141,9 @@
               </router-link>
               <router-link :to="{ name: 'AdminCategories' }" class="sidebar-item" active-class="active">
                 <span><i class="fa-solid fa-tags"></i></span> Catégories
+              </router-link>
+              <router-link :to="{ name: 'AdminPublication' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-globe"></i></span> Publication API
               </router-link>
             </div>
           </transition>

@@ -92,7 +92,15 @@
             >
           </div>
 
-          <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading || strengthScore < 100">
+          <Recaptcha 
+            v-if="configStore.config.recaptcha_site_key"
+            :site-key="configStore.config.recaptcha_site_key"
+            @verify="onRecaptchaVerify"
+            @expire="onRecaptchaExpire"
+            @error="onRecaptchaError"
+          />
+
+          <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading || strengthScore < 100 || (configStore.config.recaptcha_site_key && !form.recaptcha_token)">
             <i v-if="loading" class="fa-solid fa-circle-notch fa-spin mr-8"></i>
             {{ loading ? 'Création...' : 'S\'inscrire' }}
           </button>
@@ -111,23 +119,38 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useConfigStore } from '../stores/config';
 import SocialLoginButtons from '../components/SocialLoginButtons.vue';
+import Recaptcha from '../components/Recaptcha.vue';
 import axios from 'axios';
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const configStore = useConfigStore();
 
 const form = reactive({
   name: '',
   email: '',
   password: '',
-  password_confirmation: ''
+  password_confirmation: '',
+  recaptcha_token: ''
 });
 
 const loading = ref(false);
 const error = ref(null);
 const isInvite = ref(false);
+
+const onRecaptchaVerify = (token) => {
+  form.recaptcha_token = token;
+};
+const onRecaptchaExpire = () => {
+  form.recaptcha_token = '';
+};
+const onRecaptchaError = () => {
+  error.value = "Erreur avec reCAPTCHA, veuillez réessayer.";
+  form.recaptcha_token = '';
+};
 
 // Password Validation Logic
 const hasLength = computed(() => form.password.length >= 8);

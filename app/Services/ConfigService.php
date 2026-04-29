@@ -26,6 +26,19 @@ class ConfigService
             'mail_sender_name'      => 'DAZO Notifications',
             'mail_contact_address'  => 'contact@dazo.app',
             'maintenance_mode'      => 'false',
+            // Publication API Publique & Front
+            'enable_public_front'   => 'true',
+            'require_admin_approval'=> 'false',
+            'recaptcha_site_key'    => '',
+            'recaptcha_secret_key'  => '',
+            'public_circles'        => '[]',
+            'public_categories'     => '[]',
+            'public_statuses'       => '[]',
+            'public_filters'        => '[]',
+            'public_api_key'        => '',
+            'legal_mentions_url'    => '',
+            'privacy_policy_url'    => '',
+            'terms_of_service_url'  => '',
             // Pièces jointes — laisser vide pour accepter tous les types non-bloqués
             'allowed_file_types'    => '',
             'max_file_size_mb'      => '10',
@@ -42,7 +55,22 @@ class ConfigService
             return InstanceConfig::all()->pluck('value', 'key')->toArray();
         });
 
-        return array_merge($defaults, $fromDb);
+        $merged = array_merge($defaults, $fromDb);
+        
+        // Decode JSON arrays for specific keys so the frontend gets arrays
+        $jsonKeys = ['public_circles', 'public_categories', 'public_statuses', 'public_filters'];
+        foreach ($jsonKeys as $key) {
+            if (isset($merged[$key]) && is_string($merged[$key])) {
+                $decoded = json_decode($merged[$key], true);
+                if (is_array($decoded)) {
+                    $merged[$key] = $decoded;
+                } else {
+                    $merged[$key] = [];
+                }
+            }
+        }
+
+        return $merged;
     }
 
     /**
@@ -73,9 +101,10 @@ class ConfigService
     public function setMultiple(array $configs): void
     {
         foreach ($configs as $key => $value) {
-            // Handle booleans as strings "true"/"false" if needed, 
-            // but the service treats everything as string in DB for now.
             $val = is_bool($value) ? ($value ? 'true' : 'false') : $value;
+            if (is_array($val)) {
+                $val = json_encode($val);
+            }
             $this->set($key, $val);
         }
     }

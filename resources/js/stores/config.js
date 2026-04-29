@@ -23,12 +23,22 @@ export const useConfigStore = defineStore('config', {
     async fetchConfig() {
         this.loading = true;
         try {
-            // This endpoint should be accessible or we might need a public version
-            // For now, using the admin one if the user is logged in
             const { data } = await axios.get('/api/v1/admin/config');
             this.config = data.config || data;
         } catch (e) {
             console.error("Failed to fetch config", e);
+        } finally {
+            this.loading = false;
+        }
+    },
+    async fetchInit() {
+        this.loading = true;
+        try {
+            const { data } = await axios.get('/api/v1/init');
+            // Merge init data into config
+            this.config = { ...this.config, ...data };
+        } catch (e) {
+            console.error("Failed to fetch init config", e);
         } finally {
             this.loading = false;
         }

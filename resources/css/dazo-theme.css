@@ -82,6 +82,21 @@ body {
   }
 }
 
+/* Public Containers */
+.public-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
+
+.public-container-wide {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
+
 /* ── MAIN CONTENT ── */
 .main {
   flex: 1;

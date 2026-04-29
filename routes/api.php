@@ -6,6 +6,14 @@ use App\Http\Controllers\Api\V1\PasswordResetController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    // Configuration publique (logo, front, etc.)
+    Route::get('/init', [\App\Http\Controllers\Api\V1\InitController::class, 'index']);
+
+    // SPA Publique (sans API Key)
+    Route::get('/front/decisions', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'indexFront']);
+    Route::get('/front/decisions/{id}', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'showFront']);
+    Route::get('/front/meta', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'meta']);
+
     // Authentification (Public)
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
@@ -21,6 +29,12 @@ Route::prefix('v1')->group(function () {
     // OAuth / SSO (Public — redirects & callbacks)
     Route::get('/auth/social/{provider}/redirect', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'redirect']);
     Route::get('/auth/social/{provider}/callback', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'callback']);
+
+    // API Publique XML (CMS tiers)
+    Route::prefix('public')->middleware(['throttle:60,1', \App\Http\Middleware\EnsureValidApiKey::class])->group(function () {
+        Route::get('/decisions', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'index']);
+        Route::get('/decisions/{id}', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'show']);
+    });
 
     // Authentification (Protégé)
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
