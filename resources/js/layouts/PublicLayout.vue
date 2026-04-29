@@ -3,35 +3,34 @@
     <!-- En-tête public -->
     <header class="public-header">
       <div class="public-container-wide header-inner">
-        <div class="header-brand" style="flex: 1;">
+        <div class="header-brand" style="flex: 0 0 auto;">
           <a href="#" class="brand-link" @click.prevent="resetAndGoHome">
             <img v-if="configStore.logoUrl" :src="configStore.logoUrl" alt="Logo" class="brand-logo" />
             <span class="brand-name" v-if="!configStore.logoUrl">{{ configStore.appName }}</span>
           </a>
         </div>
         
-        <div class="header-center" style="flex: 2; display: flex; flex-direction: column; align-items: center; text-align: center;">
+        <div class="header-center dazo-header-titles">
           <div class="header-main-title">Décisions Publiques</div>
           <div class="header-sub-title">Consultez et suivez les décisions ouvertes de notre organisation.</div>
         </div>
         
-        <div class="header-actions" style="flex: 1; justify-content: flex-end;">
+        <div class="header-actions">
           <template v-if="!authStore.isAuthenticated">
+            <PublicLoginBlock />
             <router-link v-if="configStore.config.enable_registration === 'true' || configStore.config.enable_registration === true" 
-                         to="/register" class="btn btn-white-ghost btn-sm btn-auth" title="S'inscrire">
-              <i class="fa-solid fa-user-plus"></i>
-              <span class="btn-text-mobile-hide ml-6">S'inscrire</span>
-            </router-link>
-            <router-link to="/login" class="btn btn-white btn-sm shadow-md btn-auth" title="Se connecter">
-              <i class="fa-solid fa-right-to-bracket"></i>
-              <span class="btn-text-mobile-hide ml-6">Se connecter</span>
+                         to="/register" class="btn-register-link" title="S'inscrire">
+              Créer un compte
             </router-link>
           </template>
           <template v-else>
-            <router-link to="/" class="btn btn-white btn-sm shadow-md btn-auth" title="Tableau de bord">
-              <i class="fa-solid fa-house"></i>
-              <span class="btn-text-mobile-hide ml-6">Tableau de bord</span>
-            </router-link>
+            <div class="auth-success-mini">
+              <span class="welcome-text">Bonjour, <strong>{{ authStore.user?.name }}</strong></span>
+              <router-link to="/" class="btn btn-white btn-sm shadow-md btn-auth" title="Tableau de bord">
+                <i class="fa-solid fa-house"></i>
+                <span class="btn-text-mobile-hide ml-6">Tableau de bord</span>
+              </router-link>
+            </div>
           </template>
         </div>
       </div>
@@ -62,6 +61,7 @@ import { useConfigStore } from '../stores/config';
 import { useAuthStore } from '../stores/auth';
 import { usePublicFrontStore } from '../stores/publicFront';
 import { useRouter } from 'vue-router';
+import PublicLoginBlock from '../components/PublicLoginBlock.vue';
 
 const configStore = useConfigStore();
 const authStore = useAuthStore();
@@ -155,6 +155,15 @@ const resetAndGoHome = () => {
   line-height: 1.2;
 }
 
+.header-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px;
+}
+
 .header-main-title {
   font-size: 26px;
   font-weight: 800;
@@ -174,7 +183,33 @@ const resetAndGoHome = () => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.auth-success-mini {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.welcome-text {
+  color: white;
+  font-size: 14px;
+}
+
+.btn-register-link {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  text-decoration: none;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}
+
+.btn-register-link:hover {
+  color: white;
 }
 
 /* Boutons auth unifiés */

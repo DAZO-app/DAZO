@@ -1,25 +1,25 @@
 <template>
-  <div class="public-front">
+  <div class="public-front dazo-public-detail">
     <div class="public-container-wide pb-48 pt-32" @touchstart="onTouchStart" @touchend="onTouchEnd">
 
       <!-- ── Barre de navigation sticky (sans phase) ── -->
-      <div class="filters-bar nav-bar">
-        <router-link to="/public" class="btn btn-secondary btn-sm back-btn">
+      <div class="filters-bar nav-bar dazo-public-detail-navbar">
+        <router-link to="/public" class="btn btn-secondary btn-sm back-btn dazo-public-back-btn">
           <i class="fa-solid fa-arrow-left"></i>
-          <span class="back-label">Retour</span>
+          <span class="back-label">Retour à la liste</span>
         </router-link>
 
         <div class="nav-center"></div>
 
         <!-- Flèches navigation desktop -->
-        <div class="nav-arrows desktop-only" v-if="decision">
+        <div class="nav-arrows desktop-only dazo-public-nav-arrows" v-if="decision">
           <button
             class="btn btn-secondary btn-sm nav-arrow"
             :disabled="!nav.prev"
             @click="navigate(nav.prev)"
             title="Décision précédente"
           ><i class="fa-solid fa-chevron-left"></i></button>
-          <span class="nav-counter" v-if="nav.index >= 0">{{ nav.index + 1 }}&nbsp;/&nbsp;{{ nav.total }}</span>
+          <span class="nav-counter dazo-public-nav-counter" v-if="nav.index >= 0">{{ nav.index + 1 }}&nbsp;/&nbsp;{{ nav.total }}</span>
           <button
             class="btn btn-secondary btn-sm nav-arrow"
             :disabled="!nav.next"
@@ -30,13 +30,13 @@
       </div>
 
       <!-- ── Chargement ── -->
-      <div v-if="loading" class="text-center py-48 text-muted">
+      <div v-if="loading" class="text-center py-48 text-muted dazo-public-loading">
         <i class="fa-solid fa-circle-notch fa-spin fa-2x mb-16"></i>
         <p>Chargement de la décision...</p>
       </div>
 
       <!-- ── Introuvable ── -->
-      <div v-else-if="!decision" class="empty-state">
+      <div v-else-if="!decision" class="empty-state dazo-public-empty">
         <div class="empty-icon"><i class="fa-solid fa-file-circle-xmark"></i></div>
         <h3>Décision introuvable</h3>
         <p class="text-muted">La décision demandée n'existe pas ou n'est pas publique.</p>
@@ -44,24 +44,24 @@
       </div>
 
       <!-- ── Carte principale ── -->
-      <div v-else class="decision-detail-card">
+      <div v-else class="decision-detail-card dazo-public-card-detail">
 
         <!-- En-tête de la tuile -->
-        <div class="detail-header">
+        <div class="detail-header dazo-public-detail-header">
           <!-- Ligne : cercle + date + version  |  phase (haut droite) -->
           <div class="detail-meta-row">
             <div class="detail-meta-left">
               <span
                 v-if="decision.circle"
-                class="meta-item circle-tag clickable"
+                class="meta-item circle-tag clickable dazo-public-card-circle"
                 @click="goFilter('circle', String(decision.circle.id))"
                 title="Filtrer par ce cercle"
               ><i class="fa-solid fa-circle-nodes"></i> {{ decision.circle.name }}</span>
-              <span class="meta-item version-tag">v{{ decision.current_version?.version_number || 1 }}</span>
-              <span class="date"><i class="fa-regular fa-calendar"></i> {{ formatDate(decision.created_at) }}</span>
+              <span class="meta-item version-tag dazo-public-version-tag">v{{ decision.current_version?.version_number || 1 }}</span>
+              <span class="date dazo-public-date"><i class="fa-regular fa-calendar"></i> {{ formatDate(decision.created_at) }}</span>
             </div>
             <span
-              class="status-badge clickable"
+              class="status-badge clickable dazo-public-badge"
               :class="'status-' + decision.status"
               @click="goFilter('status', decision.status)"
               title="Filtrer par ce statut"
@@ -69,14 +69,14 @@
           </div>
 
           <!-- Titre -->
-          <h1 class="article-title">{{ decision.title }}</h1>
+          <h1 class="article-title dazo-public-detail-title">{{ decision.title }}</h1>
 
           <!-- Catégories en hashtag -->
-          <div class="category-tags mt-16" v-if="decision.categories?.length > 0">
+          <div class="category-tags mt-16 dazo-public-detail-tags" v-if="decision.categories?.length > 0">
             <span
               v-for="cat in decision.categories"
               :key="cat.id"
-              class="hashtag-link"
+              class="hashtag-link dazo-public-detail-tag"
               @click="goFilter('category', String(cat.id))"
               title="Filtrer par cette catégorie"
             >#{{ cat.name }}</span>
@@ -84,22 +84,22 @@
         </div>
 
         <!-- Corps du contenu -->
-        <div class="detail-body">
-          <div class="article-abstract" v-if="decision.current_version?.abstract">
+        <div class="detail-body dazo-public-detail-body">
+          <div class="article-abstract dazo-public-abstract" v-if="decision.current_version?.abstract">
             {{ decision.current_version.abstract }}
           </div>
-          <div class="article-html-content" v-if="decision.current_version?.description" v-html="decision.current_version.description"></div>
-          <div class="article-html-content" v-else-if="decision.current_version?.content" v-html="decision.current_version.content"></div>
+          <div class="article-html-content dazo-public-content" v-if="decision.current_version?.description" v-html="decision.current_version.description"></div>
+          <div class="article-html-content dazo-public-content" v-else-if="decision.current_version?.content" v-html="decision.current_version.content"></div>
 
           <!-- Échanges publics (clarifications / réactions / objections / suggestions) -->
-          <div v-if="feedbacksByType.length > 0" class="exchanges-section mt-48">
-            <div v-for="group in feedbacksByType" :key="group.type" class="exchange-group">
-              <h3 class="exchange-title">
+          <div v-if="feedbacksByType.length > 0" class="exchanges-section mt-48 dazo-public-exchanges">
+            <div v-for="group in feedbacksByType" :key="group.type" class="exchange-group dazo-public-exchange-group">
+              <h3 class="exchange-title dazo-public-exchange-title">
                 <i :class="group.icon"></i> {{ group.label }}
                 <span class="exchange-count">{{ group.items.length }}</span>
               </h3>
               <div class="exchange-list">
-                <div v-for="fb in group.items" :key="fb.id" class="exchange-item" :class="'exchange-' + group.type">
+                <div v-for="fb in group.items" :key="fb.id" class="exchange-item dazo-public-exchange-item" :class="'exchange-' + group.type">
                   <div class="exchange-header">
                     <span class="exchange-author">
                       <i :class="getAuthorRoleIcon(fb)"></i> {{ fb.author?.name || 'Anonyme' }}
@@ -113,8 +113,8 @@
           </div>
 
           <!-- Pièces jointes -->
-          <div class="attachments-section mt-48" v-if="decision.current_version?.attachments?.length > 0">
-            <h3 class="attachments-title">
+          <div class="attachments-section mt-48 dazo-public-attachments" v-if="decision.current_version?.attachments?.length > 0">
+            <h3 class="attachments-title dazo-public-attachments-title">
               <i class="fa-solid fa-paperclip"></i> Pièces jointes ({{ decision.current_version.attachments.length }})
             </h3>
             <div class="attachments-list">
@@ -123,7 +123,7 @@
                 :key="att.id"
                 :href="'/api/v1/attachments/' + att.id + '/download'"
                 target="_blank"
-                class="attachment-card"
+                class="attachment-card dazo-public-attachment-card"
               >
                 <div class="attachment-icon">
                   <i class="fa-regular fa-file-pdf" v-if="att.file_type?.includes('pdf')"></i>
@@ -142,18 +142,18 @@
         </div>
 
         <!-- Pied de tuile : navigation précédente / suivante -->
-        <div class="card-nav-footer">
+        <div class="card-nav-footer dazo-public-detail-footer">
           <span
-            class="nav-footer-link"
+            class="nav-footer-link dazo-public-footer-nav"
             :class="{ disabled: !nav.prev }"
             @click="nav.prev && navigate(nav.prev)"
           ><i class="fa-solid fa-chevron-left"></i> Précédente</span>
 
-          <span class="nav-footer-counter" v-if="nav.index >= 0">{{ nav.index + 1 }} / {{ nav.total }}</span>
+          <span class="nav-footer-counter dazo-public-footer-counter" v-if="nav.index >= 0">{{ nav.index + 1 }} / {{ nav.total }}</span>
           <span v-else></span>
 
           <span
-            class="nav-footer-link"
+            class="nav-footer-link dazo-public-footer-nav"
             :class="{ disabled: !nav.next }"
             @click="nav.next && navigate(nav.next)"
           >Suivante <i class="fa-solid fa-chevron-right"></i></span>

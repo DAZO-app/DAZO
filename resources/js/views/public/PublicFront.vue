@@ -1,118 +1,126 @@
 <template>
-  <div class="public-front">
+  <div class="public-front dazo-public-listing">
     <div class="public-container-wide pb-48 pt-32">
 
       <!-- Bouton flottant loupe (mobile, filtres fermés) -->
-      <button v-if="isMobileFiltersHidden" class="floating-search-btn" @click="isMobileFiltersHidden = false">
+      <button v-if="isMobileFiltersHidden" class="floating-search-btn dazo-public-mobile-trigger" @click="isMobileFiltersHidden = false">
         <i class="fa-solid fa-magnifying-glass"></i>
       </button>
 
-      <!-- ── Moteur de Recherche & Filtres (Style Backend) ── -->
-      <div class="search-engine-card">
-        <div class="search-main-row">
-          <div class="search-input-group">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input
-              type="text"
-              v-model="store.filters.search"
-              placeholder="Rechercher par titre, auteur, mot-clé..."
-              class="main-search-input"
-              @keyup.enter="store.fetchDecisions(1)"
-            />
-          </div>
-          <button class="btn btn-primary btn-search-trigger" @click="store.fetchDecisions(1)">
-            <i class="fa-solid fa-filter mr-8"></i> Afficher
-          </button>
+      <!-- ── Barre de filtres ── -->
+      <div class="filters-bar dazo-public-filter-bar" :class="{ 'mobile-hidden': isMobileFiltersHidden }">
+        <button class="btn-close-filters dazo-public-filter-close" @click="isMobileFiltersHidden = true">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <!-- Recherche libre -->
+        <div class="filter-group search-group dazo-public-search-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            v-model="store.filters.search"
+            placeholder="Rechercher une décision par titre ou auteur..."
+            class="search-input dazo-public-search-input"
+            @keyup.enter="store.fetchDecisions(1)"
+          />
         </div>
 
-        <div class="filters-secondary-row">
+        <!-- Ligne de selects -->
+        <div class="filter-row dazo-public-filter-row">
+
           <!-- État / Phase -->
-          <div class="filter-control" v-if="store.meta.statuses.length > 0">
+          <div class="filter-item dazo-public-filter-item" v-if="store.meta.statuses.length > 0">
             <label>État</label>
-            <select v-model="store.filters.status" class="select-custom">
-              <option value="">Tous les états</option>
+            <select v-model="store.filters.status" class="select-sm dazo-public-filter-select">
+              <option value="">Tous états</option>
               <option v-for="s in store.meta.statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
             </select>
           </div>
 
           <!-- Cercle -->
-          <div class="filter-control" v-if="store.meta.circles.length > 0">
+          <div class="filter-item dazo-public-filter-item" v-if="store.meta.circles.length > 0">
             <label>Cercle</label>
-            <select v-model="store.filters.circle" class="select-custom">
-              <option value="">Tous les cercles</option>
+            <select v-model="store.filters.circle" class="select-sm dazo-public-filter-select">
+              <option value="">Tous cercles</option>
               <option v-for="c in store.meta.circles" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
             </select>
           </div>
 
-          <!-- Catégorie -->
-          <div class="filter-control" v-if="store.meta.categories.length > 0">
+          <!-- Catégorie / Thématique -->
+          <div class="filter-item dazo-public-filter-item" v-if="store.meta.categories.length > 0">
             <label>Thématique</label>
-            <select v-model="store.filters.category" class="select-custom">
-              <option value="">Toutes thématiques</option>
+            <select v-model="store.filters.category" class="select-sm dazo-public-filter-select">
+              <option value="">Toutes</option>
               <option v-for="c in store.meta.categories" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
             </select>
           </div>
 
           <!-- Auteur -->
-          <div class="filter-control" v-if="store.meta.authors.length > 0">
+          <div class="filter-item dazo-public-filter-item" v-if="store.meta.authors.length > 0">
             <label>Auteur</label>
-            <select v-model="store.filters.author" class="select-custom">
+            <select v-model="store.filters.author" class="select-sm dazo-public-filter-select">
               <option value="">Tous auteurs</option>
               <option v-for="a in store.meta.authors" :key="a.id" :value="String(a.id)">{{ a.name }}</option>
             </select>
           </div>
 
           <!-- Tri -->
-          <div class="filter-control">
+          <div class="filter-item dazo-public-filter-item">
             <label>Tri</label>
-            <select v-model="store.filters.sort" class="select-custom">
-              <option value="created_desc">Plus récents</option>
-              <option value="created_asc">Plus anciens</option>
-              <option value="updated_desc">Mise à jour (Derniers)</option>
+            <select v-model="store.filters.sort" class="select-sm dazo-public-filter-select">
+              <option value="created_desc">Création (Récents)</option>
+              <option value="created_asc">Création (Anciens)</option>
+              <option value="updated_desc">Mise à jour (Récents)</option>
+              <option value="updated_asc">Mise à jour (Anciens)</option>
               <option value="alpha_asc">A → Z</option>
               <option value="alpha_desc">Z → A</option>
             </select>
           </div>
 
-          <div class="filter-actions-end">
-            <button v-if="hasActiveFilters" class="btn btn-ghost btn-sm" @click="resetFilters">
+          <!-- Actions -->
+          <div class="filter-actions ml-auto dazo-public-filter-actions">
+            <button class="btn btn-primary btn-sm dazo-public-btn-apply" @click="store.fetchDecisions(1)">
+              <i class="fa-solid fa-filter"></i> Afficher
+            </button>
+            <button class="btn btn-ghost btn-sm dazo-public-btn-reset" v-if="hasActiveFilters" @click="resetFilters">
               <i class="fa-solid fa-rotate-left"></i> Réinitialiser
             </button>
           </div>
+
         </div>
       </div>
 
       <!-- ── Chargement ── -->
-      <div v-if="store.loading" class="text-center py-48 text-muted">
+      <div v-if="store.loading" class="text-center py-48 text-muted dazo-public-loading">
         <i class="fa-solid fa-circle-notch fa-spin fa-2x mb-16"></i>
         <p>Chargement des décisions...</p>
       </div>
 
       <!-- ── Vide ── -->
-      <div v-else-if="store.decisions.length === 0" class="empty-state">
+      <div v-else-if="store.decisions.length === 0" class="empty-state dazo-public-empty">
         <div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div>
         <h3>Aucune décision trouvée</h3>
         <p class="text-muted">Il n'y a actuellement aucune décision publique correspondant à vos critères.</p>
-        <button v-if="hasActiveFilters" class="btn btn-secondary mt-16" @click="resetFilters">Effacer les filtres</button>
+        <button v-if="hasActiveFilters" class="btn btn-secondary mt-16 dazo-public-btn-reset" @click="resetFilters">Effacer les filtres</button>
       </div>
 
       <!-- ── Grille ── -->
-      <div v-else class="decisions-grid">
+      <div v-else class="decisions-grid dazo-public-grid">
         <router-link
           v-for="decision in store.decisions"
           :key="decision.id"
           :to="{ name: 'PublicDecision', params: { id: decision.id } }"
-          class="decision-card"
+          class="decision-card dazo-public-card"
         >
-          <div class="card-header-block">
-            <h3 class="decision-title">{{ decision.title }}</h3>
-            <div class="decision-meta-info">
+          <div class="card-header-block dazo-public-card-header">
+            <h3 class="decision-title dazo-public-card-title">{{ decision.title }}</h3>
+            <div class="decision-meta-info dazo-public-card-meta">
               <span class="date">{{ formatDate(decision.created_at) }}</span>
               <span class="version-tag"> - v{{ decision.current_version?.version_number || 1 }}</span>
             </div>
-            <div class="status-container mt-8">
+            <div class="status-container mt-8 dazo-public-card-status">
               <span
-                class="status-badge clickable"
+                class="status-badge clickable dazo-public-badge"
                 :class="'status-' + decision.status"
                 @click.prevent="applyFilter('status', decision.status)"
                 title="Filtrer par cette phase"
@@ -120,19 +128,19 @@
             </div>
           </div>
 
-          <div class="card-footer">
-            <div class="category-tags" v-if="decision.categories?.length > 0">
+          <div class="card-footer dazo-public-card-footer">
+            <div class="category-tags dazo-public-card-tags" v-if="decision.categories?.length > 0">
               <span
                 v-for="cat in decision.categories"
                 :key="cat.id"
-                class="hashtag-link"
+                class="hashtag-link dazo-public-card-tag"
                 @click.prevent="applyFilter('category', String(cat.id))"
               >#{{ cat.name }}</span>
             </div>
             <div class="footer-right">
               <span
                 v-if="decision.circle"
-                class="meta-item circle-tag clickable"
+                class="meta-item circle-tag clickable dazo-public-card-circle"
                 @click.prevent="applyFilter('circle', String(decision.circle.id))"
                 title="Filtrer par ce cercle"
               >
@@ -144,12 +152,12 @@
       </div>
 
       <!-- ── Pagination ── -->
-      <div v-if="store.pagination.last_page > 1" class="pagination">
-        <button class="btn btn-ghost" :disabled="store.pagination.current_page === 1" @click="store.fetchDecisions(store.pagination.current_page - 1)">
+      <div v-if="store.pagination.last_page > 1" class="pagination dazo-public-pagination">
+        <button class="btn btn-ghost dazo-public-page-btn" :disabled="store.pagination.current_page === 1" @click="store.fetchDecisions(store.pagination.current_page - 1)">
           <i class="fa-solid fa-chevron-left"></i> Précédent
         </button>
-        <span class="page-info">Page {{ store.pagination.current_page }} sur {{ store.pagination.last_page }}</span>
-        <button class="btn btn-ghost" :disabled="store.pagination.current_page === store.pagination.last_page" @click="store.fetchDecisions(store.pagination.current_page + 1)">
+        <span class="page-info dazo-public-page-info">Page {{ store.pagination.current_page }} sur {{ store.pagination.last_page }}</span>
+        <button class="btn btn-ghost dazo-public-page-btn" :disabled="store.pagination.current_page === store.pagination.last_page" @click="store.fetchDecisions(store.pagination.current_page + 1)">
           Suivant <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
@@ -203,129 +211,83 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* ── Search Engine Card (Unified Filters) ── */
-.search-engine-card {
-  background: white;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-  border: 1px solid var(--gray-200);
-  margin-bottom: 40px;
-  position: sticky;
-  top: 110px;
-  z-index: 90;
+/* ── Floating search (mobile) ── */
+.floating-search-btn {
+  display: none; position: fixed; top: 95px; left: 8px;
+  width: 42px; height: 42px; background: var(--blue-600); color: white;
+  border-radius: 50%; border: none; box-shadow: 0 4px 16px rgba(59,130,246,0.4);
+  align-items: center; justify-content: center; font-size: 18px; cursor: pointer; z-index: 95; transition: transform 0.2s;
+}
+.floating-search-btn:active { transform: scale(0.95); }
+
+/* ── Filters bar ── */
+.filters-bar {
+  background: white; padding: 24px 28px; border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.04); border: 1px solid var(--gray-200);
+  position: sticky; top: 106px; z-index: 90; margin-bottom: 40px;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 
-.search-main-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
+/* Glassmorphism subtle effect if supported */
+@supports (backdrop-filter: blur(10px)) {
+  .filters-bar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+  }
 }
 
-.search-input-group {
-  flex: 1;
-  position: relative;
+.btn-close-filters {
+  display: none; position: absolute; top: -12px; right: -12px;
+  width: 32px; height: 32px; background: white; border: 1px solid var(--gray-200);
+  border-radius: 50%; color: var(--gray-500); box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  align-items: center; justify-content: center; font-size: 14px; cursor: pointer; z-index: 10;
 }
 
-.search-icon {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--gray-400);
-  font-size: 16px;
+/* ── Search input ── */
+.search-group { position: relative; margin-bottom: 20px; }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 14px; }
+.search-input {
+  width: 100%; padding: 12px 14px 12px 42px;
+  border: 1px solid var(--gray-200); border-radius: 10px;
+  font-size: 15px; background: var(--gray-50); transition: all 0.2s;
 }
+.search-input:focus { background: white; border-color: var(--blue-400); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); outline: none; }
 
-.main-search-input {
-  width: 100%;
-  padding: 14px 20px 14px 50px;
-  border: 1px solid var(--gray-200);
-  border-radius: 12px;
-  font-size: 16px;
-  background: var(--gray-50);
-  transition: all 0.2s;
-  font-weight: 500;
+/* ── Filter row (selects) ── */
+.filter-row { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 16px; 
+  align-items: flex-end; 
 }
-
-.main-search-input:focus {
-  background: white;
-  border-color: var(--blue-500);
-  box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
-  outline: none;
-}
-
-.btn-search-trigger {
-  padding: 0 32px;
-  height: 52px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 15px;
-  box-shadow: 0 4px 12px rgba(59,130,246,0.3);
-}
-
-.filters-secondary-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-end;
-  padding-top: 16px;
-  border-top: 1px solid var(--gray-100);
-}
-
-.filter-control {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.filter-control label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--gray-500);
-  letter-spacing: 0.05em;
-  margin-left: 4px;
-}
-
-.select-custom {
-  padding: 8px 32px 8px 12px;
-  border: 1px solid var(--gray-200);
-  border-radius: 10px;
-  font-size: 13px;
-  background-color: white;
-  color: var(--gray-700);
-  cursor: pointer;
-  appearance: none;
+.filter-item { display: flex; flex-direction: column; gap: 5px; }
+.filter-item label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--gray-500); letter-spacing: 0.05em; }
+.select-sm {
+  padding: 8px 32px 8px 12px; border: 1px solid var(--gray-200); border-radius: 10px;
+  font-size: 13px; background-color: white; color: var(--gray-700);
+  cursor: pointer; appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 14px;
-  transition: all 0.2s;
-  min-width: 140px;
+  background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+  transition: border-color 0.2s;
+}
+.select-sm:focus { outline: none; border-color: var(--blue-400); }
+.ml-auto { margin-left: auto; }
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.select-custom:hover {
-  border-color: var(--gray-300);
-}
-
-.select-custom:focus {
-  outline: none;
-  border-color: var(--blue-400);
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.05);
-}
-
-.filter-actions-end {
-  margin-left: auto;
-  align-self: center;
-}
-
-@media (max-width: 1024px) {
-  .search-engine-card { position: static; }
-  .search-main-row { flex-direction: column; }
-  .btn-search-trigger { width: 100%; }
-  .filters-secondary-row { flex-direction: column; align-items: stretch; }
-  .select-custom { min-width: 0; width: 100%; }
-  .filter-actions-end { margin-left: 0; width: 100%; margin-top: 8px; }
+@media (max-width: 768px) {
+  .btn-close-filters { display: flex; }
+  .floating-search-btn { display: flex; }
+  .filters-bar.mobile-hidden { opacity: 0; pointer-events: none; transform: translateY(-20px); position: absolute; }
+  .filter-row { flex-direction: column; align-items: flex-start; }
+  .filter-item { width: 100%; }
+  .select-sm { width: 100%; }
+  .ml-auto { margin-left: 0; }
+  .filter-actions { width: 100%; justify-content: space-between; margin-top: 8px; }
 }
 
 /* ── Decisions grid ── */
