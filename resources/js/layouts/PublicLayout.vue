@@ -17,11 +17,17 @@
         
         <div class="header-actions">
           <template v-if="!authStore.isAuthenticated">
-            <PublicLoginBlock />
-            <router-link v-if="configStore.config.enable_registration === 'true' || configStore.config.enable_registration === true" 
-                         to="/register" class="btn-register-link" title="S'inscrire">
-              Créer un compte
-            </router-link>
+            <div class="header-auth-buttons">
+              <router-link v-if="configStore.config.enable_registration === 'true' || configStore.config.enable_registration === true" 
+                           to="/register" class="btn btn-white-ghost btn-sm btn-auth" title="S'inscrire">
+                <i class="fa-solid fa-user-plus"></i>
+                <span class="btn-text-mobile-hide ml-6">S'inscrire</span>
+              </router-link>
+              <router-link to="/login" class="btn btn-white btn-sm shadow-md btn-auth" title="Se connecter">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                <span class="btn-text-mobile-hide ml-6">Se connecter</span>
+              </router-link>
+            </div>
           </template>
           <template v-else>
             <div class="auth-success-mini">
@@ -61,7 +67,6 @@ import { useConfigStore } from '../stores/config';
 import { useAuthStore } from '../stores/auth';
 import { usePublicFrontStore } from '../stores/publicFront';
 import { useRouter } from 'vue-router';
-import PublicLoginBlock from '../components/PublicLoginBlock.vue';
 
 const configStore = useConfigStore();
 const authStore = useAuthStore();
@@ -181,10 +186,15 @@ const resetAndGoHome = () => {
 
 .header-actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  align-items: center;
+  gap: 16px;
   flex: 0 0 auto;
+}
+
+.header-auth-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .auth-success-mini {
@@ -196,20 +206,6 @@ const resetAndGoHome = () => {
 .welcome-text {
   color: white;
   font-size: 14px;
-}
-
-.btn-register-link {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
-  text-decoration: none;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transition: color 0.2s;
-}
-
-.btn-register-link:hover {
-  color: white;
 }
 
 /* Boutons auth unifiés */
