@@ -136,9 +136,18 @@ class DecisionService
                 ->where('role', '!=', \App\Enums\CircleMemberRole::OBSERVER->value)
                 ->exists();
 
+            $isCircleAnimator = $decision->circle->members()
+                ->where('user_id', $actor->id)
+                ->where('role', \App\Enums\CircleMemberRole::ANIMATOR->value)
+                ->exists();
+
             // Si c'est en mode meeting, on autorise tous les membres (non-observateurs)
-            // Sinon, on reste sur le porteur, l'animateur ou l'admin global
-            $hasRights = $isAuthorOrAnimator || $actor->is_global_animator || ($isMeeting && $isCircleMember);
+            // Sinon, on reste sur le porteur, l'animateur, l'admin global / système ou l'animateur du cercle
+            $hasRights = $isAuthorOrAnimator 
+                || $actor->is_global_animator 
+                || $isCircleAnimator
+                || in_array($actor->role, [\App\Enums\UserRole::ADMIN, \App\Enums\UserRole::SUPERADMIN])
+                || ($isMeeting && $isCircleMember);
 
             if (!$hasRights) {
                 throw ValidationException::withMessages([

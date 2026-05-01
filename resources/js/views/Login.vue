@@ -35,14 +35,14 @@
               </div>
               
               <Recaptcha 
-                v-if="configStore.config.recaptcha_site_key"
+                v-if="isRecaptchaEnabled"
                 :site-key="configStore.config.recaptcha_site_key"
                 @verify="onRecaptchaVerify"
                 @expire="onRecaptchaExpire"
                 @error="onRecaptchaError"
               />
 
-              <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading || (configStore.config.recaptcha_site_key && !recaptchaToken)">
+              <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="isButtonDisabled">
                 {{ loading ? 'Connexion en cours...' : 'Se connecter' }}
               </button>
               
@@ -71,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useConfigStore } from '../stores/config';
 import { useRouter, useRoute } from 'vue-router';
@@ -143,8 +143,19 @@ onMounted(async () => {
   }
 });
 
+const isRecaptchaEnabled = computed(() => {
+  const key = configStore.config.recaptcha_site_key;
+  return !!(key && key !== '' && key !== 'null' && key !== 'undefined');
+});
+
+const isButtonDisabled = computed(() => {
+  if (loading.value) return true;
+  if (isRecaptchaEnabled.value && !recaptchaToken.value) return true;
+  return false;
+});
+
 const handleLogin = async () => {
-    if (configStore.config.recaptcha_site_key && !recaptchaToken.value) {
+    if (isRecaptchaEnabled.value && !recaptchaToken.value) {
         error.value = "Veuillez valider le reCAPTCHA.";
         return;
     }
@@ -183,11 +194,20 @@ const handleLogin = async () => {
 @media (max-width: 900px) {
   .auth-blocks {
     flex-direction: column;
-    max-width: 440px;
-    align-items: center;
+    max-width: 500px;
+    align-items: stretch;
+    margin: 0 auto;
   }
   .auth-block {
     width: 100%;
+    flex: none;
+  }
+}
+
+@media (max-width: 750px) {
+  .auth-blocks {
+    max-width: 100%;
+    padding: 0;
   }
 }
 

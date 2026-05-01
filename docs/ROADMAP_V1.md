@@ -73,3 +73,8 @@ Toutes les briques fondamentales du moteur de décision sociocratique, de l'inte
 ## ✅ Bloc 19 — Authentification & Accès (Évolutions)
 - [x] **Social Login** : Connexion via fournisseurs tiers (Google, Microsoft, Github).
 - [x] Maintien du support de mot de passe par défaut.
+## 🚀 Prochaines Étapes (V1.5 / V2)
+- [ ] **Snippet Generator** : Générateur d'extraits HTML/JS pour l'intégration web facilitée.
+- [ ] **Notification Push** : Intégration Firebase pour alertes mobiles en temps réel.
+- [ ] **Recherche multi-critères avancée** sur l'interface publique.
+- [ ] **API Publique (V2)** : Support des webhooks pour notifier les CMS tiers.

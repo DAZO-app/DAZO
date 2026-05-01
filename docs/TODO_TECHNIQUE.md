@@ -108,6 +108,12 @@ Ajouter un audit log pour :
 - Envoi de relances par email
 - Impersonnation
 - Suppression d'utilisateurs
+- Génération de snippets d'intégration
+
+### Snippet Generator (API Publique)
+- Créer une interface pour générer du code `<script>` ou `<iframe>`
+- Template d'affichage minimaliste (widget)
+- Support de l'auto-resize du widget via postMessage
 
 ### Commande artisan de diagnostic
 ```bash

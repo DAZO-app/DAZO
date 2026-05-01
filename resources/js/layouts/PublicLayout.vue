@@ -107,8 +107,7 @@ const resetAndGoHome = () => {
 .public-header {
   background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-700) 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -238,11 +237,9 @@ const resetAndGoHome = () => {
 .public-footer {
   background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-900) 100%);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 8px 0;
+  padding: 16px 0;
   margin-top: auto;
-  position: sticky;
-  bottom: 0;
-  z-index: 100;
+  z-index: 10;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 }
 

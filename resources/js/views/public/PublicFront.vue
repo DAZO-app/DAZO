@@ -567,7 +567,7 @@ onUnmounted(() => {
   box-shadow: var(--shadow-md);
   border: 1px solid var(--gray-200);
   position: sticky;
-  top: 106px;
+  top: 0;
   z-index: 100;
   margin-bottom: 32px;
 }
@@ -1172,7 +1172,7 @@ onUnmounted(() => {
   .filters-actions-bar {
     gap: 8px;
     padding: 10px;
-    top: 70px; /* Ajustement car le header est souvent plus petit en mobile */
+    top: 0;
     border-radius: 0 0 16px 16px;
   }
   

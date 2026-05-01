@@ -94,14 +94,14 @@
               </div>
 
               <Recaptcha 
-                v-if="configStore.config.recaptcha_site_key"
+                v-if="isRecaptchaEnabled"
                 :site-key="configStore.config.recaptcha_site_key"
                 @verify="onRecaptchaVerify"
                 @expire="onRecaptchaExpire"
                 @error="onRecaptchaError"
               />
 
-              <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading || strengthScore < 100 || (configStore.config.recaptcha_site_key && !form.recaptcha_token)">
+              <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="isButtonDisabled">
                 <i v-if="loading" class="fa-solid fa-circle-notch fa-spin mr-8"></i>
                 {{ loading ? 'Création...' : 'S\'inscrire' }}
               </button>
@@ -188,6 +188,18 @@ const strengthColor = computed(() => {
     return '#10b981'; // Green (Solid)
 });
 
+const isRecaptchaEnabled = computed(() => {
+  const key = configStore.config.recaptcha_site_key;
+  return !!(key && key !== '' && key !== 'null' && key !== 'undefined');
+});
+
+const isButtonDisabled = computed(() => {
+  if (loading.value) return true;
+  if (strengthScore.value < 100) return true;
+  if (isRecaptchaEnabled.value && !form.recaptcha_token) return true;
+  return false;
+});
+
 onMounted(() => {
     if (route.query.email) {
         form.email = route.query.email;
@@ -253,11 +265,20 @@ const handleRegister = async () => {
 @media (max-width: 900px) {
   .auth-blocks {
     flex-direction: column;
-    max-width: 440px;
-    align-items: center;
+    max-width: 500px;
+    align-items: stretch;
+    margin: 0 auto;
   }
   .auth-block {
     width: 100%;
+    flex: none;
+  }
+}
+
+@media (max-width: 750px) {
+  .auth-blocks {
+    max-width: 100%;
+    padding: 0;
   }
 }
 

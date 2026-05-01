@@ -25,7 +25,7 @@ class CirclePolicy
         // Si le cercle est 'open' ou 'observer_open', il peut éventuellement être visible publiquement.
         // Pour l'instant on autorise tout user connecté à voir ses infos basiques ou on restreint aux membres.
         // On va vérifier si le user est membre de ce cercle :
-        if ($user->is_global_animator) {
+        if ($user->is_global_animator || in_array($user->role, [\App\Enums\UserRole::ADMIN, \App\Enums\UserRole::SUPERADMIN])) {
             return true;
         }
 
@@ -46,7 +46,7 @@ class CirclePolicy
      */
     public function update(User $user, Circle $circle): bool
     {
-        if ($user->is_global_animator) {
+        if ($user->is_global_animator || in_array($user->role, [\App\Enums\UserRole::ADMIN, \App\Enums\UserRole::SUPERADMIN])) {
             return true;
         }
 

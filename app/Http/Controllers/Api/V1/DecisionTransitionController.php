@@ -16,9 +16,9 @@ class DecisionTransitionController extends Controller
     {
     }
 
-    public function transition(TransitionDecisionRequest $request, string $decisionId): JsonResponse
+    public function transition(TransitionDecisionRequest $request, string $decision_id): JsonResponse
     {
-        $decision = Decision::findOrFail($decisionId);
+        $decision = Decision::findOrFail($decision_id);
         
         // Uniquement lecture nécessaire, le service vérifie les droits actifs
         if ($request->user()->cannot('view', $decision)) {
@@ -40,9 +40,9 @@ class DecisionTransitionController extends Controller
         ]);
     }
 
-    public function abandon(Request $request, string $decisionId): JsonResponse
+    public function abandon(Request $request, string $decision_id): JsonResponse
     {
-        $decision = Decision::findOrFail($decisionId);
+        $decision = Decision::findOrFail($decision_id);
         
         if ($request->user()->cannot('view', $decision)) {
             abort(403);

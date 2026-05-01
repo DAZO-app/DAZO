@@ -343,7 +343,7 @@ const getAuthorRoleIcon = (fb) => {
   box-shadow: var(--shadow-md);
   border: 1px solid var(--gray-200);
   position: sticky;
-  top: 106px;
+  top: 0;
   z-index: 100;
   margin-bottom: 32px;
 }

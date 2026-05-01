@@ -22,7 +22,7 @@ class Decision extends Model
         'circle_id', 'status', 'title', 'visibility',
         'priority', 'emergency_mode', 'objection_round_deadline', 'model_id',
         'revision_content', 'revision_attachment_ids',
-        'current_deadline', 'reminder_sent'
+        'current_deadline', 'reminder_sent', 'status_before_suspension'
     ];
 
     protected $appends = ['author_id', 'animator_id'];

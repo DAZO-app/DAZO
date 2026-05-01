@@ -6,16 +6,20 @@
   >
     <!-- Header (Zone de drag) -->
     <div 
-      class="pc-header pc-header-indigo cursor-grab active:cursor-grabbing" 
+      class="secretary-header-role cursor-move active:cursor-grabbing" 
       @mousedown="startDrag"
     >
-      <div class="pc-header-icon"><i class="fa-solid fa-clipboard-user"></i></div>
-      <div class="pc-header-content" v-if="!isCollapsed">
-        <div class="pc-header-title">Secrétariat</div>
-        <div class="pc-header-sub">Gérer la réunion</div>
+      <div class="role-item-mini">
+        <div class="role-icon-mini secretariat">
+          <i class="fa-solid fa-pen-nib"></i>
+        </div>
+        <div class="role-info-mini" v-if="!isCollapsed">
+          <span class="role-label-mini">Secrétariat</span>
+          <span class="role-name-mini">{{ authStore.user?.name || 'Gérer la réunion' }}</span>
+        </div>
       </div>
       <div class="ml-auto flex items-center">
-        <button class="btn btn-sm" style="background:transparent; color:white; border:none;" @click.stop="toggleCollapse">
+        <button class="btn btn-sm" style="background:transparent; color:var(--gray-400); border:none;" @click.stop="toggleCollapse">
           <i class="fa-solid" :class="isCollapsed ? 'fa-expand' : 'fa-compress'"></i>
         </button>
       </div>
@@ -748,6 +752,69 @@ const getRoleColor = (role) => {
 </script>
 
 <style scoped>
+
+.secretary-header-role {
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.2s;
+  cursor: move !important;
+}
+
+.secretary-header-role:active {
+  cursor: grabbing !important;
+}
+
+.secretary-header-role:hover {
+  background: var(--gray-50);
+}
+
+.role-item-mini {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-icon-mini {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.role-icon-mini.secretariat {
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  color: #059669;
+}
+
+.role-info-mini {
+  display: flex;
+  flex-direction: column;
+}
+
+.role-label-mini {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-500);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.role-name-mini {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-900);
+  line-height: 1.2;
+}
+
 .secretary-panel-classic {
   position: fixed;
   width: 350px;

@@ -66,34 +66,34 @@
             </div>
             <div class="pc-body p-24">
               
-              <div class="grid-2 gap-32">
-                <!-- CERCLES -->
-                <div class="form-group">
-                  <label class="config-label">Cercles autorisés</label>
-                  <p class="help-text mb-12">Seules les décisions appartenant à ces cercles pourront être exposées.</p>
-                  <div class="checkbox-list">
-                    <label v-for="circle in circles" :key="circle.id" class="checkbox-item">
-                      <input type="checkbox" :value="circle.id" v-model="config.public_circles">
-                      <span>{{ circle.name }}</span>
-                    </label>
-                  </div>
+              <!-- CERCLES -->
+              <div class="form-group mb-32">
+                <label class="config-label">Cercles autorisés</label>
+                <p class="help-text mb-12">Seules les décisions appartenant à ces cercles pourront être exposées.</p>
+                <div class="checkbox-list inline-list">
+                  <label v-for="circle in circles" :key="circle.id" class="checkbox-item">
+                    <input type="checkbox" :value="circle.id" v-model="config.public_circles">
+                    <span>{{ circle.name }}</span>
+                  </label>
+                  <div v-if="circles.length === 0" class="text-muted p-16 fs-12 italic">Aucun cercle trouvé.</div>
                 </div>
+              </div>
 
-                <!-- CATEGORIES -->
-                <div class="form-group">
-                  <label class="config-label">Catégories autorisées</label>
-                  <p class="help-text mb-12">Seules les décisions rattachées à ces catégories pourront être exposées.</p>
-                  <div class="checkbox-list">
-                    <label v-for="cat in categories" :key="cat.id" class="checkbox-item">
-                      <input type="checkbox" :value="cat.id" v-model="config.public_categories">
-                      <span>{{ cat.name }}</span>
-                    </label>
-                  </div>
+              <!-- CATEGORIES -->
+              <div class="form-group mb-32">
+                <label class="config-label">Catégories autorisées</label>
+                <p class="help-text mb-12">Seules les décisions rattachées à ces catégories pourront être exposées.</p>
+                <div class="checkbox-list inline-list">
+                  <label v-for="cat in categories" :key="cat.id" class="checkbox-item">
+                    <input type="checkbox" :value="cat.id" v-model="config.public_categories">
+                    <span>{{ cat.name }}</span>
+                  </label>
+                  <div v-if="categories.length === 0" class="text-muted p-16 fs-12 italic">Aucune catégorie trouvée.</div>
                 </div>
               </div>
 
               <!-- STATUSES -->
-              <div class="form-group mt-32">
+              <div class="form-group">
                 <label class="config-label">Statuts exposés</label>
                 <p class="help-text mb-12">Généralement, seules les décisions finales (adoptées, rejetées) ou en phase finale d'objection sont publiques.</p>
                 <div class="checkbox-list inline-list">
@@ -108,8 +108,8 @@
           </div>
 
           <!-- FILTERS SECTION -->
-          <div class="premium-card animate-fade-in">
-            <div class="pc-header pc-header-purple">
+          <div class="premium-card animate-fade-in mb-32">
+            <div class="pc-header pc-header-blue">
               <div class="pc-header-icon"><i class="fa-solid fa-sliders"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Filtres de l'API</div>
@@ -124,6 +124,23 @@
                       <span>{{ filter.label }} (<code>?{{ filter.value }}=...</code>)</span>
                     </label>
                   </div>
+               </div>
+            </div>
+          </div>
+
+          <!-- SNIPPET GENERATOR SECTION -->
+          <div class="premium-card animate-fade-in mb-32">
+            <div class="pc-header pc-header-teal">
+              <div class="pc-header-icon"><i class="fa-solid fa-code"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Snippet Generator</div>
+                <div class="pc-header-sub">Générez des extraits de code pour intégrer les décisions sur votre site.</div>
+              </div>
+            </div>
+            <div class="pc-body p-48 text-center bg-gray-50 border-dashed m-24 rounded-12">
+               <div class="text-muted italic">
+                  <i class="fa-solid fa-hourglass-start mb-12 fa-2x block"></i><br>
+                  Fonctionnalité à venir : Générateur de widgets et snippets HTML/JS pour l'affichage dynamique.
                </div>
             </div>
           </div>
@@ -214,8 +231,8 @@ onMounted(async () => {
     const data = configRes.data.config || configRes.data || {};
     config.value = mapConfig(data);
 
-    circles.value = circlesRes.data.data || circlesRes.data || [];
-    categories.value = categoriesRes.data.data || categoriesRes.data || [];
+    circles.value = circlesRes.data.circles || [];
+    categories.value = categoriesRes.data.categories || [];
 
   } catch (e) {
     console.error("Fetch error", e);

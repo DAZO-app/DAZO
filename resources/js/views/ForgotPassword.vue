@@ -29,14 +29,14 @@
         </div>
 
         <Recaptcha 
-          v-if="configStore.config.recaptcha_site_key"
+          v-if="isRecaptchaEnabled"
           :site-key="configStore.config.recaptcha_site_key"
           @verify="onRecaptchaVerify"
           @expire="onRecaptchaExpire"
           @error="onRecaptchaError"
         />
 
-        <button type="submit" class="btn btn-primary btn-block p-12 mt-4" :disabled="loading || (configStore.config.recaptcha_site_key && !recaptchaToken)">
+        <button type="submit" class="btn btn-primary btn-block p-12 mt-4" :disabled="isButtonDisabled">
           {{ loading ? 'Envoi en cours...' : 'Envoyer le lien' }}
         </button>
       </form>
@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import axios from 'axios';
 import { useConfigStore } from '../stores/config';
 import Recaptcha from '../components/Recaptcha.vue';
@@ -73,7 +73,16 @@ const onRecaptchaError = () => {
   errorMsg.value = "Erreur avec reCAPTCHA, veuillez réessayer.";
   recaptchaToken.value = '';
 };
+const isRecaptchaEnabled = computed(() => {
+  const key = configStore.config.recaptcha_site_key;
+  return !!(key && key !== '' && key !== 'null' && key !== 'undefined');
+});
 
+const isButtonDisabled = computed(() => {
+  if (loading.value) return true;
+  if (isRecaptchaEnabled.value && !recaptchaToken.value) return true;
+  return false;
+});
 const sendResetLink = async () => {
     if (configStore.config.recaptcha_site_key && !recaptchaToken.value) {
         errorMsg.value = "Veuillez valider le reCAPTCHA.";

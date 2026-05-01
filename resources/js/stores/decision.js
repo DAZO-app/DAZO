@@ -101,6 +101,10 @@ export const useDecisionStore = defineStore('decision', {
             this.mySettings = null;
         },
 
+        setCurrentDecision(decision) {
+            this.currentDecision = decision;
+        },
+
         /**
          * Mise à jour optimiste des favoris : bascule localement immédiatement,
          * puis confirme (ou annule) côté serveur.
