@@ -169,14 +169,14 @@
                 class="attachment-card dazo-public-attachment-card"
               >
                 <div class="attachment-icon">
-                  <i class="fa-regular fa-file-pdf" v-if="att.file_type?.includes('pdf')"></i>
-                  <i class="fa-regular fa-image" v-else-if="att.file_type?.includes('image')"></i>
-                  <i class="fa-regular fa-file-word" v-else-if="att.file_type?.includes('word')"></i>
+                  <i class="fa-regular fa-file-pdf" v-if="att.mime_type?.includes('pdf')"></i>
+                  <i class="fa-regular fa-image" v-else-if="att.mime_type?.includes('image')"></i>
+                  <i class="fa-regular fa-file-word" v-else-if="att.mime_type?.includes('word')"></i>
                   <i class="fa-regular fa-file" v-else></i>
                 </div>
                 <div class="attachment-info">
-                  <div class="attachment-name">{{ att.original_name }}</div>
-                  <div class="attachment-size">{{ formatSize(att.file_size) }}</div>
+                  <div class="attachment-name">{{ att.filename }}</div>
+                  <div class="attachment-size">{{ formatSize(att.size_bytes) }}</div>
                 </div>
                 <div class="attachment-action"><i class="fa-solid fa-download"></i></div>
               </a>

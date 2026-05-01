@@ -139,7 +139,7 @@ const hydrateAttachments = () => {
   localAttachments.value = (props.attachments || []).map((attachment) => ({
     ...attachment,
     localKey: attachment.id || `${attachment.filename}-${attachment.s3_path}`,
-    url: attachment.s3_path ? `/storage/${attachment.s3_path}` : attachment.url,
+    url: attachment.id ? `/api/v1/attachments/${attachment.id}/download` : attachment.url,
     uploading: false,
     progress: 100,
   }));

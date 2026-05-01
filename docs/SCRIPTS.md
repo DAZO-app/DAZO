@@ -6,6 +6,7 @@ Ces scripts sont conçus pour simplifier la gestion, le déploiement et la maint
 
 | Script | Description | Quand l'utiliser |
 |--------|-------------|------------------|
+| `dazo-tool.sh` | **Menu unifié interactif** | **Utilisation recommandée au quotidien** |
 | `dazo-install.sh` | Installation initiale complète | Première mise en route du projet |
 | `dazo-update.sh` | Mise à jour complète (Git + Deps + DB + Cache) | Déploiement d'une nouvelle version |
 | `dazo-gitpull.sh` | Récupération simple du code GitHub | Vérifier les changements sans les appliquer |
@@ -14,12 +15,34 @@ Ces scripts sont conçus pour simplifier la gestion, le déploiement et la maint
 | `dazo-dev.sh` | Lancement de l'environnement de dev local | Lancer le travail local (Vite HMR + Containers) |
 | `dazo-refresh.sh` | Rafraîchissement complet local | Purger caches, permissions et build (HMR bloqué) |
 | `dazo-rollback.sh` | Retour à la version précédente (Git) | En cas d'erreur critique après mise à jour |
+| `dazo-diag-storage.sh` | Diagnostic spécifique Stockage / Branding | En cas de logos ou pièces jointes invisibles |
 
 ---
 
 ## 🚀 Utilisation Détaillée
 
-### 1. Installation Initiale (`dazo-install.sh`)
+### 0. Le Centre de Contrôle (`dazo-tool.sh`)
+C'est le point d'entrée unique recommandé. Au lieu de retenir tous les noms de scripts, lancez simplement celui-ci pour accéder à un menu interactif.
+
+**Commande :**
+```bash
+./dazo-tool.sh
+```
+
+---
+
+### 1. Diagnostic de Stockage & Branding (`dazo-diag-storage.sh`)
+Ce script est crucial si vous ne voyez pas votre logo personnalisé ou si les pièces jointes semblent cassées. Il vérifie :
+- L'intégrité du lien symbolique `public/storage` (nécessaire pour le logo).
+- Les permissions des dossiers `storage/`.
+- La présence physique des fichiers (pièces jointes et logo) sur le serveur.
+
+**Commande :**
+```bash
+./dazo-diag-storage.sh
+```
+
+### 2. Installation Initiale (`dazo-install.sh`)
 Ce script automatise tout le processus de démarrage :
 - Création du `.env` (si manquant).
 - Build et démarrage des containers Docker.
@@ -33,7 +56,7 @@ Ce script automatise tout le processus de démarrage :
 ./dazo-install.sh
 ```
 
-### 2. Mise à jour et Déploiement (`dazo-update.sh`)
+### 3. Mise à jour et Déploiement (`dazo-update.sh`)
 C'est le script principal pour vos déploiements réguliers. Il effectue :
 1. Une sauvegarde préventive de la base de données dans `./backups/`.
 2. Un `git pull` de la branche main.
@@ -47,7 +70,7 @@ C'est le script principal pour vos déploiements réguliers. Il effectue :
 ./dazo-update.sh
 ```
 
-### 3. Nettoyage du Cache (`dazo-cleancache.sh`)
+### 4. Nettoyage du Cache (`dazo-cleancache.sh`)
 À utiliser en cas de comportement étrange ou après avoir modifié manuellement le fichier `.env`. Il nettoie TOUS les caches Laravel et les reconstruit proprement pour la production.
 
 **Commande :**
@@ -55,7 +78,7 @@ C'est le script principal pour vos déploiements réguliers. Il effectue :
 ./dazo-cleancache.sh
 ```
 
-### 4. Vérification du Système (`dazo-check.sh`)
+### 5. Vérification du Système (`dazo-check.sh`)
 Affiche un rapport rapide sur :
 - L'état des containers Docker.
 - La connectivité PostgreSQL et Redis.
@@ -68,11 +91,11 @@ Affiche un rapport rapide sur :
 ./dazo-check.sh
 ```
 
-### 5. Rollback (`dazo-rollback.sh`)
+### 6. Rollback (`dazo-rollback.sh`)
 En cas de problème après un `git pull`, ce script revient à l'état juste avant la mise à jour (via `git reset --hard HEAD@{1}`).
 *Note : Il ne restaure pas automatiquement la base de données, utilisez les backups dans `./backups/` si nécessaire.*
 
-### 6. Développement Local (`dazo-dev.sh`)
+### 7. Développement Local (`dazo-dev.sh`)
 Lance l'environnement complet pour le travail quotidien :
 - Démarre les containers.
 - Lance le serveur de développement Vite avec **HMR (Hot Module Replacement)**.
@@ -83,7 +106,7 @@ Lance l'environnement complet pour le travail quotidien :
 ./dazo-dev.sh
 ```
 
-### 7. Rafraîchissement Local (`dazo-refresh.sh`)
+### 8. Rafraîchissement Local (`dazo-refresh.sh`)
 Un outil complet pour corriger les soucis de cache, de permissions ou de compilation en local.
 
 **Commandes disponibles :**

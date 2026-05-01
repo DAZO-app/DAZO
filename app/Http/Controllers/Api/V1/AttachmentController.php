@@ -201,10 +201,19 @@ class AttachmentController extends Controller
     public function download(Request $request, string $attachmentId): mixed
     {
         $attachment = Attachment::with('version.decision')->findOrFail($attachmentId);
+        $decision = $attachment->version?->decision;
 
-        // Vérifier que l'utilisateur a accès à la décision parente
-        if ($attachment->version?->decision) {
-            $this->authorize('view', $attachment->version->decision);
+        if ($decision) {
+            // Si la décision est publique, on autorise l'accès sans check de session
+            if ($decision->visibility === \App\Enums\DecisionVisibility::PUBLIC) {
+                // OK
+            } else {
+                // Sinon, l'utilisateur doit être connecté et avoir les droits
+                if (!\Illuminate\Support\Facades\Auth::check()) {
+                    abort(401, 'Vous devez être connecté pour accéder à ce fichier.');
+                }
+                $this->authorize('view', $decision);
+            }
         }
 
         if (! Storage::disk('local')->exists($attachment->s3_path)) {

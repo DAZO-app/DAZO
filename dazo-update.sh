@@ -57,6 +57,7 @@ echo -e "${GREEN}✅ Permissions set${NC}"
 
 # Step 7: Storage Link
 echo -e "${YELLOW}🔗 Ensuring storage symbolic link exists...${NC}"
+docker compose exec app rm -rf public/storage
 docker compose exec app php artisan storage:link --force
 echo -e "${GREEN}✅ Storage link verified${NC}"
 

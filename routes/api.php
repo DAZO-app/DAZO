@@ -31,6 +31,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/auth/social/{provider}/redirect', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'redirect']);
     Route::get('/auth/social/{provider}/callback', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'callback']);
 
+    // Téléchargement de pièces jointes (accès public possible si la décision est publique)
+    Route::get('/attachments/{attachment}/download', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'download'])
+        ->name('attachments.download');
+
     // API Publique XML (CMS tiers)
     Route::prefix('public')->middleware(['throttle:60,1', \App\Http\Middleware\EnsureValidApiKey::class])->group(function () {
         Route::get('/decisions', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'index']);
@@ -150,8 +154,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/attachments', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'store'])
             ->middleware('throttle:20,1');
         Route::post('/decisions/versions/{versionId}/attachments/link', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'link']);
-        Route::get('/attachments/{attachment}/download', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'download'])
-            ->name('attachments.download');
         Route::delete('/attachments/{attachment}', [\App\Http\Controllers\Api\V1\AttachmentController::class, 'destroy']);
 
         // Notifications

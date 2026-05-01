@@ -50,6 +50,7 @@ echo -e "${GREEN}✅ Database migrated and seeded${NC}"
 
 # Step 6: Storage Link
 echo -e "${YELLOW}🔗 Creating storage symbolic link...${NC}"
+docker compose exec app rm -rf public/storage
 docker compose exec app php artisan storage:link --force
 echo -e "${GREEN}✅ Storage link created${NC}"
 

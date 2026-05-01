@@ -661,7 +661,7 @@ const handleMeetingModeClose = () => {
 const openAttachment = (idx) => {
   const attachment = displayAttachments.value[idx];
   if (attachment) {
-    const url = attachment.url || (attachment.s3_path ? `/storage/${attachment.s3_path}` : null);
+    const url = attachment.id ? `/api/v1/attachments/${attachment.id}/download` : (attachment.url || null);
     if (url) window.open(url, '_blank');
   }
 };
@@ -1211,6 +1211,7 @@ const refreshDecision = async () => {
   if (!decisionStore.decisions.length) {
     await decisionStore.fetchDecisions();
   }
+  updateDraftForm();
   await fetchAllVersions();
 };
 
