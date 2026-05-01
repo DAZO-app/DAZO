@@ -18,12 +18,12 @@
         <div class="header-actions">
           <template v-if="!authStore.isAuthenticated">
             <div class="header-auth-buttons">
-              <router-link v-if="configStore.config.enable_registration === 'true' || configStore.config.enable_registration === true" 
+              <router-link v-if="(configStore.config.enable_registration === 'true' || configStore.config.enable_registration === true) && route.name !== 'Register'" 
                            to="/register" class="btn btn-white-ghost btn-sm btn-auth" title="S'inscrire">
                 <i class="fa-solid fa-user-plus"></i>
                 <span class="btn-text-mobile-hide ml-6">S'inscrire</span>
               </router-link>
-              <router-link to="/login" class="btn btn-white btn-sm shadow-md btn-auth" title="Se connecter">
+              <router-link v-if="route.name !== 'Login'" to="/login" class="btn btn-white btn-sm shadow-md btn-auth" title="Se connecter">
                 <i class="fa-solid fa-right-to-bracket"></i>
                 <span class="btn-text-mobile-hide ml-6">Se connecter</span>
               </router-link>
@@ -68,12 +68,13 @@
 import { useConfigStore } from '../stores/config';
 import { useAuthStore } from '../stores/auth';
 import { usePublicFrontStore } from '../stores/publicFront';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 const configStore = useConfigStore();
 const authStore = useAuthStore();
 const publicFrontStore = usePublicFrontStore();
 const router = useRouter();
+const route = useRoute();
 
 const resetAndGoHome = () => {
   if (router.currentRoute.value.name === 'PublicDecision') {

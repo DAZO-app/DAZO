@@ -23,14 +23,14 @@ class DashboardController extends Controller
         // 1a. Decisions where I am AUTHOR
         $authorDecisions = Decision::whereHas('participants', function ($q) use ($user) {
             $q->where('user_id', $user->id)->where('role', DecisionParticipantRole::AUTHOR->value);
-        })->with('circle', 'currentVersion.attachments', 'participants.user')->get();
+        })->with(['circle', 'currentVersion.attachments', 'participants.user'])->get();
 
         // 1b. Decisions where I am ANIMATOR (but not author)
         $authorIds = $authorDecisions->pluck('id')->toArray();
         $animatorDecisions = Decision::whereNotIn('id', $authorIds)
             ->whereHas('participants', function ($q) use ($user) {
                 $q->where('user_id', $user->id)->where('role', DecisionParticipantRole::ANIMATOR->value);
-            })->with('circle', 'currentVersion.attachments', 'participants.user')->get();
+            })->with(['circle', 'currentVersion.attachments', 'participants.user'])->get();
 
         // Group by circle name
         $groupByCircle = function ($decisions) {
@@ -42,12 +42,13 @@ class DashboardController extends Controller
             return $grouped;
         };
 
-        $myDecisionsGrouped   = $groupByCircle($authorDecisions);
-        $myAnimatedGrouped    = $groupByCircle($animatorDecisions);
-        
+        // Attach action status (handles eager loading internally)
         $this->attachUserActionStatus($authorDecisions, $user->id);
         $this->attachUserActionStatus($animatorDecisions, $user->id);
 
+        $myDecisionsGrouped   = $groupByCircle($authorDecisions);
+        $myAnimatedGrouped    = $groupByCircle($animatorDecisions);
+        
         // 2. Circle decisions: member but not author/animator
         $myAllIds = array_merge($authorIds, $animatorDecisions->pluck('id')->toArray());
         $circleDecisions = Decision::whereNotIn('id', $myAllIds)
@@ -85,8 +86,8 @@ class DashboardController extends Controller
             ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'messages.author'])
             ->orderByDesc('created_at')->get();
 
-        // 5. STATS (all circle decisions visible to user)
-        $allVisible = Decision::where(function ($q) use ($user) {
+        // 5. STATS (Query optimized: count in DB instead of loading all in memory)
+        $visibleQuery = Decision::where(function ($q) use ($user) {
             $q->whereHas('circle.members', function ($q2) use ($user) {
                 $q2->where('user_id', $user->id);
             })->orWhereHas('participants', function ($q2) use ($user) {
@@ -97,19 +98,22 @@ class DashboardController extends Controller
               ->orWhereHas('participants', function ($q2) use ($user) {
                   $q2->where('user_id', $user->id)->whereIn('role', [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value]);
               });
-        })->get();
+        });
 
         $stats = [
-            'total'        => $allVisible->count(),
+            'total'        => $visibleQuery->count(),
             'as_author'    => $authorDecisions->count(),
             'as_animator'  => $animatorDecisions->count(),
-            'draft'        => $allVisible->filter(fn($d) => $d->status->value === 'draft')->count(),
-            'in_progress'  => $allVisible->filter(fn($d) => in_array($d->status->value, ['clarification','reaction','objection']))->count(),
-            'adopted'      => $allVisible->filter(fn($d) => in_array($d->status->value, ['adopted','adopted_override']))->count(),
-            'abandoned'    => $allVisible->filter(fn($d) => in_array($d->status->value, ['abandoned','deserted','lapsed']))->count(),
+            'draft'        => (clone $visibleQuery)->where('status', DecisionStatus::DRAFT->value)->count(),
+            'in_progress'  => (clone $visibleQuery)->whereIn('status', [DecisionStatus::CLARIFICATION->value, DecisionStatus::REACTION->value, DecisionStatus::OBJECTION->value])->count(),
+            'adopted'      => (clone $visibleQuery)->whereIn('status', [DecisionStatus::ADOPTED->value, DecisionStatus::ADOPTED_OVERRIDE->value])->count(),
+            'abandoned'    => (clone $visibleQuery)->whereIn('status', [DecisionStatus::ABANDONED->value, DecisionStatus::DESERTED->value, DecisionStatus::LAPSED->value])->count(),
         ];
 
-        $categories = \App\Models\Category::all();
+        // Cache categories for 1 hour (common for 500 users load)
+        $categories = \Illuminate\Support\Facades\Cache::remember('categories_all', 3600, function () {
+            return \App\Models\Category::all();
+        });
 
         return response()->json([
             'my_decisions'     => $myDecisionsGrouped,

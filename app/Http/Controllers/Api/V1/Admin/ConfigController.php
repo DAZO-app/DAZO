@@ -46,4 +46,26 @@ class ConfigController extends Controller
             'config' => $this->configService->all()
         ]);
     }
+
+    public function generateApiKey(): JsonResponse
+    {
+        $key = 'dz_' . bin2hex(random_bytes(32));
+        $this->configService->set('public_api_key', $key);
+
+        return response()->json([
+            'message' => 'New API Key generated. Please save it as it will not be shown again in its entirety if the page is reloaded.',
+            'api_key' => $key,
+            'config' => $this->configService->all()
+        ]);
+    }
+
+    public function revokeApiKey(): JsonResponse
+    {
+        $this->configService->set('public_api_key', '');
+
+        return response()->json([
+            'message' => 'API Key revoked successfully',
+            'config' => $this->configService->all()
+        ]);
+    }
 }

@@ -169,7 +169,14 @@ const uploadFiles = async (files) => {
     return;
   }
 
+  // Max size check (client-side) - Default 100MB if not specified
+  const MAX_SIZE = 100 * 1024 * 1024; 
+
   for (const file of files) {
+    if (file.size > MAX_SIZE) {
+        window.alert(`Le fichier "${file.name}" est trop volumineux (max 100 Mo).`);
+        continue;
+    }
     const tempKey = `${file.name}-${file.size}-${Date.now()}-${Math.random()}`;
     const localItem = {
       id: null,

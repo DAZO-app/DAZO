@@ -229,26 +229,32 @@ class PublicDecisionController extends Controller
         };
     }
 
-    public function index(Request $request): Response
+    public function index(Request $request): Response|JsonResponse
     {
         $query = $this->buildBaseQuery();
         $this->applyFilters($query, $request);
 
         $decisions = $query->paginate(20);
 
-        $xml = $this->xmlService->formatDecisionsList($decisions);
+        if ($request->wantsJson()) {
+            return response()->json($decisions);
+        }
 
+        $xml = $this->xmlService->formatDecisionsList($decisions);
         return response($xml, 200)->header('Content-Type', 'application/xml');
     }
 
-    public function show($id): Response
+    public function show($id): Response|JsonResponse
     {
         $decision = $this->buildBaseQuery()
                          ->with(['currentVersion', 'categories', 'circle'])
                          ->findOrFail($id);
 
-        $xml = $this->xmlService->formatDecisionDetail($decision);
+        if (request()->wantsJson()) {
+            return response()->json(['decision' => $decision]);
+        }
 
+        $xml = $this->xmlService->formatDecisionDetail($decision);
         return response($xml, 200)->header('Content-Type', 'application/xml');
     }
 

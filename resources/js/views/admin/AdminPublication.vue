@@ -42,9 +42,12 @@
               <div class="form-group">
                 <label class="config-label">Clé secrète actuelle</label>
                 <div style="display: flex; gap: 16px; align-items: center;">
-                  <input type="text" v-model="config.public_api_key" class="input input-lg" readonly style="font-family: monospace; letter-spacing: 2px; background: var(--gray-50);">
+                  <input type="text" v-model="config.public_api_key" class="input input-lg" readonly style="font-family: monospace; letter-spacing: 2px; background: var(--gray-50);" :placeholder="config.public_api_key ? '' : 'Aucune clé active'">
                   <button class="btn btn-outline" @click="generateApiKey">
-                    <i class="fa-solid fa-rotate-right mr-8"></i> Générer une nouvelle clé
+                    <i class="fa-solid fa-rotate-right mr-8"></i> {{ config.public_api_key ? 'Regénérer' : 'Générer une clé' }}
+                  </button>
+                  <button v-if="config.public_api_key" class="btn btn-ghost text-red-500" @click="revokeApiKey">
+                    <i class="fa-solid fa-trash-can mr-8"></i> Révoquer
                   </button>
                 </div>
                 <p class="help-text">La regénération d'une clé révoquera immédiatement l'accès aux clients utilisant l'ancienne clé.</p>
@@ -168,14 +171,36 @@ const availableFilters = [
     { value: 'search', label: 'Recherche texte (titre)' }
 ];
 
-const generateApiKey = () => {
-    // Generate a random 32 character alphanumeric string
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = 'dz_';
-    for (let i = 0; i < 32; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
+const mapConfig = (data) => {
+    return {
+        public_api_key: data.public_api_key || '',
+        public_circles: Array.isArray(data.public_circles) ? data.public_circles : [],
+        public_categories: Array.isArray(data.public_categories) ? data.public_categories : [],
+        public_statuses: Array.isArray(data.public_statuses) ? data.public_statuses : [],
+        public_filters: Array.isArray(data.public_filters) ? data.public_filters : []
+    };
+};
+
+const generateApiKey = async () => {
+    if (!confirm('Voulez-vous générer une nouvelle clé API ? L\'ancienne sera immédiatement révoquée.')) return;
+    try {
+        const { data } = await axios.post('/api/v1/admin/config/api-key');
+        config.value = mapConfig(data.config);
+        alert('Nouvelle clé générée avec succès : ' + data.api_key);
+    } catch (e) {
+        alert('Erreur lors de la génération de la clé.');
     }
-    config.value.public_api_key = result;
+};
+
+const revokeApiKey = async () => {
+    if (!confirm('Voulez-vous révoquer la clé API actuelle ? Tout accès externe sera coupé.')) return;
+    try {
+        const { data } = await axios.delete('/api/v1/admin/config/api-key');
+        config.value = mapConfig(data.config);
+        alert('Clé révoquée avec succès.');
+    } catch (e) {
+        alert('Erreur lors de la révocation.');
+    }
 };
 
 onMounted(async () => {
@@ -187,15 +212,7 @@ onMounted(async () => {
     ]);
 
     const data = configRes.data.config || configRes.data || {};
-    
-    // Ensure arrays
-    config.value = {
-        public_api_key: data.public_api_key || '',
-        public_circles: Array.isArray(data.public_circles) ? data.public_circles : [],
-        public_categories: Array.isArray(data.public_categories) ? data.public_categories : [],
-        public_statuses: Array.isArray(data.public_statuses) ? data.public_statuses : [],
-        public_filters: Array.isArray(data.public_filters) ? data.public_filters : []
-    };
+    config.value = mapConfig(data);
 
     circles.value = circlesRes.data.data || circlesRes.data || [];
     categories.value = categoriesRes.data.data || categoriesRes.data || [];

@@ -96,6 +96,9 @@
                                       <button class="btn btn-secondary btn-icon mr-4" @click="downloadBackup(b.name)" title="Télécharger">
                                         <i class="fa-solid fa-download"></i>
                                       </button>
+                                      <button class="btn btn-secondary btn-icon mr-4 text-amber-600" @click="handleRestore(b.name)" title="Restaurer cette sauvegarde" :disabled="loading">
+                                        <i class="fa-solid fa-rotate-left"></i>
+                                      </button>
                                       <button class="btn btn-secondary btn-icon text-red-500" @click="confirmDeleteBackup(b.name)" title="Supprimer">
                                         <i class="fa-solid fa-trash"></i>
                                       </button>
@@ -249,6 +252,20 @@ const handleBackup = async () => {
         alert('Échec de la sauvegarde. Vérifiez les permissions pg_dump.');
     } finally {
       loading.value = false;
+    }
+};
+
+const handleRestore = async (filename) => {
+    if (!confirm(`ATTENTION: Vous allez écraser la base de données actuelle avec la sauvegarde "${filename}". Cette opération est irréversible. Continuer ?`)) return;
+    loading.value = true;
+    try {
+        await axios.post('/api/v1/admin/tools/database/restore', { filename });
+        alert('Restauration terminée avec succès. La page va se recharger.');
+        window.location.reload();
+    } catch (e) {
+        alert(e.response?.data?.error || 'Échec de la restauration.');
+    } finally {
+        loading.value = false;
     }
 };
 

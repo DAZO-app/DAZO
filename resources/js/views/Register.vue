@@ -4,17 +4,17 @@
       <div class="auth-blocks">
         
         <!-- Bloc 1 : Logo -->
-        <div class="auth-block block-logo-container text-center">
-          <img src="/DAZO-logo-carre-noir.svg" alt="DAZO" class="auth-main-logo">
-          <div class="auth-tagline">Decision At Zero Objection</div>
+        <div class="auth-block premium-card block-logo-card">
+          <div class="pc-body p-24" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <img src="/DAZO-logo-carre-noir.svg" alt="DAZO" class="auth-main-logo">
+            <div class="auth-tagline">Decision At Zero Objection</div>
+          </div>
         </div>
 
         <!-- Bloc 2 : Formulaire d'inscription -->
         <div class="auth-block premium-card">
-          <div class="pc-header pc-header-blue" style="justify-content: center; padding: 16px;">
-            <div class="pc-header-title text-center" style="font-size: 18px;">Créer votre compte</div>
-          </div>
           <div class="pc-body p-24">
+            <h2 class="text-center font-bold text-gray-800 text-xl mb-24">Créer votre compte</h2>
             <form @submit.prevent="handleRegister" class="login-form">
               <div v-if="error" class="alert alert-error mb-16">
                 {{ error }}
@@ -111,7 +111,7 @@
 
         <!-- Bloc 3 : Social Register -->
         <div class="auth-block premium-card">
-          <div class="pc-body p-24">
+          <div class="pc-body p-24" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
             <div class="text-center font-bold text-gray-500 mb-16 text-sm uppercase tracking-wider">Ou créer un compte avec</div>
             <SocialLoginButtons 
               :invitation-token="route.query.token || null"
@@ -237,38 +237,53 @@ const handleRegister = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 60px 20px;
   min-height: 100%;
 }
 
 .auth-blocks {
   width: 100%;
-  max-width: 440px;
+  max-width: 1200px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 24px;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .auth-blocks {
+    flex-direction: column;
+    max-width: 440px;
+    align-items: center;
+  }
+  .auth-block {
+    width: 100%;
+  }
 }
 
 .auth-block {
-  width: 100%;
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
 }
 
-.block-logo-container {
-  margin-bottom: 8px;
+.block-logo-card {
+  text-align: center;
 }
 
 .auth-main-logo {
-  width: 160px;
+  width: 180px;
   height: auto;
-  margin: 0 auto 8px auto;
+  margin: 0 auto 16px auto;
   display: block;
 }
 
 .auth-tagline {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--gray-500);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  font-weight: 600;
 }
 
 .auth-link {

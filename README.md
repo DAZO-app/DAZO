@@ -95,6 +95,7 @@ L'ensemble de la documentation détaillée se trouve dans le dossier [`docs/`](d
 | [docs/state-machine.md](docs/state-machine.md) | Machine d'états & transitions |
 | [docs/enums.md](docs/enums.md) | Référence de tous les Enums PHP |
 | [docs/domain-model.md](docs/domain-model.md) | Modèle de données |
+| [docs/EMAILS.md](docs/EMAILS.md) | Stratégie & Répertoire des Emails |
 | [docs/TODO_TECHNIQUE.md](docs/TODO_TECHNIQUE.md) | Backlog technique détaillé |
 
 ## ⚖️ Licence

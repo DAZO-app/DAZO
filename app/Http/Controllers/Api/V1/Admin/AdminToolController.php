@@ -184,6 +184,41 @@ class AdminToolController extends Controller
     }
 
     /**
+     * Restore a database backup.
+     */
+    public function restore(Request $request)
+    {
+        $request->validate(['filename' => 'required|string']);
+        $filename = basename($request->filename);
+        $path = storage_path('app/backups/' . $filename);
+
+        if (!File::exists($path)) {
+            return response()->json(['error' => 'Fichier introuvable.'], 404);
+        }
+
+        $dbConfig = config('database.connections.pgsql');
+        
+        // This command assumes the dump is a gziped SQL file (from backup() method)
+        $command = sprintf(
+            'gunzip < %s | PGPASSWORD=%s psql -h %s -p %s -U %s %s',
+            escapeshellarg($path),
+            escapeshellarg($dbConfig['password']),
+            escapeshellarg($dbConfig['host']),
+            escapeshellarg($dbConfig['port']),
+            escapeshellarg($dbConfig['username']),
+            escapeshellarg($dbConfig['database'])
+        );
+
+        exec($command, $output, $returnVar);
+
+        if ($returnVar !== 0) {
+            return response()->json(['error' => 'Erreur lors de la restauration.'], 500);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Generate a temporary signed URL for downloading a backup.
      */
     public function getDownloadUrl($filename)

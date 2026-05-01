@@ -23,6 +23,10 @@
         </option>
       </select>
 
+      <button v-if="isImpersonating" @click="stopImpersonating" class="btn btn-sm impersonation-btn btn-quit" title="Arrêter la simulation">
+        <i class="fa-solid fa-user-slash mr-4"></i> Quitter
+      </button>
+
       <button @click="authStore.setBannerHidden(true)" class="btn btn-sm impersonation-btn" title="Masquer cette barre">
         Masquer
       </button>
@@ -90,6 +94,11 @@ const switchImpersonation = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const stopImpersonating = async () => {
+  await authStore.stopImpersonating();
+  window.location.reload();
 };
 </script>
 
@@ -159,6 +168,13 @@ const switchImpersonation = async () => {
   background: rgba(0,0,0,0.25);
   border-color: rgba(255,255,255,0.5);
 }
+.btn-quit {
+  background: #dc2626; /* Red 600 */
+}
+.btn-quit:hover {
+  background: #b91c1c; /* Red 700 */
+}
+.mr-4 { margin-right: 4px; }
 
 @media (max-width: 768px) {
   .impersonation-banner { flex-direction: column; gap: 8px; padding: 12px; text-align: center; }

@@ -164,6 +164,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'index']);
             Route::put('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'update']);
             Route::post('/config/logo', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'uploadLogo']);
+            Route::post('/config/api-key', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'generateApiKey']);
+            Route::delete('/config/api-key', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'revokeApiKey']);
             Route::get('/stats', [\App\Http\Controllers\Api\V1\Admin\DashboardController::class, 'stats']);
             
             // Impersonation
@@ -199,6 +201,7 @@ Route::prefix('v1')->group(function () {
             Route::prefix('tools')->group(function () {
                 Route::get('/database', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'databaseStats']);
                 Route::post('/database/backup', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'backup']);
+                Route::post('/database/restore', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'restore']);
                 Route::get('/database/backups/{filename}/url', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'getDownloadUrl']);
                 Route::delete('/database/backups/{filename}', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'deleteBackup']);
                 Route::get('/server', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'serverStats']);
