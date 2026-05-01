@@ -44,9 +44,9 @@ else
 fi
 
 # Step 5: Database Migrations
-echo -e "${YELLOW}🗄️  Running database migrations...${NC}"
-docker compose exec app php artisan migrate --force
-echo -e "${GREEN}✅ Database migrated${NC}"
+echo -e "${YELLOW}🗄️  Running database migrations and seeding...${NC}"
+docker compose exec app php artisan migrate --seed --force
+echo -e "${GREEN}✅ Database migrated and seeded${NC}"
 
 # Step 6: Permissions
 echo -e "${YELLOW}🔐 Setting storage permissions...${NC}"
