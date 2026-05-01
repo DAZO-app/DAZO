@@ -48,7 +48,12 @@ echo -e "${YELLOW}🗄️  Running database migrations...${NC}"
 docker compose exec app php artisan migrate --force
 echo -e "${GREEN}✅ Database migrated${NC}"
 
-# Step 6: Finalize
+# Step 6: Permissions
+echo -e "${YELLOW}🔐 Setting storage permissions...${NC}"
+docker compose exec app chown -R www-data:www-data storage bootstrap/cache
+echo -e "${GREEN}✅ Permissions set${NC}"
+
+# Step 7: Finalize
 echo -e "${YELLOW}🧹 Clearing and warming up cache...${NC}"
 docker compose exec app php artisan config:cache
 docker compose exec app php artisan route:cache

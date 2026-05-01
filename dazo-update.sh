@@ -45,17 +45,22 @@ docker compose exec app npm install
 docker compose exec app npm run build
 echo -e "${GREEN}✅ Frontend built${NC}"
 
-# Step 5: Migrations
+# Step 5: Database Migrations
 echo -e "${YELLOW}🗄️  Running database migrations...${NC}"
 docker compose exec app php artisan migrate --force
 echo -e "${GREEN}✅ Database migrated${NC}"
 
-# Step 6: Cache Refresh
-echo -e "${YELLOW}🧹 Refreshing cache...${NC}"
+# Step 6: Permissions
+echo -e "${YELLOW}🔐 Setting storage permissions...${NC}"
+docker compose exec app chown -R www-data:www-data storage bootstrap/cache
+echo -e "${GREEN}✅ Permissions set${NC}"
+
+# Step 7: Finalize
+echo -e "${YELLOW}🧹 Clearing and warming up cache...${NC}"
 docker compose exec app php artisan config:cache
 docker compose exec app php artisan route:cache
 docker compose exec app php artisan view:cache
-echo -e "${GREEN}✅ Cache refreshed${NC}"
+echo -e "${GREEN}✅ Cache warmed up${NC}"
 
 # Step 7: Restart relevant services
 echo -e "${YELLOW}♻️  Restarting background workers...${NC}"
