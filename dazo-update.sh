@@ -55,17 +55,22 @@ echo -e "${YELLOW}🔐 Setting storage permissions...${NC}"
 docker compose exec app chown -R www-data:www-data storage bootstrap/cache
 echo -e "${GREEN}✅ Permissions set${NC}"
 
-# Step 7: Finalize
+# Step 7: Storage Link
+echo -e "${YELLOW}🔗 Ensuring storage symbolic link exists...${NC}"
+docker compose exec app php artisan storage:link --force
+echo -e "${GREEN}✅ Storage link verified${NC}"
+
+# Step 8: Finalize
 echo -e "${YELLOW}🧹 Clearing and warming up cache...${NC}"
 docker compose exec app php artisan config:cache
 docker compose exec app php artisan route:cache
 docker compose exec app php artisan view:cache
 echo -e "${GREEN}✅ Cache warmed up${NC}"
 
-# Step 7: Restart relevant services
-echo -e "${YELLOW}♻️  Restarting background workers...${NC}"
-docker compose restart queue scheduler reverb
-echo -e "${GREEN}✅ Services restarted${NC}"
+# Step 9: Restart/Update relevant services
+echo -e "${YELLOW}♻️  Updating background workers...${NC}"
+docker compose up -d queue scheduler reverb
+echo -e "${GREEN}✅ Services updated and running${NC}"
 
 echo -e "${GREEN}=====================================${NC}"
 echo -e "${GREEN}✅ DAZO UPDATED SUCCESSFULLY! ✨${NC}"

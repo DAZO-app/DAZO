@@ -48,12 +48,17 @@ echo -e "${YELLOW}🗄️  Running database migrations and seeding...${NC}"
 docker compose exec app php artisan migrate --seed --force
 echo -e "${GREEN}✅ Database migrated and seeded${NC}"
 
-# Step 6: Permissions
+# Step 6: Storage Link
+echo -e "${YELLOW}🔗 Creating storage symbolic link...${NC}"
+docker compose exec app php artisan storage:link --force
+echo -e "${GREEN}✅ Storage link created${NC}"
+
+# Step 7: Permissions
 echo -e "${YELLOW}🔐 Setting storage permissions...${NC}"
 docker compose exec app chown -R www-data:www-data storage bootstrap/cache
 echo -e "${GREEN}✅ Permissions set${NC}"
 
-# Step 7: Finalize
+# Step 8: Finalize
 echo -e "${YELLOW}🧹 Clearing and warming up cache...${NC}"
 docker compose exec app php artisan config:cache
 docker compose exec app php artisan route:cache
