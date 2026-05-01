@@ -346,7 +346,7 @@ onMounted(() => {
 
 const logout = async () => {
   await authStore.logout();
-  router.push('/login');
+  router.push('/');
 };
 
 const stopImpersonating = async () => {
