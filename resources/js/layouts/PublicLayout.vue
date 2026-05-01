@@ -44,7 +44,9 @@
 
     <!-- Contenu principal -->
     <main class="public-main">
-      <router-view></router-view>
+      <slot>
+        <router-view></router-view>
+      </slot>
     </main>
 
     <!-- Pied de page public -->

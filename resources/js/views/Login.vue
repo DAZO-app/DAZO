@@ -1,53 +1,71 @@
 <template>
-  <div class="login-wrapper">
-    <div class="card login-card">
-      <div class="card-header justify-center" style="border:none;flex-direction:column;gap:8px;align-items:center;">
-        <img src="/DAZO-logo-carre-noir.svg" alt="DAZO" class="login-logo">
-        <div class="login-tagline">Decision At Zero Objection</div>
-      </div>
-      <div class="card-body">
-        <!-- Pending approval message -->
-        <div v-if="pendingMessage" class="alert alert-warning mb-16">
-          <i class="fa-solid fa-clock"></i>
-          {{ pendingMessage }}
+  <PublicLayout>
+    <div class="auth-wrapper">
+      <div class="auth-blocks">
+        
+        <!-- Bloc 1 : Logo -->
+        <div class="auth-block block-logo-container text-center">
+          <img src="/DAZO-logo-carre-noir.svg" alt="DAZO" class="auth-main-logo">
+          <div class="auth-tagline">Decision At Zero Objection</div>
         </div>
 
-        <form @submit.prevent="handleLogin">
-          <div v-if="error" class="alert alert-error mb-16">{{ error }}</div>
-          <div class="text-sm text-muted mb-16" style="text-align:center;">Compte de démonstration: admin@dazo.test / password</div>
-          
-          <div class="form-group">
-            <label class="label">Email</label>
-            <input type="email" v-model="email" class="input" required>
+        <!-- Bloc 2 : Paramètres de connexion -->
+        <div class="auth-block premium-card">
+          <div class="pc-header pc-header-blue" style="justify-content: center; padding: 16px;">
+            <div class="pc-header-title text-center" style="font-size: 18px;">Se connecter</div>
           </div>
-          
-          <div class="form-group">
-            <label class="label">Mot de passe</label>
-            <input type="password" v-model="password" class="input" required>
-          </div>
-          
-          <Recaptcha 
-            v-if="configStore.config.recaptcha_site_key"
-            :site-key="configStore.config.recaptcha_site_key"
-            @verify="onRecaptchaVerify"
-            @expire="onRecaptchaExpire"
-            @error="onRecaptchaError"
-          />
+          <div class="pc-body p-24">
+            <div v-if="pendingMessage" class="alert alert-warning mb-16">
+              <i class="fa-solid fa-clock"></i>
+              {{ pendingMessage }}
+            </div>
+            <form @submit.prevent="handleLogin">
+              <div v-if="error" class="alert alert-error mb-16">{{ error }}</div>
+              
+              <div class="form-group">
+                <label class="label">Email</label>
+                <input type="email" v-model="email" class="input" required>
+              </div>
+              
+              <div class="form-group">
+                <label class="label">Mot de passe</label>
+                <input type="password" v-model="password" class="input" required>
+              </div>
+              
+              <Recaptcha 
+                v-if="configStore.config.recaptcha_site_key"
+                :site-key="configStore.config.recaptcha_site_key"
+                @verify="onRecaptchaVerify"
+                @expire="onRecaptchaExpire"
+                @error="onRecaptchaError"
+              />
 
-          <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading || (configStore.config.recaptcha_site_key && !recaptchaToken)">
-            {{ loading ? 'Connexion en cours...' : 'Se connecter' }}
-          </button>
-          
-          <div style="text-align: center; margin-top: 16px;">
-            <router-link to="/forgot-password" style="font-size: 13px; color: var(--blue-600); text-decoration: none;">Mot de passe oublié ?</router-link>
+              <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading || (configStore.config.recaptcha_site_key && !recaptchaToken)">
+                {{ loading ? 'Connexion en cours...' : 'Se connecter' }}
+              </button>
+              
+              <div style="text-align: center; margin-top: 16px;">
+                <router-link to="/forgot-password" class="auth-link">Mot de passe oublié ?</router-link>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
 
-        <!-- Social Login Buttons -->
-        <SocialLoginButtons label="ou se connecter avec" />
+        <!-- Bloc 3 : Social Login -->
+        <div class="auth-block premium-card">
+          <div class="pc-body p-24">
+            <div class="text-center font-bold text-gray-500 mb-16 text-sm uppercase tracking-wider">Ou se connecter avec</div>
+            <SocialLoginButtons />
+            <div class="text-center mt-24">
+              <span class="text-sm text-muted">Pas encore de compte ? </span>
+              <router-link to="/register" class="auth-link font-bold">S'inscrire</router-link>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
-  </div>
+  </PublicLayout>
 </template>
 
 <script setup>
@@ -57,9 +75,10 @@ import { useConfigStore } from '../stores/config';
 import { useRouter, useRoute } from 'vue-router';
 import SocialLoginButtons from '../components/SocialLoginButtons.vue';
 import Recaptcha from '../components/Recaptcha.vue';
+import PublicLayout from '../layouts/PublicLayout.vue';
 
-const email = ref('admin@dazo.test');
-const password = ref('password');
+const email = ref('');
+const password = ref('');
 const error = ref('');
 const loading = ref(false);
 const pendingMessage = ref('');
@@ -91,7 +110,6 @@ onMounted(async () => {
   if (errorParam === 'account_pending') {
     const pendingEmail = params.get('email') || '';
     pendingMessage.value = `Votre compte (${pendingEmail}) a été créé. Un administrateur doit valider votre inscription avant que vous puissiez vous connecter.`;
-    // Clean the URL
     window.history.replaceState({}, '', '/login');
     return;
   }
@@ -109,15 +127,11 @@ onMounted(async () => {
   }
 
   if (token) {
-    // Store the token and fetch user
     localStorage.setItem('dazo_token', token);
     localStorage.setItem('dazo_logged_in', 'true');
     await authStore.fetchUser();
-
-    // Clean the URL
     window.history.replaceState({}, '', '/login');
 
-    // Handle invitation redirect
     const invitationToken = params.get('invitation_token');
     if (invitationToken) {
       router.push({ name: 'InvitationAccept', params: { token: invitationToken } });
@@ -147,27 +161,50 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-wrapper {
+.auth-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  width: 100%;
-  padding: 20px;
-  background: var(--blue-50);
+  padding: 40px 20px;
+  min-height: 100%;
 }
-.login-card {
+
+.auth-blocks {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
-.login-logo {
+
+.auth-block {
+  width: 100%;
+}
+
+.block-logo-container {
+  margin-bottom: 8px;
+}
+
+.auth-main-logo {
   width: 160px;
   height: auto;
+  margin: 0 auto 8px auto;
+  display: block;
 }
-.login-tagline {
+
+.auth-tagline {
   font-size: 11px;
   color: var(--gray-500);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.auth-link {
+  font-size: 13px;
+  color: var(--blue-600);
+  text-decoration: none;
+}
+.auth-link:hover {
+  text-decoration: underline;
 }
 </style>

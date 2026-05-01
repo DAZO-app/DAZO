@@ -1,118 +1,131 @@
 <template>
-  <div class="login-wrapper">
-    <div class="card login-card">
-      <div class="card-header justify-center" style="border:none;flex-direction:column;gap:8px;align-items:center;">
-        <img src="/DAZO-logo-carre-noir.svg" alt="DAZO" class="login-logo">
-        <div class="login-tagline">Decision At Zero Objection</div>
-        <h1 class="text-xl font-bold mt-8" style="color:var(--gray-800)">Créer votre compte</h1>
-      </div>
+  <PublicLayout>
+    <div class="auth-wrapper">
+      <div class="auth-blocks">
+        
+        <!-- Bloc 1 : Logo -->
+        <div class="auth-block block-logo-container text-center">
+          <img src="/DAZO-logo-carre-noir.svg" alt="DAZO" class="auth-main-logo">
+          <div class="auth-tagline">Decision At Zero Objection</div>
+        </div>
 
-      <div class="card-body">
-        <form @submit.prevent="handleRegister" class="login-form">
-          <div v-if="error" class="alert alert-error mb-16">
-            {{ error }}
+        <!-- Bloc 2 : Formulaire d'inscription -->
+        <div class="auth-block premium-card">
+          <div class="pc-header pc-header-blue" style="justify-content: center; padding: 16px;">
+            <div class="pc-header-title text-center" style="font-size: 18px;">Créer votre compte</div>
           </div>
+          <div class="pc-body p-24">
+            <form @submit.prevent="handleRegister" class="login-form">
+              <div v-if="error" class="alert alert-error mb-16">
+                {{ error }}
+              </div>
 
-          <!-- Social Registration Buttons -->
-          <SocialLoginButtons 
-            label="créer un compte avec" 
-            :invitation-token="route.query.token || null"
-          />
+              <div class="form-group">
+                <label for="name" class="label">Nom complet</label>
+                <input 
+                  v-model="form.name" 
+                  type="text" 
+                  id="name" 
+                  class="input" 
+                  placeholder="Ex: Jean Dupont" 
+                  required
+                >
+              </div>
 
-          <div class="form-group">
-            <label for="name" class="label">Nom complet</label>
-            <input 
-              v-model="form.name" 
-              type="text" 
-              id="name" 
-              class="input" 
-              placeholder="Ex: Jean Dupont" 
-              required
-            >
+              <div class="form-group">
+                <label for="email" class="label">Adresse e-mail</label>
+                <input 
+                  v-model="form.email" 
+                  type="email" 
+                  id="email" 
+                  class="input" 
+                  placeholder="votre@email.com" 
+                  required
+                  :disabled="isInvite"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="password" class="label">Mot de passe</label>
+                <input 
+                  v-model="form.password" 
+                  type="password" 
+                  id="password" 
+                  class="input" 
+                  placeholder="••••••••" 
+                  required
+                >
+                <!-- Strength Meter -->
+                <div class="strength-meter mt-8">
+                    <div class="strength-bar" :style="{ width: strengthScore + '%', backgroundColor: strengthColor }"></div>
+                </div>
+                
+                <!-- Checklist -->
+                <div class="password-checklist mt-12">
+                    <div class="checklist-item" :class="{ active: hasLength }">
+                        <i class="fa-solid" :class="hasLength ? 'fa-check' : 'fa-circle'"></i>
+                        8 caractères minimum
+                    </div>
+                    <div class="checklist-item" :class="{ active: hasMixed }">
+                        <i class="fa-solid" :class="hasMixed ? 'fa-check' : 'fa-circle'"></i>
+                        Majuscule & Minuscule
+                    </div>
+                    <div class="checklist-item" :class="{ active: hasNumber }">
+                        <i class="fa-solid" :class="hasNumber ? 'fa-check' : 'fa-circle'"></i>
+                        Un chiffre
+                    </div>
+                    <div class="checklist-item" :class="{ active: hasSymbol }">
+                        <i class="fa-solid" :class="hasSymbol ? 'fa-check' : 'fa-circle'"></i>
+                        Un caractère spécial
+                    </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="password_confirmation" class="label">Confirmer le mot de passe</label>
+                <input 
+                  v-model="form.password_confirmation" 
+                  type="password" 
+                  id="password_confirmation" 
+                  class="input" 
+                  placeholder="••••••••" 
+                  required
+                >
+              </div>
+
+              <Recaptcha 
+                v-if="configStore.config.recaptcha_site_key"
+                :site-key="configStore.config.recaptcha_site_key"
+                @verify="onRecaptchaVerify"
+                @expire="onRecaptchaExpire"
+                @error="onRecaptchaError"
+              />
+
+              <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading || strengthScore < 100 || (configStore.config.recaptcha_site_key && !form.recaptcha_token)">
+                <i v-if="loading" class="fa-solid fa-circle-notch fa-spin mr-8"></i>
+                {{ loading ? 'Création...' : 'S\'inscrire' }}
+              </button>
+            </form>
           </div>
+        </div>
 
-          <div class="form-group">
-            <label for="email" class="label">Adresse e-mail</label>
-            <input 
-              v-model="form.email" 
-              type="email" 
-              id="email" 
-              class="input" 
-              placeholder="votre@email.com" 
-              required
-              :disabled="isInvite"
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="password" class="label">Mot de passe</label>
-            <input 
-              v-model="form.password" 
-              type="password" 
-              id="password" 
-              class="input" 
-              placeholder="••••••••" 
-              required
-            >
-            <!-- Strength Meter -->
-            <div class="strength-meter mt-8">
-                <div class="strength-bar" :style="{ width: strengthScore + '%', backgroundColor: strengthColor }"></div>
+        <!-- Bloc 3 : Social Register -->
+        <div class="auth-block premium-card">
+          <div class="pc-body p-24">
+            <div class="text-center font-bold text-gray-500 mb-16 text-sm uppercase tracking-wider">Ou créer un compte avec</div>
+            <SocialLoginButtons 
+              :invitation-token="route.query.token || null"
+            />
+            <div class="text-center mt-24">
+              <span class="text-sm text-muted">Déjà un compte ? </span>
+              <router-link to="/login" class="auth-link font-bold">Se connecter</router-link>
             </div>
-            
-            <!-- Checklist -->
-            <div class="password-checklist mt-12">
-                <div class="checklist-item" :class="{ active: hasLength }">
-                    <i class="fa-solid" :class="hasLength ? 'fa-check' : 'fa-circle'"></i>
-                    8 caractères minimum
-                </div>
-                <div class="checklist-item" :class="{ active: hasMixed }">
-                    <i class="fa-solid" :class="hasMixed ? 'fa-check' : 'fa-circle'"></i>
-                    Majuscule & Minuscule
-                </div>
-                <div class="checklist-item" :class="{ active: hasNumber }">
-                    <i class="fa-solid" :class="hasNumber ? 'fa-check' : 'fa-circle'"></i>
-                    Un chiffre
-                </div>
-                <div class="checklist-item" :class="{ active: hasSymbol }">
-                    <i class="fa-solid" :class="hasSymbol ? 'fa-check' : 'fa-circle'"></i>
-                    Un caractère spécial
-                </div>
-            </div>
           </div>
+        </div>
 
-          <div class="form-group">
-            <label for="password_confirmation" class="label">Confirmer le mot de passe</label>
-            <input 
-              v-model="form.password_confirmation" 
-              type="password" 
-              id="password_confirmation" 
-              class="input" 
-              placeholder="••••••••" 
-              required
-            >
-          </div>
-
-          <Recaptcha 
-            v-if="configStore.config.recaptcha_site_key"
-            :site-key="configStore.config.recaptcha_site_key"
-            @verify="onRecaptchaVerify"
-            @expire="onRecaptchaExpire"
-            @error="onRecaptchaError"
-          />
-
-          <button type="submit" class="btn btn-primary btn-block mt-16" :disabled="loading || strengthScore < 100 || (configStore.config.recaptcha_site_key && !form.recaptcha_token)">
-            <i v-if="loading" class="fa-solid fa-circle-notch fa-spin mr-8"></i>
-            {{ loading ? 'Création...' : 'S\'inscrire' }}
-          </button>
-
-          <div style="text-align: center; margin-top: 24px;">
-            <span class="text-sm text-muted">Déjà un compte ? </span>
-            <router-link to="/login" class="link" style="font-size: 13px; color: var(--blue-600); text-decoration: none; font-weight: 600;">Se connecter</router-link>
-          </div>
-        </form>
       </div>
     </div>
-  </div>
+  </PublicLayout>
 </template>
 
 <script setup>
@@ -122,6 +135,7 @@ import { useAuthStore } from '../stores/auth';
 import { useConfigStore } from '../stores/config';
 import SocialLoginButtons from '../components/SocialLoginButtons.vue';
 import Recaptcha from '../components/Recaptcha.vue';
+import PublicLayout from '../layouts/PublicLayout.vue';
 import axios from 'axios';
 
 const router = useRouter();
@@ -219,28 +233,51 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.login-wrapper {
+.auth-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  width: 100%;
-  padding: 20px;
-  background: var(--blue-50);
+  padding: 40px 20px;
+  min-height: 100%;
 }
-.login-card {
+
+.auth-blocks {
   width: 100%;
   max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
-.login-logo {
+
+.auth-block {
+  width: 100%;
+}
+
+.block-logo-container {
+  margin-bottom: 8px;
+}
+
+.auth-main-logo {
   width: 160px;
   height: auto;
+  margin: 0 auto 8px auto;
+  display: block;
 }
-.login-tagline {
+
+.auth-tagline {
   font-size: 11px;
   color: var(--gray-500);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.auth-link {
+  font-size: 13px;
+  color: var(--blue-600);
+  text-decoration: none;
+}
+.auth-link:hover {
+  text-decoration: underline;
 }
 
 /* Strength Meter */
