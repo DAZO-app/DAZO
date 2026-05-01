@@ -30,23 +30,27 @@ L'objectif de DAZO est de transformer la manière dont les groupes collaborent e
 - **Base de données** : PostgreSQL / MySQL.
 - **Design** : CSS Vanilla (Design System premium, responsive & mobile-first).
 
-## 📥 Installation & Déploiement
+## 🚀 Installation & Déploiement
 
-Pour simplifier la mise en route et la maintenance, DAZO inclut des scripts d'automatisation :
+Le projet utilise Docker pour garantir une parité parfaite entre le développement local et la production. Des scripts automatisés sont fournis pour simplifier toutes les opérations.
 
-```bash
-# 1. Cloner le projet
-git clone <repository-url>
-cd DAZO
+### Développement Local
+1. **Initialisation** : `./dazo-install.sh`
+2. **Lancer le développement** : `./dazo-dev.sh`
+   * Accès : `http://localhost:3003`
+   * Vite (HMR) : Actif sur le port 5173
 
-# 2. Installation initiale (Docker + Deps + DB)
-./dazo-install.sh
+### Production (VPS)
+1. **Première installation** : `./dazo-install.sh`
+2. **Mise à jour** : `./dazo-update.sh`
 
-# 3. Vérifier que tout est OK
-./dazo-check.sh
-```
+## 🛠️ Scripts de Maintenance
+Une suite de scripts est disponible à la racine pour faciliter la gestion :
+- `./dazo-check.sh` : Vérifie la santé de tous les services (BDD, Redis, Containers).
+- `./dazo-cleancache.sh` : Vide tous les caches Laravel proprement.
+- `./dazo-refresh.sh` : (Local) Rafraîchit les droits et les caches après une modif.
 
-Consultez la [Documentation des Scripts](docs/SCRIPTS.md) pour découvrir toutes les commandes disponibles (`update`, `cleancache`, `rollback`).
+Pour plus de détails, consultez la [Documentation des Scripts](docs/SCRIPTS.md). pour découvrir toutes les commandes disponibles (`update`, `cleancache`, `rollback`).
 
 ## 🐳 Architecture Docker Standard
 DAZO tourne sur une architecture multi-containers optimisée pour la production :

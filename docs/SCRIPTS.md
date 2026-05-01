@@ -11,6 +11,8 @@ Ces scripts sont conçus pour simplifier la gestion, le déploiement et la maint
 | `dazo-gitpull.sh` | Récupération simple du code GitHub | Vérifier les changements sans les appliquer |
 | `dazo-check.sh` | Vérification de l'état du système | En cas de doute sur la santé des containers |
 | `dazo-cleancache.sh` | Nettoyage et reconstruction des caches | Après un changement de config ou de routes |
+| `dazo-dev.sh` | Lancement de l'environnement de dev local | Lancer le travail local (Vite HMR + Containers) |
+| `dazo-refresh.sh` | Rafraîchissement rapide local | Après une modif de code ou de permissions locales |
 | `dazo-rollback.sh` | Retour à la version précédente (Git) | En cas d'erreur critique après mise à jour |
 
 ---
@@ -69,6 +71,28 @@ Affiche un rapport rapide sur :
 ### 5. Rollback (`dazo-rollback.sh`)
 En cas de problème après un `git pull`, ce script revient à l'état juste avant la mise à jour (via `git reset --hard HEAD@{1}`).
 *Note : Il ne restaure pas automatiquement la base de données, utilisez les backups dans `./backups/` si nécessaire.*
+
+### 6. Développement Local (`dazo-dev.sh`)
+Lance l'environnement complet pour le travail quotidien :
+- Démarre les containers.
+- Lance le serveur de développement Vite avec **HMR (Hot Module Replacement)**.
+- Gardez ce script ouvert dans un terminal pour voir les changements en temps réel.
+
+**Commande :**
+```bash
+./dazo-dev.sh
+```
+
+### 7. Rafraîchissement Local (`dazo-refresh.sh`)
+Un outil rapide pour corriger les petits soucis en local :
+- Vide tous les caches Laravel.
+- Recrée le lien symbolique `storage:link`.
+- Réinitialise les permissions `www-data` pour Docker.
+
+**Commande :**
+```bash
+./dazo-refresh.sh
+```
 
 ---
 
