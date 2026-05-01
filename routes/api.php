@@ -173,16 +173,19 @@ Route::prefix('v1')->group(function () {
             
             // Users CRUD
             Route::apiResource('users', \App\Http\Controllers\Api\V1\Admin\UserController::class)
-                ->only(['index', 'store', 'update', 'destroy']);
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->names('admin.users');
             
             Route::get('/users/{user}/circles', [\App\Http\Controllers\Api\V1\Admin\UserController::class, 'userCircles']);
                 
             // Categories CRUD
             Route::apiResource('categories', \App\Http\Controllers\Api\V1\Admin\CategoryController::class)
-                ->except(['show']);
+                ->except(['show'])
+                ->names('admin.categories');
 
             // Circles CRUD
-            Route::apiResource('circles', \App\Http\Controllers\Api\V1\Admin\CircleController::class);
+            Route::apiResource('circles', \App\Http\Controllers\Api\V1\Admin\CircleController::class)
+                ->names('admin.circles');
             Route::post('/circles/{circle}/members', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'addMember']);
             Route::post('/circles/{circle}/invitations/{invitation}/resend', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'resendInvitation']);
             Route::delete('/circles/{circle}/invitations/{invitation}', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'removeInvitation']);
