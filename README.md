@@ -30,23 +30,33 @@ L'objectif de DAZO est de transformer la manière dont les groupes collaborent e
 - **Base de données** : PostgreSQL / MySQL.
 - **Design** : CSS Vanilla (Design System premium, responsive & mobile-first).
 
-## 📥 Installation
+## 📥 Installation & Déploiement
+
+Pour simplifier la mise en route et la maintenance, DAZO inclut des scripts d'automatisation :
 
 ```bash
-# Cloner le projet
+# 1. Cloner le projet
 git clone <repository-url>
 cd DAZO
 
-# Installation Backend
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
+# 2. Installation initiale (Docker + Deps + DB)
+./dazo-install.sh
 
-# Installation Frontend
-npm install
-npm run build
+# 3. Vérifier que tout est OK
+./dazo-check.sh
 ```
+
+Consultez la [Documentation des Scripts](docs/SCRIPTS.md) pour découvrir toutes les commandes disponibles (`update`, `cleancache`, `rollback`).
+
+## 🐳 Architecture Docker Standard
+DAZO tourne sur une architecture multi-containers optimisée pour la production :
+- **dazo-app** : Backend Laravel (PHP 8.3 FPM)
+- **dazo-nginx** : Serveur Web
+- **dazo-db** : PostgreSQL 15
+- **dazo-redis** : Cache & Sessions
+- **dazo-queue** : Worker de files d'attente
+- **dazo-reverb** : Serveur WebSocket (Real-time)
+
 
 ### 🖥 Développement local (3 terminaux)
 
