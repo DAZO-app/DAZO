@@ -12,7 +12,7 @@ Ces scripts sont conçus pour simplifier la gestion, le déploiement et la maint
 | `dazo-check.sh` | Vérification de l'état du système | En cas de doute sur la santé des containers |
 | `dazo-cleancache.sh` | Nettoyage et reconstruction des caches | Après un changement de config ou de routes |
 | `dazo-dev.sh` | Lancement de l'environnement de dev local | Lancer le travail local (Vite HMR + Containers) |
-| `dazo-refresh.sh` | Rafraîchissement rapide local | Après une modif de code ou de permissions locales |
+| `dazo-refresh.sh` | Rafraîchissement complet local | Purger caches, permissions et build (HMR bloqué) |
 | `dazo-rollback.sh` | Retour à la version précédente (Git) | En cas d'erreur critique après mise à jour |
 
 ---
@@ -84,14 +84,16 @@ Lance l'environnement complet pour le travail quotidien :
 ```
 
 ### 7. Rafraîchissement Local (`dazo-refresh.sh`)
-Un outil rapide pour corriger les petits soucis en local :
-- Vide tous les caches Laravel.
-- Recrée le lien symbolique `storage:link`.
-- Réinitialise les permissions `www-data` pour Docker.
+Un outil complet pour corriger les soucis de cache, de permissions ou de compilation en local.
 
-**Commande :**
+**Commandes disponibles :**
+- `./dazo-refresh.sh` : Nettoie les caches Laravel, réinitialise les permissions `www-data` et recrée le lien `storage:link`.
+- `./dazo-refresh.sh --restart` : Identique, mais **redémarre** également les containers `app` et `web` (utile si le serveur PHP est bloqué).
+- `./dazo-refresh.sh --build` : Identique, mais force une **compilation de production** des assets JS/Vue (utile si Vite HMR ne reflète pas vos changements).
+
+**Usage conseillé en cas de bug d'affichage :**
 ```bash
-./dazo-refresh.sh
+./dazo-refresh.sh --restart
 ```
 
 ---
