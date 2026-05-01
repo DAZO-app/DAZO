@@ -1,0 +1,60 @@
+#!/bin/bash
+# DAZO Update and Deployment Script
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+BACKUP_DIR="./backups"
+mkdir -p $BACKUP_DIR
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+echo -e "${YELLOW}🔄 Starting DAZO Update Process...${NC}"
+
+# Step 1: Database Backup
+echo -e "${YELLOW}💾 Backing up database...${NC}"
+docker compose exec pgsql pg_dump -U dazo_user dazo > "$BACKUP_DIR/db_backup_$TIMESTAMP.sql"
+echo -e "${GREEN}✅ Backup saved to $BACKUP_DIR/db_backup_$TIMESTAMP.sql${NC}"
+
+# Step 2: Git Pull
+echo -e "${YELLOW}📥 Pulling latest code from GitHub...${NC}"
+git fetch origin
+git log HEAD..origin/main --oneline
+git pull origin main
+echo -e "${GREEN}✅ Code updated${NC}"
+
+# Step 3: Composer Install
+echo -e "${YELLOW}🐘 Updating PHP dependencies...${NC}"
+docker compose exec app composer install --no-dev --optimize-autoloader
+echo -e "${GREEN}✅ PHP dependencies updated${NC}"
+
+# Step 4: NPM Install & Build
+echo -e "${YELLOW}📦 Building assets...${NC}"
+docker compose exec app npm install
+docker compose exec app npm run build
+echo -e "${GREEN}✅ Frontend built${NC}"
+
+# Step 5: Migrations
+echo -e "${YELLOW}🗄️  Running database migrations...${NC}"
+docker compose exec app php artisan migrate --force
+echo -e "${GREEN}✅ Database migrated${NC}"
+
+# Step 6: Cache Refresh
+echo -e "${YELLOW}🧹 Refreshing cache...${NC}"
+docker compose exec app php artisan config:cache
+docker compose exec app php artisan route:cache
+docker compose exec app php artisan view:cache
+echo -e "${GREEN}✅ Cache refreshed${NC}"
+
+# Step 7: Restart relevant services
+echo -e "${YELLOW}♻️  Restarting background workers...${NC}"
+docker compose restart queue scheduler reverb
+echo -e "${GREEN}✅ Services restarted${NC}"
+
+echo -e "${GREEN}=====================================${NC}"
+echo -e "${GREEN}✅ DAZO UPDATED SUCCESSFULLY! ✨${NC}"
+echo -e "${GREEN}=====================================${NC}"
+docker compose ps
