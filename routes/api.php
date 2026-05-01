@@ -11,6 +11,7 @@ Route::prefix('v1')->group(function () {
 
     // SPA Publique (sans API Key)
     Route::get('/front/decisions', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'indexFront']);
+    Route::get('/front/decisions/suggestions', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'suggestions']);
     Route::get('/front/decisions/{id}', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'showFront']);
     Route::get('/front/meta', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'meta']);
 

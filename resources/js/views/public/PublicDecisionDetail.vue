@@ -3,29 +3,46 @@
     <div class="public-container-wide pb-48 pt-32" @touchstart="onTouchStart" @touchend="onTouchEnd">
 
       <!-- ── Barre de navigation sticky (sans phase) ── -->
-      <div class="filters-bar nav-bar dazo-public-detail-navbar">
-        <router-link to="/public" class="btn btn-secondary btn-sm back-btn dazo-public-back-btn">
-          <i class="fa-solid fa-arrow-left"></i>
-          <span class="back-label">Retour à la liste</span>
-        </router-link>
+      <div class="filters-actions-bar dazo-public-detail-navbar">
+        
+        <div class="popin-wrapper">
+          <router-link to="/public" class="action-btn dazo-public-back-btn">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span class="btn-label">Retour à la liste</span>
+          </router-link>
+        </div>
 
-        <div class="nav-center"></div>
+        <div class="popin-wrapper">
+          <button class="action-btn" @click="openSharePopin">
+            <i class="fa-solid fa-share-nodes"></i> Partager
+          </button>
+        </div>
+
+        <div class="popin-wrapper">
+          <button class="action-btn" @click="printDecision">
+            <i class="fa-solid fa-print"></i> Imprimer
+          </button>
+        </div>
 
         <!-- Flèches navigation desktop -->
-        <div class="nav-arrows desktop-only dazo-public-nav-arrows" v-if="decision">
-          <button
-            class="btn btn-secondary btn-sm nav-arrow"
-            :disabled="!nav.prev"
-            @click="navigate(nav.prev)"
-            title="Décision précédente"
-          ><i class="fa-solid fa-chevron-left"></i></button>
-          <span class="nav-counter dazo-public-nav-counter" v-if="nav.index >= 0">{{ nav.index + 1 }}&nbsp;/&nbsp;{{ nav.total }}</span>
-          <button
-            class="btn btn-secondary btn-sm nav-arrow"
-            :disabled="!nav.next"
-            @click="navigate(nav.next)"
-            title="Décision suivante"
-          ><i class="fa-solid fa-chevron-right"></i></button>
+        <div class="popin-wrapper desktop-only dazo-public-nav-arrows" v-if="decision">
+          <div class="action-btn" style="padding: 0; overflow: hidden; cursor: default; justify-content: space-between;">
+            <button
+              class="btn btn-ghost"
+              style="border: none; border-right: 1px solid var(--gray-200); border-radius: 0; padding: 10px 16px; height: 100%; display: flex; align-items: center; justify-content: center;"
+              :disabled="!nav.prev"
+              @click="navigate(nav.prev)"
+              title="Décision précédente"
+            ><i class="fa-solid fa-chevron-left"></i></button>
+            <span class="nav-counter dazo-public-nav-counter" style="font-size: 14px; font-weight: 600; color: var(--gray-700);" v-if="nav.index >= 0">{{ nav.index + 1 }} / {{ nav.total }}</span>
+            <button
+              class="btn btn-ghost"
+              style="border: none; border-left: 1px solid var(--gray-200); border-radius: 0; padding: 10px 16px; height: 100%; display: flex; align-items: center; justify-content: center;"
+              :disabled="!nav.next"
+              @click="navigate(nav.next)"
+              title="Décision suivante"
+            ><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
         </div>
       </div>
 
@@ -47,19 +64,17 @@
       <div v-else class="decision-detail-card dazo-public-card-detail">
 
         <!-- En-tête de la tuile -->
-        <div class="detail-header dazo-public-detail-header">
-          <!-- Ligne : cercle + date + version  |  phase (haut droite) -->
-          <div class="detail-meta-row">
-            <div class="detail-meta-left">
-              <span
-                v-if="decision.circle"
-                class="meta-item circle-tag clickable dazo-public-card-circle"
-                @click="goFilter('circle', String(decision.circle.id))"
-                title="Filtrer par ce cercle"
-              ><i class="fa-solid fa-circle-nodes"></i> {{ decision.circle.name }}</span>
-              <span class="meta-item version-tag dazo-public-version-tag">v{{ decision.current_version?.version_number || 1 }}</span>
-              <span class="date dazo-public-date"><i class="fa-regular fa-calendar"></i> {{ formatDate(decision.created_at) }}</span>
-            </div>
+        <div class="card-header-bar detail-card-header">
+          <div class="header-left">
+            <span
+              v-if="decision.circle"
+              class="meta-item circle-tag clickable dazo-public-card-circle"
+              @click="goFilter('circle', String(decision.circle.id))"
+              title="Filtrer par ce cercle"
+            ><i class="fa-solid fa-circle-nodes"></i> {{ decision.circle.name }}</span>
+          </div>
+
+          <div class="header-right">
             <span
               class="status-badge clickable dazo-public-badge"
               :class="'status-' + decision.status"
@@ -67,19 +82,47 @@
               title="Filtrer par ce statut"
             >{{ getStatusLabel(decision.status) }}</span>
           </div>
+        </div>
 
-          <!-- Titre -->
-          <h1 class="article-title dazo-public-detail-title">{{ decision.title }}</h1>
+        <div class="detail-header-content dazo-public-detail-header">
+          <!-- Titre & Hashtags -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+            <h1 class="article-title dazo-public-detail-title" style="flex: 1; min-width: 250px;">{{ decision.title }}</h1>
+            
+            <div class="category-tags dazo-public-detail-tags" v-if="decision.categories?.length > 0" style="margin-top: 6px;">
+              <span
+                v-for="cat in decision.categories"
+                :key="cat.id"
+                class="hashtag-link dazo-public-detail-tag"
+                @click="goFilter('category', String(cat.id))"
+                title="Filtrer par cette catégorie"
+              >#{{ cat.name }}</span>
+            </div>
+          </div>
 
-          <!-- Catégories en hashtag -->
-          <div class="category-tags mt-16 dazo-public-detail-tags" v-if="decision.categories?.length > 0">
-            <span
-              v-for="cat in decision.categories"
-              :key="cat.id"
-              class="hashtag-link dazo-public-detail-tag"
-              @click="goFilter('category', String(cat.id))"
-              title="Filtrer par cette catégorie"
-            >#{{ cat.name }}</span>
+          <!-- Auteurs -->
+          <div class="decision-authors-line inline mt-16 dazo-public-card-authors" v-if="getAuthor(decision) || getAnimator(decision)">
+            Proposé par : 
+            <span class="author-link" v-if="getAuthor(decision)" @click.prevent="goFilter('author', String(getAuthor(decision).id))">
+              {{ getAuthor(decision).name }}
+            </span>
+            <span v-else class="author-link">N/A</span>, 
+            animé par : 
+            <span class="author-link" v-if="getAnimator(decision)" @click.prevent="goFilter('animator', String(getAnimator(decision).id))">
+              {{ getAnimator(decision).name }}
+            </span>
+            <span v-else class="author-link">Non assigné</span>.
+          </div>
+
+          <!-- Métadonnées -->
+          <div class="decision-metadata-row mt-16">
+            <div class="decision-metadata-line" style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+              <span class="meta-item version-tag dazo-public-version-tag">v{{ decision.current_version?.version_number || 1 }}</span>
+              <span class="date dazo-public-date"><i class="fa-regular fa-calendar"></i> Créé le {{ formatDate(decision.created_at) }}</span>
+              <span class="date dazo-public-date" v-if="decision.updated_at && decision.updated_at !== decision.created_at">
+                <i class="fa-regular fa-calendar-check"></i> Modifié le {{ formatDate(decision.updated_at) }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -192,6 +235,16 @@ const goFilter = (key, value) => {
   router.push({ name: 'PublicFront' });
 };
 
+// ── Actions ──────────────────────────────────────────────
+const printDecision = () => {
+  window.print();
+};
+
+const openSharePopin = () => {
+  alert('Fonctionnalité de partage à venir.');
+};
+
+
 // ── Feedbacks regroupés par type ──────────────────────────
 const FEEDBACK_META = {
   clarification: { label: 'Clarifications',  icon: 'fa-solid fa-circle-question',  type: 'clarification' },
@@ -224,6 +277,16 @@ const onTouchEnd   = (e) => {
 };
 
 // ── Fetch ────────────────────────────────────────────────
+const getAuthor = (d) => {
+  if (!d) return null;
+  return d.author?.user || null;
+};
+
+const getAnimator = (d) => {
+  if (!d) return null;
+  return d.current_animator?.user || null;
+};
+
 const fetchDecision = async () => {
   loading.value = true;
   decision.value = null;
@@ -270,22 +333,60 @@ const getAuthorRoleIcon = (fb) => {
 
 <style scoped>
 /* ── Nav bar ── */
-.filters-bar {
-  display: flex; gap: 16px; margin-bottom: 32px;
-  background: white; padding: 12px 20px; border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid var(--gray-200);
-  position: sticky; top: 106px; z-index: 90; align-items: center;
+.filters-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 12px 20px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+  position: sticky;
+  top: 106px;
+  z-index: 100;
+  margin-bottom: 32px;
 }
-.nav-bar { justify-content: space-between; flex-wrap: nowrap; }
-.back-btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
-.nav-center { flex: 1; overflow: hidden; padding: 0 16px; }
-.nav-title { font-size: 13px; font-weight: 600; color: var(--gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-.nav-arrows { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.nav-arrow { width: 34px; height: 34px; padding: 0 !important; display: flex; align-items: center; justify-content: center; }
-.nav-counter { font-size: 13px; font-weight: 600; color: var(--gray-500); min-width: 44px; text-align: center; }
 
-.desktop-only { display: flex; }
-.mobile-only  { display: none; }
+@supports (backdrop-filter: blur(10px)) {
+  .filters-actions-bar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+  }
+}
+
+.popin-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border: 1px solid var(--gray-200);
+  background: white;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  width: 100%;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.action-btn:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+}
+
+.desktop-only { display: flex !important; }
+.mobile-only  { display: none !important; }
 
 /* ── Card ── */
 .decision-detail-card {
@@ -294,15 +395,52 @@ const getAuthorRoleIcon = (fb) => {
 }
 
 /* ── Header ── */
-.detail-header {
-  padding: 32px 40px 28px;
-  border-bottom: 1px solid var(--gray-100);
+.card-header-bar {
+  background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-900) 100%);
+  color: white;
+  padding: 16px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  position: relative;
+  overflow: hidden;
 }
 
-.detail-meta-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;
+.card-header-bar::after {
+  content: ""; position: absolute; top: -50%; right: -10%; width: 250px; height: 250px;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%; pointer-events: none;
 }
-.detail-meta-left { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+
+.header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: relative; z-index: 1; }
+.header-right { flex-shrink: 0; position: relative; z-index: 1; }
+
+.card-header-bar .circle-tag {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+/* ── Authors ── */
+.decision-authors-line {
+  font-size: 13px;
+  color: var(--gray-600);
+}
+.author-link {
+  font-weight: 600;
+  color: var(--blue-600);
+  cursor: pointer;
+  text-decoration: underline dotted;
+  transition: color 0.2s;
+}
+.author-link:hover {
+  color: var(--blue-800);
+}
+
+.detail-header-content {
+  padding: 24px 40px 16px;
+}
 
 .date {
   font-size: 13px; color: var(--gray-500); font-weight: 500;
@@ -335,12 +473,13 @@ const getAuthorRoleIcon = (fb) => {
   text-transform: uppercase; letter-spacing: 0.05em; padding: 5px 12px; border-radius: 20px;
 }
 .status-badge.clickable:hover { opacity: 0.75; }
-.status-draft        { background: var(--gray-100);  color: var(--gray-600); }
-.status-clarification{ background: var(--blue-100);  color: var(--blue-700); }
-.status-reaction     { background: var(--amber-100); color: var(--amber-700); }
-.status-objection    { background: var(--red-100);   color: var(--red-700); }
-.status-adopted      { background: var(--teal-100);  color: var(--teal-700); }
-.status-abandoned    { background: var(--gray-200);  color: var(--gray-700); }
+.status-draft        { background: var(--gray-50);   color: var(--gray-600);   border: 1px solid var(--gray-200); }
+.status-clarification{ background: var(--blue-50);   color: var(--blue-800);   border: 1px solid var(--blue-200); }
+.status-reaction     { background: var(--blue-50);   color: var(--blue-800);   border: 1px solid var(--blue-200); }
+.status-objection    { background: var(--amber-50);  color: var(--amber-600);  border: 1px solid var(--amber-100); }
+.status-revision     { background: var(--purple-50); color: var(--purple-600); border: 1px solid var(--purple-100); }
+.status-adopted      { background: var(--teal-50);   color: var(--teal-600);   border: 1px solid var(--teal-100); }
+.status-abandoned    { background: var(--red-50);    color: var(--red-600);    border: 1px solid var(--red-100); }
 
 /* ── Body ── */
 .detail-body { padding: 36px 40px 48px; }

@@ -62,6 +62,55 @@ class PublicDecisionController extends Controller
     }
 
     /**
+     * Get categorized suggestions for the search input.
+     */
+    public function suggestions(Request $request): JsonResponse
+    {
+        if (filter_var($this->configService->get('enable_public_front'), FILTER_VALIDATE_BOOLEAN) !== true) {
+            abort(404);
+        }
+
+        $term = $request->query('q');
+        if (strlen($term) < 2) {
+            return response()->json(['results' => []]);
+        }
+
+        $baseQuery = $this->buildBaseQuery();
+        $termLike = '%' . $term . '%';
+
+        $results = [];
+
+        // 1. Titles
+        $results['titles'] = (clone $baseQuery)->where('title', 'like', $termLike)
+            ->limit(5)
+            ->get(['id', 'title']);
+
+        // 2. Content
+        $results['content'] = (clone $baseQuery)->whereHas('currentVersion', function($q) use ($termLike) {
+                $q->where('content', 'like', $termLike);
+            })
+            ->whereNotIn('id', $results['titles']->pluck('id'))
+            ->limit(5)
+            ->get(['id', 'title']);
+
+        // 3. Circles
+        $publicCircleIds = $this->configService->get('public_circles', []);
+        $results['circles'] = Circle::where('name', 'like', $termLike)
+            ->when(!empty($publicCircleIds), fn($q) => $q->whereIn('id', $publicCircleIds))
+            ->limit(3)
+            ->get(['id', 'name']);
+
+        // 4. Categories
+        $publicCatIds = $this->configService->get('public_categories', []);
+        $results['categories'] = Category::where('name', 'like', $termLike)
+            ->when(!empty($publicCatIds), fn($q) => $q->whereIn('id', $publicCatIds))
+            ->limit(3)
+            ->get(['id', 'name']);
+
+        return response()->json(['results' => $results]);
+    }
+
+    /**
      * Return metadata needed by the public front: allowed filters, circles, categories, statuses.
      */
     public function meta(): JsonResponse
@@ -104,9 +153,7 @@ class PublicDecisionController extends Controller
             'label' => $allStatusMap[$s] ?? $s,
         ])->values();
 
-        $authors = User::whereHas('participations', function($q) {
-            $q->where('role', 'author');
-        })->select('id', 'name')->get();
+        $authors = User::has('authoredDecisions')->select('id', 'name')->get();
 
         return response()->json([
             'allowed_filters' => $allowedFilters,
@@ -162,6 +209,14 @@ class PublicDecisionController extends Controller
             });
         }
 
+        // Date range
+        if ($request->filled('date_start')) {
+            $query->whereDate('created_at', '>=', $request->query('date_start'));
+        }
+        if ($request->filled('date_end')) {
+            $query->whereDate('created_at', '<=', $request->query('date_end'));
+        }
+
         // Tri
         $sort = $request->query('sort', 'created_desc');
         match ($sort) {
@@ -202,7 +257,7 @@ class PublicDecisionController extends Controller
      */
     private function buildBaseQuery()
     {
-        $query = Decision::query()->with(['circle', 'categories', 'currentVersion']);
+        $query = Decision::query()->with(['circle', 'categories', 'currentVersion', 'author.user', 'currentAnimator.user']);
 
         // Rule 1: Decision itself must be public
         $query->where('visibility', 'public');

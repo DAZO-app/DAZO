@@ -6,8 +6,20 @@ import axios from 'axios';
 export const usePublicFrontStore = defineStore('publicFront', () => {
   const decisions   = ref([]);
   const loading     = ref(false);
-  const filters     = ref({ search: '', status: '', category: '', circle: '', author: '', sort: 'created_desc' });
+  const filters     = ref({ 
+    search: '', 
+    status: '', 
+    category: '', 
+    circle: '', 
+    author: '', 
+    sort: 'created_desc',
+    date_start: '',
+    date_end: '',
+    viewMode: 'grid', // 'grid' or 'list'
+  });
   const pagination  = ref({ current_page: 1, last_page: 1 });
+  const suggestions = ref({ results: { titles: [], content: [], circles: [], categories: [] } });
+  const loadingSuggestions = ref(false);
 
   // Metadata from /front/meta
   const meta = ref({
@@ -47,6 +59,23 @@ export const usePublicFrontStore = defineStore('publicFront', () => {
     }
   };
 
+  // ── Fetch suggestions ───────────────────────────────
+  const fetchSuggestions = async (query) => {
+    if (!query || query.length < 2) {
+      suggestions.value = { results: { titles: [], content: [], circles: [], categories: [] } };
+      return;
+    }
+    loadingSuggestions.value = true;
+    try {
+      const { data } = await axios.get('/api/v1/front/decisions/suggestions', { params: { q: query } });
+      suggestions.value = data;
+    } catch (e) {
+      console.warn('publicFront: suggestions fetch failed', e);
+    } finally {
+      loadingSuggestions.value = false;
+    }
+  };
+
   // ── Navigation helpers ───────────────────────────────
   const decisionIds = () => decisions.value.map(d => d.id);
 
@@ -79,7 +108,8 @@ export const usePublicFrontStore = defineStore('publicFront', () => {
   return {
     decisions, loading, filters, pagination,
     meta, metaLoaded,
-    fetchMeta, fetchDecisions,
+    suggestions, loadingSuggestions,
+    fetchMeta, fetchDecisions, fetchSuggestions,
     getNeighbours, applyFilter, isFilterAllowed, goToListWithFilter,
   };
 });
