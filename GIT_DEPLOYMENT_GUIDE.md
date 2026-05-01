@@ -127,7 +127,7 @@ docker compose exec app composer install --no-dev --optimize-autoloader
 echo "✅ Composer dependencies updated"
 
 # 7. Build frontend
-docker compose exec app npm ci --production
+docker compose exec app npm ci --omit=dev
 docker compose exec app npm run build
 echo "✅ Frontend built"
 
@@ -163,8 +163,8 @@ echo "✅ Deployment complete!"
 
 set -e  # Exit on error
 
-PROJECT_DIR="/root/dazo"  # Change if needed
-BACKUP_DIR="/tmp/backups"
+PROJECT_DIR="/srv/dazo"  # Change if needed
+BACKUP_DIR="~/tmp/backups"
 LOG_FILE="$BACKUP_DIR/deploy-$(date +%Y%m%d-%H%M%S).log"
 
 # Colors
