@@ -17,7 +17,11 @@ echo ""
 
 # 2. Database Connection
 echo -e "${YELLOW}🗄️  Database Connection:${NC}"
-if docker compose exec app php artisan db:show > /dev/null 2>&1; then
+# Load DB_USERNAME from .env
+DB_USER=$(grep DB_USERNAME .env | cut -d '=' -f2)
+DB_NAME=$(grep DB_DATABASE .env | cut -d '=' -f2)
+
+if docker compose exec pgsql pg_isready -U ${DB_USER:-dazo_user} -d ${DB_NAME:-dazo} > /dev/null 2>&1; then
     echo -e "${GREEN}✅ Database connection successful${NC}"
 else
     echo -e "${RED}❌ Database connection failed${NC}"

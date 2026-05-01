@@ -14,9 +14,17 @@ TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
 echo -e "${YELLOW}🔄 Starting DAZO Update Process...${NC}"
 
+# Load environment variables from .env
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+DB_USER=${DB_USERNAME:-dazo_user}
+DB_NAME=${DB_DATABASE:-dazo}
+
 # Step 1: Database Backup
 echo -e "${YELLOW}💾 Backing up database...${NC}"
-docker compose exec pgsql pg_dump -U dazo_user dazo > "$BACKUP_DIR/db_backup_$TIMESTAMP.sql"
+docker compose exec pgsql pg_dump -U $DB_USER $DB_NAME > "$BACKUP_DIR/db_backup_$TIMESTAMP.sql"
 echo -e "${GREEN}✅ Backup saved to $BACKUP_DIR/db_backup_$TIMESTAMP.sql${NC}"
 
 # Step 2: Git Pull
