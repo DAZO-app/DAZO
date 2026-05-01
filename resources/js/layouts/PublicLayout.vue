@@ -5,14 +5,27 @@
       <div class="public-container-wide header-inner">
         <div class="header-brand" style="flex: 0 0 auto;">
           <a href="#" class="brand-link" @click.prevent="resetAndGoHome">
-            <img v-if="configStore.logoUrl" :src="configStore.logoUrl" alt="Logo" class="brand-logo" />
-            <span class="brand-name" v-if="!configStore.logoUrl">{{ configStore.appName }}</span>
+            <div class="logo-stack">
+              <transition name="logo-fade" mode="out-in">
+                <img v-if="!showCustomLogo || !configStore.hasCustomLogo" 
+                     :src="configStore.defaultLogoUrl" 
+                     alt="DAZO" 
+                     key="dazo" 
+                     class="brand-logo" />
+                <img v-else 
+                     :src="configStore.customLogoUrl" 
+                     alt="Logo" 
+                     key="custom" 
+                     class="brand-logo" />
+              </transition>
+            </div>
           </a>
         </div>
         
         <div class="header-center dazo-header-titles">
-          <div class="header-main-title">Décisions Publiques</div>
-          <div class="header-sub-title">Consultez et suivez les décisions ouvertes de notre organisation.</div>
+          <div class="header-main-title">{{ configStore.appName || 'Décisions Publiques' }}</div>
+          <div class="header-sub-title" v-if="configStore.appName !== 'DAZO'">Décisions Publiques</div>
+          <div class="header-sub-title" v-else>Consultez et suivez les décisions ouvertes de notre organisation.</div>
         </div>
         
         <div class="header-actions">
@@ -69,12 +82,23 @@ import { useConfigStore } from '../stores/config';
 import { useAuthStore } from '../stores/auth';
 import { usePublicFrontStore } from '../stores/publicFront';
 import { useRouter, useRoute } from 'vue-router';
+import { onMounted, ref } from 'vue';
 
 const configStore = useConfigStore();
 const authStore = useAuthStore();
 const publicFrontStore = usePublicFrontStore();
 const router = useRouter();
 const route = useRoute();
+
+const showCustomLogo = ref(false);
+
+onMounted(() => {
+  if (configStore.hasCustomLogo) {
+    setInterval(() => {
+      showCustomLogo.value = !showCustomLogo.value;
+    }, 4000);
+  }
+});
 
 const resetAndGoHome = () => {
   if (router.currentRoute.value.name === 'PublicDecision') {
@@ -273,6 +297,27 @@ const resetAndGoHome = () => {
 .footer-links a:hover {
   color: rgba(255, 255, 255, 0.8);
   text-decoration: underline;
+}
+
+/* Animations Logo */
+.logo-stack {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  width: auto;
+  min-width: 60px;
+}
+
+.logo-fade-enter-active,
+.logo-fade-leave-active {
+  transition: opacity 1.5s ease;
+}
+
+.logo-fade-enter-from,
+.logo-fade-leave-to {
+  opacity: 0;
 }
 
 @media (max-width: 768px) {

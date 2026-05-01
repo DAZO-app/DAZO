@@ -4,9 +4,14 @@
     <div class="meeting-header grad-indigo text-white">
       <div class="meeting-logo-container">
         <div class="logo-circle">
-          <img src="/DAZO-logo-carre-blanc.svg" alt="DAZO Logo">
+          <img :src="configStore.defaultLogoUrl" alt="DAZO Logo">
         </div>
       </div>
+      
+      <div v-if="configStore.hasCustomLogo" class="meeting-custom-logo-container">
+        <img :src="configStore.customLogoUrl" alt="Custom Logo" class="meeting-custom-logo" />
+      </div>
+
       <div class="meeting-title">
         <h1 class="text-3xl font-bold text-white mb-4">{{ decision.title }}</h1>
         <div class="meeting-breadcrumb">
@@ -350,6 +355,9 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import axios from 'axios';
 import MeetingSecretaryPanel from './MeetingSecretaryPanel.vue';
 import FloatingWindow from './FloatingWindow.vue';
+import { useConfigStore } from '../stores/config';
+
+const configStore = useConfigStore();
 
 // On essaie l'import local, mais on prévoira un fallback
 // Suppression de l'import local qui semble poser problème avec le build Vite
@@ -896,6 +904,20 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.meeting-custom-logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24px;
+}
+.meeting-custom-logo {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+}
 .meeting-mode-overlay {
   position: fixed;
   top: 0;

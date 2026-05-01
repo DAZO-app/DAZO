@@ -4,9 +4,12 @@
       <!-- HERO WELCOME -->
       <div class="hero-card">
         <div class="hero-flex">
-          <div>
-             <div class="hero-title">Cockpit Administrateur</div>
-             <div class="hero-subtitle">Supervision globale et pilotage système de la plateforme DAZO.</div>
+          <div class="hero-main-identity">
+            <img v-if="configStore.hasCustomLogo" :src="configStore.customLogoUrl" alt="Logo" class="hero-custom-logo" />
+            <div>
+               <div class="hero-title">Cockpit Administrateur</div>
+               <div class="hero-subtitle">{{ configStore.appName !== 'DAZO' ? configStore.appName : 'Supervision plateforme' }} - Pilotage système DAZO.</div>
+            </div>
           </div>
           <div class="hero-action">
              <div class="sys-pill" :class="loading ? 'loading' : 'online'">
@@ -197,6 +200,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { useConfigStore } from '../../stores/config';
+
+const configStore = useConfigStore();
 
 const stats = ref({});
 const backups = ref([]);
@@ -228,6 +234,21 @@ onMounted(fetchAll);
 .sys-pill { background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: white; border: 1px solid rgba(255,255,255,0.15); }
 .sys-pill.online i { color: #10b981; }
 .sys-pill.loading i { color: #fbbf24; }
+
+.hero-main-identity {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.hero-custom-logo {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  border-radius: var(--radius-md);
+}
 
 /* Stats Row */
 .stats-row { display: flex; gap: 16px; flex-wrap: wrap; }

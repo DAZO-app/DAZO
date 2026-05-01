@@ -12,6 +12,13 @@ export const useConfigStore = defineStore('config', {
 
   getters: {
     appName: (state) => state.config.app_name || 'DAZO',
+    hasCustomLogo: (state) => !!state.config.app_logo,
+    customLogoUrl: (state) => {
+        if (!state.config.app_logo) return null;
+        if (state.config.app_logo.startsWith('http')) return state.config.app_logo;
+        return '/storage/' + state.config.app_logo;
+    },
+    defaultLogoUrl: () => '/DAZO-logo-carre-blanc.svg',
     logoUrl: (state) => {
         if (!state.config.app_logo) return '/DAZO-logo-carre-blanc.svg';
         if (state.config.app_logo.startsWith('http')) return state.config.app_logo;

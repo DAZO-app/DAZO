@@ -6,7 +6,7 @@
     <header class="topbar">
       <div class="topbar-left">
         <router-link to="/">
-          <img :src="configStore.logoUrl" alt="DAZO" class="topbar-logo" />
+          <img :src="configStore.defaultLogoUrl" alt="DAZO" class="topbar-logo" />
         </router-link>
       </div>
       <div class="topbar-right">
@@ -67,8 +67,7 @@
       <aside class="sidebar">
         <!-- Logo & Brand -->
         <router-link to="/" class="sidebar-logo">
-          <img :src="configStore.logoUrl" alt="DAZO" class="sidebar-logo-img" />
-          <div class="sidebar-logo-sub">{{ configStore.appName }}</div>
+          <img :src="configStore.defaultLogoUrl" alt="DAZO" class="sidebar-logo-img" />
         </router-link>
 
         <!-- Bouton Nouvelle Décision -->

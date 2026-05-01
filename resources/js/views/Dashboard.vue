@@ -6,9 +6,13 @@
     <div class="page-body" v-else>
       <div class="hero-card">
         <div class="hero-flex">
-          <div>
-            <div class="hero-title">Bonjour {{ authStore.user?.name }} <i class="fa-solid fa-face-smile"></i></div>
-            <div class="hero-subtitle">{{ new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</div>
+          <div class="hero-main-identity">
+            <img v-if="configStore.hasCustomLogo" :src="configStore.customLogoUrl" alt="Logo" class="hero-custom-logo" />
+            <div>
+              <div class="hero-title">{{ configStore.appName !== 'DAZO' ? configStore.appName : 'Tableau de bord' }}</div>
+              <div class="hero-user-line">Bonjour {{ authStore.user?.name }} <i class="fa-solid fa-face-smile"></i></div>
+              <div class="hero-subtitle">{{ new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</div>
+            </div>
           </div>
           <div class="hero-action">
              <button class="btn btn-secondary" @click="$router.push('/decisions/create')">
@@ -303,6 +307,7 @@ import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useCircleStore } from '../stores/circle';
+import { useConfigStore } from '../stores/config';
 import DecisionListItem from '../components/DecisionListItem.vue';
 import EmptyState from '../components/EmptyState.vue';
 import axios from 'axios';
@@ -310,6 +315,7 @@ import axios from 'axios';
 const router = useRouter();
 const authStore = useAuthStore();
 const circleStore = useCircleStore();
+const configStore = useConfigStore();
 
 const loading = ref(true);
 const dashboard = ref({ my_decisions: {}, my_animated: {}, circle_decisions: {}, my_clarifications: [], my_objections: [], stats: null, categories: [] });
@@ -469,6 +475,28 @@ const getMyRoleLabel = (decision) => {
   .grid-2 { grid-template-columns: 1fr 1fr; } 
   .grid-3 { grid-template-columns: 1fr 1fr 1fr; } 
   .grid-3-no-gap { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+.hero-main-identity {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.hero-custom-logo {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  border-radius: var(--radius-md);
+}
+
+.hero-user-line {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 4px;
+  font-weight: 500;
 }
 
 .border-red { border: 2px solid var(--red-500) !important; }
