@@ -16,7 +16,7 @@ services:
     networks:
       - app-network
     depends_on:
-      db:
+      pgsql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -83,7 +83,7 @@ services:
       - app
 
   # Base de données (PostgreSQL)
-  db:
+  pgsql:
     image: postgres:15
     container_name: dazo-db
     restart: unless-stopped
