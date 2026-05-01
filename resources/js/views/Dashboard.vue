@@ -341,6 +341,7 @@ const ringOffset = (value, total) => {
 };
 
 onMounted(async () => {
+    configStore.fetchConfig();
     circleStore.fetchCircles();
     await fetchDashboard();
 });
@@ -484,12 +485,10 @@ const getMyRoleLabel = (decision) => {
 }
 
 .hero-custom-logo {
-  height: 64px;
+  height: 85px;
   width: auto;
+  max-width: 180px;
   object-fit: contain;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 8px;
-  border-radius: var(--radius-md);
 }
 
 .hero-user-line {

@@ -227,7 +227,10 @@ const fetchAll = async () => {
     }
 };
 
-onMounted(fetchAll);
+onMounted(() => {
+    configStore.fetchConfig();
+    fetchAll();
+});
 </script>
 
 <style scoped>
@@ -242,12 +245,10 @@ onMounted(fetchAll);
 }
 
 .hero-custom-logo {
-  height: 64px;
+  height: 85px;
   width: auto;
+  max-width: 180px;
   object-fit: contain;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 8px;
-  border-radius: var(--radius-md);
 }
 
 /* Stats Row */

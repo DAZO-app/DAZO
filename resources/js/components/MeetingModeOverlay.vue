@@ -911,12 +911,10 @@ onUnmounted(() => {
   margin-right: 24px;
 }
 .meeting-custom-logo {
-  height: 50px;
+  height: 70px;
   width: auto;
+  max-width: 160px;
   object-fit: contain;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 6px;
-  border-radius: var(--radius-sm);
 }
 .meeting-mode-overlay {
   position: fixed;

@@ -5,19 +5,10 @@
       <div class="public-container-wide header-inner">
         <div class="header-brand" style="flex: 0 0 auto;">
           <a href="#" class="brand-link" @click.prevent="resetAndGoHome">
-            <div class="logo-stack">
-              <transition name="logo-fade" mode="out-in">
-                <img v-if="!showCustomLogo || !configStore.hasCustomLogo" 
-                     :src="configStore.defaultLogoUrl" 
-                     alt="DAZO" 
-                     key="dazo" 
-                     class="brand-logo" />
-                <img v-else 
-                     :src="configStore.customLogoUrl" 
-                     alt="Logo" 
-                     key="custom" 
-                     class="brand-logo" />
-              </transition>
+            <div class="logo-side-by-side">
+              <img :src="configStore.defaultLogoUrl" alt="DAZO" class="brand-logo" />
+              <div v-if="configStore.hasCustomLogo" class="logo-separator"></div>
+              <img v-if="configStore.hasCustomLogo" :src="configStore.customLogoUrl" alt="Logo" class="brand-logo custom-brand-logo" />
             </div>
           </a>
         </div>
@@ -92,12 +83,13 @@ const route = useRoute();
 
 const showCustomLogo = ref(false);
 
-onMounted(() => {
-  if (configStore.hasCustomLogo) {
-    setInterval(() => {
-      showCustomLogo.value = !showCustomLogo.value;
-    }, 4000);
-  }
+onMounted(async () => {
+  await configStore.fetchInit();
+  console.log('DAZO Config Loaded:', { 
+    appName: configStore.appName, 
+    hasCustomLogo: configStore.hasCustomLogo,
+    logoUrl: configStore.logoUrl 
+  });
 });
 
 const resetAndGoHome = () => {
@@ -299,25 +291,21 @@ const resetAndGoHome = () => {
   text-decoration: underline;
 }
 
-/* Animations Logo */
-.logo-stack {
-  position: relative;
+/* Logos Side-by-Side */
+.logo-side-by-side {
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 60px;
-  width: auto;
-  min-width: 60px;
+  gap: 16px;
 }
 
-.logo-fade-enter-active,
-.logo-fade-leave-active {
-  transition: opacity 1.5s ease;
+.logo-separator {
+  width: 1px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.2);
 }
 
-.logo-fade-enter-from,
-.logo-fade-leave-to {
-  opacity: 0;
+.custom-brand-logo {
+  max-height: 45px;
 }
 
 @media (max-width: 768px) {
