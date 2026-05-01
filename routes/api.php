@@ -160,7 +160,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAsRead']);
 
         // Administration
-        Route::prefix('admin')->middleware(['admin'])->group(function () {
+        Route::prefix('admin')->as('admin.')->middleware(['admin'])->group(function () {
             Route::get('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'index']);
             Route::put('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'update']);
             Route::post('/config/logo', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'uploadLogo']);

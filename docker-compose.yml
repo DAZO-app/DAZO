@@ -3,6 +3,7 @@ networks:
     driver: bridge
 
 services:
+  # Application principale (PHP-FPM)
   app:
     build:
       context: .
@@ -20,12 +21,14 @@ services:
       redis:
         condition: service_healthy
 
+  # Serveur Web (Nginx)
   web:
     image: nginx:alpine
-    container_name: dazo-web
+    container_name: dazo-nginx
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./:/var/www/html
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
@@ -34,6 +37,52 @@ services:
     depends_on:
       - app
 
+  # Travailleur de file d'attente (Queue Worker)
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dazo-queue
+    restart: unless-stopped
+    command: php artisan queue:work --sleep=3 --tries=3
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - app-network
+    depends_on:
+      - app
+
+  # Planificateur (Scheduler)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dazo-scheduler
+    restart: unless-stopped
+    command: php artisan schedule:work
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - app-network
+    depends_on:
+      - app
+
+  # WebSocket (Reverb)
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dazo-reverb
+    restart: unless-stopped
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    ports:
+      - "8081:8080"
+    networks:
+      - app-network
+    depends_on:
+      - app
+
+  # Base de données (PostgreSQL)
   db:
     image: postgres:15
     container_name: dazo-db
@@ -52,6 +101,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # Cache & Sessions (Redis)
   redis:
     image: redis:alpine
     container_name: dazo-redis
@@ -66,19 +116,16 @@ services:
       timeout: 5s
       retries: 5
 
-  reverb:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: dazo-reverb
+  # Mail Testing (Mailpit)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: dazo-mailpit
     restart: unless-stopped
-    command: php artisan reverb:start --host=0.0.0.0 --port=8080
     ports:
-      - "8080:8080"
+      - "1025:1025"
+      - "8025:8025"
     networks:
       - app-network
-    depends_on:
-      - app
 
 volumes:
   dazo-db-data:
