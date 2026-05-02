@@ -23,6 +23,11 @@
           </div>
         </div>
 
+        <div class="share-info-preview">
+          <div class="preview-title">{{ title }}</div>
+          <div class="preview-desc" v-if="description">{{ description }}</div>
+        </div>
+
         <div class="social-grid">
           <ShareNetwork
             v-for="network in networks"
@@ -205,6 +210,36 @@ const copyLink = async () => {
   text-transform: uppercase;
   color: var(--gray-400);
   letter-spacing: 0.05em;
+}
+
+.share-info-preview {
+  background: white;
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  border: 1px solid var(--gray-100);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.preview-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.preview-desc {
+  font-size: 12px;
+  color: var(--gray-500);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .social-grid {

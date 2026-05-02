@@ -20,6 +20,9 @@
       <div class="decision-meta">
         <span>Créée le : {{ formatDateOnly(decision.created_at) }}</span>
         <span>· Dernière modif : {{ formatDateOnly(decision.updated_at) }}</span>
+        <span v-if="decision.share_count > 0" title="Nombre de partages publics">
+          · <i class="fa-solid fa-share-nodes ml-2"></i> {{ decision.share_count }}
+        </span>
       </div>
       <div class="decision-meta" style="margin-top: 2px" v-if="decision.participation_stats && ['clarification', 'reaction', 'objection'].includes(decision.status)">
         <span>Progression : {{ decision.participation_stats.participated }}/{{ decision.participation_stats.eligible }} intervention(s)</span>
