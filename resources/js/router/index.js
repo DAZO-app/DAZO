@@ -40,6 +40,11 @@ const routes = [
                 path: 'decision/:id',
                 name: 'PublicDecision',
                 component: () => import('../views/public/PublicDecisionDetail.vue')
+            },
+            {
+                path: 'p/:slug',
+                name: 'PublicPage',
+                component: () => import('../views/public/PublicPage.vue')
             }
         ]
     },

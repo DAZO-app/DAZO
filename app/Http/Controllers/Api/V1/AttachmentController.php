@@ -102,29 +102,40 @@ class AttachmentController extends Controller
             ], 422);
         }
 
-        if ($request->filled('decision_version_id')) {
-            $version = DecisionVersion::with('decision')->findOrFail($request->decision_version_id);
-            $this->authorize('update', $version->decision);
+        $attachment = null;
+        if ($request->filled('replace_id')) {
+            $attachment = Attachment::with('version.decision')->findOrFail($request->replace_id);
+            $this->authorize('update', $attachment->version->decision);
+            // Delete old file
+            Storage::disk('local')->delete($attachment->s3_path);
         }
 
         $filename = $file->getClientOriginalName();
-        $mime     = $file->getMimeType(); // getMimeType() utilise finfo (MIME réel, pas déclaré)
+        $mime     = $file->getMimeType();
         $size     = $file->getSize();
 
-        // Stocker dans un répertoire non-public pour forcer l'accès via contrôleur
         $path = $file->store('attachments', 'local');
 
-        $attachment = Attachment::create([
-            'decision_version_id' => $request->decision_version_id,
-            'uploader_id'         => $request->user()->id,
-            'filename'            => $filename,
-            's3_path'             => $path,
-            'mime_type'           => $mime,
-            'size_bytes'          => $size,
-        ]);
+        if ($attachment) {
+            $attachment->update([
+                'filename'   => $filename,
+                's3_path'    => $path,
+                'mime_type'  => $mime,
+                'size_bytes' => $size,
+            ]);
+        } else {
+            $attachment = Attachment::create([
+                'decision_version_id' => $request->decision_version_id,
+                'uploader_id'         => $request->user()->id,
+                'filename'            => $filename,
+                's3_path'             => $path,
+                'mime_type'           => $mime,
+                'size_bytes'          => $size,
+            ]);
+        }
 
         return response()->json([
-            'message'    => 'Fichier uploadé.',
+            'message'    => $request->filled('replace_id') ? 'Fichier remplacé.' : 'Fichier uploadé.',
             'attachment' => $attachment,
             'url'        => route('attachments.download', $attachment->id),
         ], 201);

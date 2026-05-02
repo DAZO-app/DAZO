@@ -27,7 +27,7 @@
         <div class="header-nav">
           <template v-if="isRevision && isAuthorOrAnimator">
             <button class="btn btn-secondary" :disabled="savingDraft || publishing" @click="$emit('save-revision')">
-              {{ savingDraft ? 'Enregistrer' : 'Enregistrer' }}
+              Enregistrer
             </button>
             <button class="btn btn-primary" :disabled="savingDraft || publishing" @click="$emit('publish-revision')">
               {{ publishing ? 'Publier...' : 'Publier' }}
@@ -72,6 +72,7 @@
       <span v-if="decision.current_deadline && !['adopted', 'abandoned'].includes(currentStatus)" :class="{ 'text-red font-bold': isUrgent }">
         <i class="fa-solid fa-hourglass-half mr-4"></i> {{ deadlineLabel }}
       </span>
+      <span><i class="fa-solid fa-share-nodes mr-4"></i> {{ decision.share_count || 0 }} partage(s)</span>
       <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="$emit('refresh')" style="margin-left: auto;" />
     </div>
   </div>
@@ -110,7 +111,7 @@ const notifLevelIcon = computed(() => {
   return 'fa-regular fa-bell';
 });
 
-const canOpenMeetingMode = computed(() => ['clarification', 'reaction', 'objection'].includes(props.currentStatus));
+const canOpenMeetingMode = computed(() => ['clarification', 'reaction', 'objection', 'revision'].includes(props.currentStatus));
 
 const authorName = computed(() => {
   const a = props.decision?.participants?.find(p => p.role?.value === 'author' || p.role === 'author');

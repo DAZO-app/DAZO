@@ -13,6 +13,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/front/decisions', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'indexFront']);
     Route::get('/front/decisions/suggestions', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'suggestions']);
     Route::get('/front/decisions/{id}', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'showFront']);
+    Route::post('/front/decisions/{id}/share', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'incrementShare']);
     Route::get('/front/meta', [\App\Http\Controllers\Api\V1\PublicDecisionController::class, 'meta']);
 
     // Authentification (Public)
@@ -166,6 +167,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'index']);
             Route::put('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'update']);
             Route::post('/config/logo', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'uploadLogo']);
+            Route::post('/config/test-email', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'testEmail']);
             Route::post('/config/api-key', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'generateApiKey']);
             Route::delete('/config/api-key', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'revokeApiKey']);
             Route::get('/stats', [\App\Http\Controllers\Api\V1\Admin\DashboardController::class, 'stats']);

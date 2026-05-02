@@ -97,6 +97,7 @@
             :display-content="displayContent"
             :current-content="currentVersion?.content"
             :display-attachments="displayAttachments"
+            :can-reload-attachments="isAuthorOrAnimator"
           />
 
           <div v-if="showParticipationCard" class="premium-card mb-16 border-2" :class="hasAlreadyParticipated ? 'border-teal-500' : 'border-red-500'">

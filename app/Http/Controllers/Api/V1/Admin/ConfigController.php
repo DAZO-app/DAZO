@@ -68,4 +68,26 @@ class ConfigController extends Controller
             'config' => $this->configService->all()
         ]);
     }
+
+    public function testEmail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'to_email' => ['required', 'email'],
+            'subject'  => ['required', 'string'],
+            'body'     => ['required', 'string'],
+        ]);
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($validated['to_email'])
+                ->send(new \App\Mail\TestMail($validated['subject'], $validated['body']));
+
+            return response()->json([
+                'message' => 'Email de test envoyé avec succès à ' . $validated['to_email']
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors de l\'envoi de l\'email : ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

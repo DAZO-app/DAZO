@@ -97,6 +97,13 @@
             <router-link :to="{ name: 'CircleList' }" class="sidebar-item" active-class="active">
               <span><i class="fa-solid fa-circle-nodes"></i></span> Cercles
             </router-link>
+            
+            <!-- Lien vers le site public -->
+            <a v-if="configStore.config.enable_public_front === 'true' || configStore.config.enable_public_front === true" 
+               href="/front" target="_blank" class="sidebar-item">
+              <span><i class="fa-solid fa-globe text-emerald-400"></i></span> Voir le site public
+            </a>
+
             <router-link to="/wiki" class="sidebar-item" active-class="active">
               <span><i class="fa-solid fa-book-open"></i></span> Aide
             </router-link>

@@ -39,6 +39,16 @@ class ConfigService
             'legal_mentions_url'    => '',
             'privacy_policy_url'    => '',
             'terms_of_service_url'  => '',
+            // Pages de contenu (Title, Slug, Content)
+            'page_legal_title'      => 'Mentions Légales',
+            'page_legal_slug'       => 'mentions-legales',
+            'page_legal_content'    => '<h1>Mentions Légales</h1><p>Contenu par défaut à personnaliser...</p>',
+            'page_privacy_title'    => 'Politique de Confidentialité',
+            'page_privacy_slug'     => 'politique-confidentialite',
+            'page_privacy_content'  => '<h1>Politique de Confidentialité</h1><p>Contenu par défaut à personnaliser...</p>',
+            'page_terms_title'      => 'Conditions Générales d\'Utilisation',
+            'page_terms_slug'       => 'cgu',
+            'page_terms_content'    => '<h1>Conditions Générales d\'Utilisation</h1><p>Contenu par défaut à personnaliser...</p>',
             // Pièces jointes — laisser vide pour accepter tous les types non-bloqués
             'allowed_file_types'    => '',
             'max_file_size_mb'      => '10',
@@ -47,8 +57,61 @@ class ConfigService
             'mail_username'         => '',
             'mail_password'         => '',
             'mail_encryption'       => 'tls',
-            'reminder_email_subject' => "⚠️ Rappel : La décision '{title}' arrive à échéance",
-            'reminder_email_body'    => "Bonjour {name},\n\nCeci est un rappel concernant la décision : **{title}**.\n\nLa phase actuelle (**{phase}**) arrive bientôt à échéance. Votre participation est attendue afin de faire progresser le processus.\n\n**Échéance :** {deadline}\n\nMerci de votre contribution.",
+            // Sujets et corps des emails par défaut
+            'mail_reminder_subject'     => "⚠️ Rappel : La décision '{title}' arrive à échéance",
+            'mail_reminder_body'        => "Bonjour {name},\n\nCeci est un rappel concernant la décision : **{title}**.\n\nLa phase actuelle (**{phase}**) arrive bientôt à échéance. Votre participation est attendue afin de faire progresser le processus.\n\n**Échéance :** {deadline}\n\nMerci de votre contribution.",
+            'mail_invitation_subject'   => "📩 Invitation à rejoindre le cercle '{circle}'",
+            'mail_invitation_body'      => "Bonjour,\n\nVous avez été invité à rejoindre le cercle **{circle}** sur la plateforme DAZO par **{inviter}**.\n\nCe cercle traite des sujets suivants : {description}\n\n[Accepter l'invitation]({url})",
+            'mail_notification_subject' => "📢 Nouvelle étape pour : {title}",
+            'mail_notification_body'    => "Bonjour {name},\n\nLa décision **{title}** vient de passer en phase de **{phase}**.\n\nVous pouvez consulter les détails et participer ici : [Voir la décision]({url})",
+            'mail_contact_subject'      => "✉️ Nouveau message de contact : {subject}",
+            'mail_contact_body'         => "Nom : {name}\nEmail : {email}\n\nMessage :\n{message}",
+            
+            // Configuration OAuth
+            'auth_google_enabled'       => 'false',
+            'auth_google_client_id'     => '',
+            'auth_google_client_secret' => '',
+            'auth_github_enabled'       => 'false',
+            'auth_github_client_id'     => '',
+            'auth_github_client_secret' => '',
+            'auth_microsoft_enabled'    => 'false',
+            'auth_microsoft_client_id'  => '',
+            'auth_microsoft_client_secret' => '',
+            'auth_facebook_enabled'     => 'false',
+            'auth_facebook_client_id'   => '',
+            'auth_facebook_client_secret' => '',
+            'auth_apple_enabled'        => 'false',
+            'auth_apple_client_id'      => '',
+            'auth_apple_client_secret'  => '',
+            'auth_franceconnect_enabled' => 'false',
+            'auth_franceconnect_client_id' => '',
+            'auth_franceconnect_client_secret' => '',
+
+            // TEMPLATE GÉNÉRAL EMAILS
+            'mail_template_logo'            => '', // URL ou path vers le logo
+            'mail_template_logo_perso'      => '', // Deuxième logo
+            'mail_template_site_link'       => 'https://dazo.app',
+            'mail_template_site_link_register' => 'https://dazo.app/register',
+            'mail_template_wrapper'         => '<div style="font-family: \'Inter\', sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #1e293b;">
+  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+    <div style="padding: 32px; text-align: center; border-bottom: 1px solid #f1f5f9;">
+      <a href="{site_link}">
+        <img src="{logo}" alt="Logo" style="max-height: 48px; width: auto;">
+      </a>
+    </div>
+    <div style="padding: 40px; line-height: 1.6; font-size: 16px;">
+      {message}
+    </div>
+    <div style="padding: 32px; background: #f8fafc; text-align: center; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">
+      <p style="margin: 0 0 16px 0;">Vous recevez cet email car vous participez à la gouvernance sur notre plateforme.</p>
+      <div style="display: flex; justify-content: center; gap: 16px;">
+        <a href="{site_link}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">Notre Site</a>
+        <span style="color: #cbd5e1;">&bull;</span>
+        <a href="{site_link_register}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">S\'inscrire</a>
+      </div>
+    </div>
+  </div>
+</div>',
         ];
 
         $fromDb = Cache::rememberForever(self::CACHE_KEY, function () {

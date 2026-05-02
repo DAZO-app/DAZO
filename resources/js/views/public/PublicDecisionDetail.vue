@@ -8,40 +8,43 @@
         <div class="popin-wrapper">
           <router-link to="/public" class="action-btn dazo-public-back-btn">
             <i class="fa-solid fa-arrow-left"></i>
-            <span class="btn-label">Retour à la liste</span>
+            <span class="btn-label">Retour</span>
           </router-link>
         </div>
 
         <div class="popin-wrapper">
           <button class="action-btn" @click="openSharePopin">
-            <i class="fa-solid fa-share-nodes"></i> Partager
+            <i class="fa-solid fa-share-nodes"></i>
+            <span class="btn-label">Partager <template v-if="decision?.share_count > 0">({{ decision.share_count }})</template></span>
           </button>
         </div>
 
         <div class="popin-wrapper">
           <button class="action-btn" @click="printDecision">
-            <i class="fa-solid fa-print"></i> Imprimer
+            <i class="fa-solid fa-print"></i>
+            <span class="btn-label">Imprimer</span>
           </button>
         </div>
 
-        <!-- Flèches navigation desktop -->
-        <div class="popin-wrapper desktop-only dazo-public-nav-arrows" v-if="decision">
-          <div class="action-btn" style="padding: 0; overflow: hidden; cursor: default; justify-content: space-between;">
+        <!-- Flèches navigation -->
+        <div class="popin-wrapper dazo-public-nav-arrows" v-if="decision">
+          <div class="flex items-center gap-8 w-full">
             <button
-              class="btn btn-ghost"
-              style="border: none; border-right: 1px solid var(--gray-200); border-radius: 0; padding: 10px 16px; height: 100%; display: flex; align-items: center; justify-content: center;"
+              class="action-btn"
               :disabled="!nav.prev"
               @click="navigate(nav.prev)"
-              title="Décision précédente"
-            ><i class="fa-solid fa-chevron-left"></i></button>
-            <span class="nav-counter dazo-public-nav-counter" style="font-size: 14px; font-weight: 600; color: var(--gray-700);" v-if="nav.index >= 0">{{ nav.index + 1 }} / {{ nav.total }}</span>
+            >
+              <i class="fa-solid fa-chevron-left"></i>
+              <span class="btn-label">Précédent</span>
+            </button>
             <button
-              class="btn btn-ghost"
-              style="border: none; border-left: 1px solid var(--gray-200); border-radius: 0; padding: 10px 16px; height: 100%; display: flex; align-items: center; justify-content: center;"
+              class="action-btn"
               :disabled="!nav.next"
               @click="navigate(nav.next)"
-              title="Décision suivante"
-            ><i class="fa-solid fa-chevron-right"></i></button>
+            >
+              <i class="fa-solid fa-chevron-right"></i>
+              <span class="btn-label">Suivant</span>
+            </button>
           </div>
         </div>
       </div>
@@ -117,7 +120,71 @@
           <!-- Métadonnées -->
           <div class="decision-metadata-row mt-16">
             <div class="decision-metadata-line" style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-              <span class="meta-item version-tag dazo-public-version-tag">v{{ decision.current_version?.version_number || 1 }}</span>
+              <div class="popin-container" v-click-outside="() => activePopin = null">
+                <span 
+                  class="meta-item version-tag dazo-public-version-tag clickable"
+                  :class="{ active: activePopin === 'versions' }"
+                  @click.stop="togglePopin('versions')"
+                  title="Historique des versions"
+                >
+                  v{{ decision.current_version?.version_number || 1 }}
+                </span>
+
+                <!-- Popin Historique des versions (Premium Design) -->
+                <transition name="popin-wow">
+                  <div v-if="activePopin === 'versions'" class="popin-center-overlay" @click="activePopin = null">
+                    <div class="popin-versions-premium" @click.stop>
+                      <div class="premium-popin-header">
+                        <div class="header-icon-wrapper">
+                          <i class="fa-solid fa-clock-rotate-left"></i>
+                        </div>
+                        <div class="header-text">
+                          <h3>Historique</h3>
+                          <span>Retrouvez toutes les révisions</span>
+                        </div>
+                        <button class="close-popin-btn" @click="activePopin = null">
+                          <i class="fa-solid fa-xmark"></i>
+                        </button>
+                      </div>
+
+                      <div class="premium-versions-list">
+                        <div 
+                          v-for="v in sortedVersions" 
+                          :key="v.id" 
+                          class="premium-version-item"
+                          :class="{ current: v.id === decision.current_version?.id }"
+                          @click="selectVersion(v)"
+                        >
+                          <div class="item-visual">
+                            <div class="version-number-badge">v{{ v.version_number }}</div>
+                          </div>
+                          
+                          <div class="item-content">
+                            <div class="item-title">Révision #{{ v.version_number }}</div>
+                            <div class="item-meta">{{ formatDate(v.published_at || v.created_at) }}</div>
+                          </div>
+
+                          <div class="item-status">
+                            <i v-if="v.id === decision.current_version?.id" class="fa-solid fa-circle-check"></i>
+                            <i v-else class="fa-solid fa-chevron-right"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </transition>
+              </div>
+
+              <!-- Bouton Rollback (Retour à la version actuelle) -->
+              <span 
+                v-if="isOldVersion" 
+                class="meta-item rollback-tag clickable"
+                @click="resetToLatest"
+                title="Retourner à la version actuelle"
+              >
+                <i class="fa-solid fa-rotate-left"></i>
+              </span>
+
               <span class="date dazo-public-date"><i class="fa-regular fa-calendar"></i> Créé le {{ formatDate(decision.created_at) }}</span>
               <span class="date dazo-public-date" v-if="decision.updated_at && decision.updated_at !== decision.created_at">
                 <i class="fa-regular fa-calendar-check"></i> Modifié le {{ formatDate(decision.updated_at) }}
@@ -161,12 +228,11 @@
               <i class="fa-solid fa-paperclip"></i> Pièces jointes ({{ decision.current_version.attachments.length }})
             </h3>
             <div class="attachments-list">
-              <a
-                v-for="att in decision.current_version.attachments"
+              <div
+                v-for="(att, idx) in decision.current_version.attachments"
                 :key="att.id"
-                :href="'/api/v1/attachments/' + att.id + '/download'"
-                target="_blank"
                 class="attachment-card dazo-public-attachment-card"
+                @click="openAttachment(idx)"
               >
                 <div class="attachment-icon">
                   <i class="fa-regular fa-file-pdf" v-if="att.mime_type?.includes('pdf')"></i>
@@ -178,8 +244,8 @@
                   <div class="attachment-name">{{ att.filename }}</div>
                   <div class="attachment-size">{{ formatSize(att.size_bytes) }}</div>
                 </div>
-                <div class="attachment-action"><i class="fa-solid fa-download"></i></div>
-              </a>
+                <div class="attachment-action"><i class="fa-solid fa-expand"></i></div>
+              </div>
             </div>
           </div>
         </div>
@@ -204,14 +270,44 @@
 
       </div>
     </div>
+
+    <!-- Share Popin -->
+    <SharePopin
+      v-if="showSharePopin"
+      :url="shareUrl"
+      :title="decision?.title || ''"
+      :description="decision?.current_version?.content?.substring(0, 150) + '...'"
+      :share-count="decision?.share_count || 0"
+      @close="showSharePopin = false"
+      @shared="handleShared"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
+import PhotoSwipeLightbox from 'photoswipe/lightbox';
+import PhotoSwipe from 'photoswipe';
+import 'photoswipe/dist/photoswipe.css';
 import { usePublicFrontStore } from '../../stores/publicFront';
+import SharePopin from '../../components/public/SharePopin.vue';
+
+// Directive v-click-outside
+const vClickOutside = {
+  mounted(el, binding) {
+    el.clickOutsideEvent = (event) => {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value();
+      }
+    };
+    document.addEventListener('click', el.clickOutsideEvent);
+  },
+  unmounted(el) {
+    document.removeEventListener('click', el.clickOutsideEvent);
+  },
+};
 
 const route   = useRoute();
 const router  = useRouter();
@@ -219,6 +315,11 @@ const store   = usePublicFrontStore();
 
 const decision = ref(null);
 const loading  = ref(true);
+const activePopin = ref(null);
+const originalVersionId = ref(null);
+const showSharePopin = ref(false);
+
+const shareUrl = computed(() => window.location.href);
 
 // ── Navigation ──────────────────────────────────────────
 const nav = computed(() => {
@@ -241,7 +342,49 @@ const printDecision = () => {
 };
 
 const openSharePopin = () => {
-  alert('Fonctionnalité de partage à venir.');
+  showSharePopin.value = true;
+};
+
+const handleShared = async () => {
+  if (!decision.value) return;
+  try {
+    const { data } = await axios.post(`/api/v1/front/decisions/${decision.value.id}/share`);
+    decision.value.share_count = data.share_count;
+  } catch (e) {
+    console.error('Error incrementing share count', e);
+  }
+};
+
+const togglePopin = (name) => {
+  activePopin.value = activePopin.value === name ? null : name;
+};
+
+// ── Versions ──────────────────────────────────────────────
+const sortedVersions = computed(() => {
+  if (!decision.value?.versions) return [];
+  return [...decision.value.versions].sort((a, b) => b.version_number - a.version_number);
+});
+
+const isOldVersion = computed(() => {
+  if (!decision.value || !originalVersionId.value) return false;
+  return decision.value.current_version?.id !== originalVersionId.value;
+});
+
+const selectVersion = (v) => {
+  if (!decision.value) return;
+  
+  // Ensure we find the full version object from the versions list (which now has attachments/feedbacks)
+  const fullVersion = decision.value.versions.find(ver => ver.id === v.id) || v;
+  
+  decision.value.current_version = fullVersion;
+  activePopin.value = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const resetToLatest = () => {
+  if (!decision.value || !originalVersionId.value) return;
+  const latest = decision.value.versions.find(v => v.id === originalVersionId.value);
+  if (latest) selectVersion(latest);
 };
 
 
@@ -293,6 +436,7 @@ const fetchDecision = async () => {
   try {
     const { data } = await axios.get(`/api/v1/front/decisions/${route.params.id}`);
     decision.value = data.decision;
+    originalVersionId.value = data.decision.current_version?.id;
   } catch (e) {
     console.error('decision detail fetch error', e);
   } finally {
@@ -302,11 +446,48 @@ const fetchDecision = async () => {
 
 watch(() => route.params.id, () => { fetchDecision(); window.scrollTo(0, 0); });
 
+let lightbox = null;
+
 onMounted(async () => {
   if (!store.metaLoaded) await store.fetchMeta();
   if (store.decisions.length === 0) await store.fetchDecisions();
   fetchDecision();
+
+  lightbox = new PhotoSwipeLightbox({
+    pswpModule: PhotoSwipe,
+    bgOpacity: 0.95,
+    showHideAnimationType: 'zoom',
+  });
+  lightbox.init();
 });
+
+const openAttachment = (index) => {
+  if (!lightbox || !decision.value?.current_version?.attachments) return;
+
+  const items = decision.value.current_version.attachments.map(a => {
+    const isImg = a.mime_type?.includes('image');
+    const url = `/api/v1/attachments/${a.id}/download`;
+    
+    if (isImg) {
+      return { src: url, w: 1200, h: 800, alt: a.filename };
+    } else if (a.mime_type?.includes('pdf')) {
+      return {
+        html: `<div class="pswp-pdf-slide"><iframe src="${url}#view=FitH" style="width:100%;height:100%;border:none;"></iframe></div>`
+      };
+    } else {
+      return {
+        html: `<div class="pswp-doc-slide">
+          <i class="fa-solid fa-file-lines" style="font-size:60px;margin-bottom:20px;"></i>
+          <div style="font-size:18px;margin-bottom:24px;">${a.filename}</div>
+          <a href="${url}" target="_blank" class="btn btn-primary" onclick="event.stopPropagation()">Ouvrir le document</a>
+        </div>`
+      };
+    }
+  });
+
+  lightbox.options.dataSource = items;
+  lightbox.loadAndOpen(index);
+};
 
 // ── Helpers ──────────────────────────────────────────────
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
@@ -346,6 +527,13 @@ const getAuthorRoleIcon = (fb) => {
   top: 0;
   z-index: 100;
   margin-bottom: 32px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+.filters-actions-bar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 @supports (backdrop-filter: blur(10px)) {
@@ -378,6 +566,7 @@ const getAuthorRoleIcon = (fb) => {
   width: 100%;
   text-decoration: none;
   box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .action-btn:hover {
@@ -385,8 +574,10 @@ const getAuthorRoleIcon = (fb) => {
   border-color: var(--gray-300);
 }
 
-.desktop-only { display: flex !important; }
-.mobile-only  { display: none !important; }
+.action-btn .btn-label {
+  display: inline-block;
+  margin-left: 2px;
+}
 
 /* ── Card ── */
 .decision-detail-card {
@@ -464,8 +655,236 @@ const getAuthorRoleIcon = (fb) => {
 
 .meta-item { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; }
 .circle-tag { background: var(--gray-100); color: var(--gray-600); }
+.version-tag {
+  border: 1px solid var(--gray-200);
+  color: var(--gray-500);
+  background: white;
+  font-family: var(--font-mono);
+}
+.version-tag.active {
+  background: var(--blue-50);
+  border-color: var(--blue-300);
+  color: var(--blue-700);
+}
+
+.rollback-tag {
+  background: var(--amber-50);
+  color: var(--amber-700);
+  border: 1px solid var(--amber-200);
+}
+.rollback-tag:hover {
+  background: var(--amber-100);
+}
+
 .clickable { cursor: pointer; transition: all 0.2s; }
 .circle-tag.clickable:hover { background: var(--blue-50); color: var(--blue-700); }
+
+/* ── Popin WOW Effects ── */
+.popin-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.popin-versions {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  width: 260px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+  border: 1px solid var(--gray-200);
+  z-index: 1000;
+  padding: 8px 0;
+  transform-origin: top left;
+}
+
+.popin-center-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.popin-center-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2500;
+  backdrop-filter: blur(8px);
+}
+
+.popin-versions-premium {
+  width: 400px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.premium-popin-header {
+  padding: 24px;
+  background: linear-gradient(to right, var(--blue-600), var(--blue-800));
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  color: white;
+}
+
+.header-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.header-text h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.header-text span {
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.close-popin-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: white;
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 8px;
+  transition: all 0.2s;
+}
+
+.close-popin-btn:hover {
+  opacity: 1;
+  transform: rotate(90deg);
+}
+
+.premium-versions-list {
+  padding: 12px;
+  max-height: 450px;
+  overflow-y: auto;
+  background: #f8fafc;
+}
+
+.premium-version-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+}
+
+.premium-version-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: var(--blue-200);
+}
+
+.premium-version-item.current {
+  background: var(--blue-50);
+  border-color: var(--blue-200);
+}
+
+.item-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.version-number-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--gray-600);
+  transition: all 0.2s;
+}
+
+.premium-version-item.current .version-number-badge {
+  background: var(--blue-600);
+  color: white;
+}
+
+.item-content {
+  flex: 1;
+}
+
+.item-title {
+  font-weight: 700;
+  color: var(--gray-800);
+  font-size: 14px;
+}
+
+.item-meta {
+  font-size: 11px;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+
+.item-status {
+  color: var(--gray-300);
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.premium-version-item.current .item-status {
+  color: var(--blue-600);
+}
+
+.premium-version-item:hover .item-status {
+  transform: translateX(3px);
+  color: var(--blue-400);
+}
+
+/* WOW Transition */
+.popin-wow-enter-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.popin-wow-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.popin-wow-enter-from {
+  opacity: 0;
+  transform: scale(0.9) translateY(-10px);
+}
+.popin-wow-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
 
 /* ── Status badges ── */
 .status-badge {
@@ -558,16 +977,61 @@ const getAuthorRoleIcon = (fb) => {
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+  .filters-actions-bar {
+    gap: 8px;
+    padding: 10px;
+    top: 0;
+    border-radius: 0 0 16px 16px;
+    margin-bottom: 24px;
+  }
+  
+  .popin-wrapper {
+    flex: 1;
+  }
+  
+  .action-btn {
+    padding: 10px 5px;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+    height: auto;
+  }
+  
+  .action-btn .btn-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .dazo-public-nav-arrows {
+    flex: 2; /* Donne plus de place aux flèches */
+  }
+
+  .dazo-public-nav-arrows .flex {
+    gap: 8px;
+  }
+
   .desktop-only { display: none !important; }
   .mobile-only  { display: flex !important; }
-  .nav-bar { display: none !important; }
-  .detail-header { padding: 20px; }
+
+  .detail-header-content { padding: 20px; }
   .detail-body { padding: 20px 20px 36px; }
   .card-nav-footer { padding: 12px 20px; }
   .article-title { font-size: 22px; }
   .article-abstract { font-size: 15px; }
   .article-html-content { font-size: 15px; }
-  .nav-bar { gap: 8px; padding: 10px 12px; }
-  .back-label { display: none; }
+}
+
+@media (max-width: 480px) {
+  .action-btn .btn-label {
+    display: none;
+  }
+  .action-btn {
+    padding: 12px 5px;
+  }
 }
 </style>

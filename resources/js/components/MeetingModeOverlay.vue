@@ -127,11 +127,32 @@
             <div class="sidebar-content" v-show="!isDocSidebarCollapsed">
               <!-- Prose en affichage fluide (Mode Flat) -->
               <div class="meeting-prose-container flex-1">
-                <div class="meeting-prose prose-sm" v-html="displayContent"></div>
+                <template v-if="currentStatus === 'revision' && isAnimator">
+                   <div class="flex flex-col gap-16">
+                     <div class="form-group">
+                       <RichTextEditor 
+                         v-model="directEditDraft.content"
+                         class="meeting-inline-editor"
+                         placeholder="Modifiez le texte de la proposition ici..."
+                       />
+                     </div>
+                     <div class="form-group">
+                       <AttachmentPanel 
+                         :attachments="directEditDraft.attachments"
+                         :editable="true"
+                         :hide-header="true"
+                         @uploaded="onDirectEditAttachmentAdded"
+                         @removed="onDirectEditAttachmentRemoved"
+                         class="bg-white rounded-xl border border-gray-100"
+                       />
+                     </div>
+                   </div>
+                </template>
+                <div v-else class="meeting-prose prose-sm" v-html="displayContent"></div>
               </div>
 
-              <!-- Pièces jointes -->
-              <div v-if="attachments && attachments.length > 0" class="meeting-attachments-panel mt-24 pt-24 border-t border-gray-200">
+              <!-- Pièces jointes (Lecture seule si pas en édition) -->
+              <div v-if="!(currentStatus === 'revision' && isAnimator) && attachments && attachments.length > 0" class="meeting-attachments-panel mt-24 pt-24 border-t border-gray-200">
                 <h3 class="text-xs font-bold mb-12 text-gray-400 uppercase tracking-wider">Pièces jointes</h3>
                 <div class="flex flex-col gap-8">
                   <button 
@@ -195,120 +216,173 @@
                 <template v-if="activeTab !== 'reactions'">
                   <div v-for="fb in filteredFeedbacks" :key="fb.id" class="mf-card" :class="{'fb-closed': isClosed(fb)}">
                     <div class="mf-header" @click.stop="toggleCollapse(fb.id)" style="cursor: pointer;">
-                <div class="flex flex-col">
-                  <div class="flex items-center gap-8">
-                    <span :class="typeBadge(fb.type)" class="badge badge-xs uppercase px-6 font-bold text-[9px]">
-                      {{ translateType(fb.type) }}
-                    </span>
-                    <span class="font-bold text-gray-800">{{ fb.author?.name }}</span>
-                  </div>
-                  <!-- Liste des soutiens directement dans le titre -->
-                  <div v-if="fb.joins && fb.joins.length > 0" class="text-[10px] text-gray-500 italic font-normal ml-4">
-                    Soutenu par ({{ fb.joins.length }}) : {{ fb.joins.map(j => j.user?.name).join(', ') }}
-                  </div>
-                </div>
-                
-                <div class="ml-auto flex items-center gap-12">
-                  <!-- Bouton Soutenir / Rejoindre -->
-                  <button 
-                    v-if="isAnimator && !isClosed(fb) && ['objection', 'suggestion'].includes(fb.type?.value || fb.type)"
-                    class="btn btn-xs btn-outline-indigo"
-                    @click.stop="showJoinPickerFor = (showJoinPickerFor === fb.id ? null : fb.id)"
-                    :title="'Ajouter un soutien à cette ' + (fb.type?.value || fb.type)"
-                  >
-                    <i class="fa-solid fa-users mr-4"></i> Rejoindre
-                  </button>
+                      <div class="flex flex-col">
+                        <div class="flex items-center gap-8">
+                          <span :class="typeBadge(fb.type)" class="badge badge-xs uppercase px-6 font-bold text-[9px]">
+                            {{ translateType(fb.type) }}
+                          </span>
+                          <span class="font-bold text-gray-800">{{ fb.author?.name }}</span>
+                        </div>
+                        <!-- Liste des soutiens directement dans le titre -->
+                        <div v-if="fb.joins && fb.joins.length > 0" class="text-[10px] text-gray-500 italic font-normal ml-4">
+                          Soutenu par ({{ fb.joins.length }}) : {{ fb.joins.map(j => j.user?.name).join(', ') }}
+                        </div>
+                      </div>
+                      
+                      <div class="ml-auto flex items-center gap-12">
+                        <!-- Bouton Soutenir / Rejoindre -->
+                        <button 
+                          v-if="isAnimator && !isClosed(fb) && ['objection', 'suggestion'].includes(fb.type?.value || fb.type)"
+                          class="btn btn-xs btn-outline-indigo"
+                          @click.stop="showJoinPickerFor = (showJoinPickerFor === fb.id ? null : fb.id)"
+                          :title="'Ajouter un soutien à cette ' + (fb.type?.value || fb.type)"
+                        >
+                          <i class="fa-solid fa-users mr-4"></i> Rejoindre
+                        </button>
 
-                  <!-- Bouton Répondre pour le secrétaire (Masqué si la phase est passée) -->
-                  <button 
-                    v-if="isAnimator && !isClosed(fb) && canReply(fb)" 
-                    class="btn btn-xs btn-secondary"
-                    @click.stop="prepareReply(fb)"
-                  >
-                    <i class="fa-solid fa-reply mr-4"></i> Répondre
-                  </button>
+                        <!-- Bouton Répondre pour le secrétaire (Masqué si la phase est passée) -->
+                        <button 
+                          v-if="isAnimator && !isClosed(fb) && canReply(fb)" 
+                          class="btn btn-xs btn-secondary"
+                          @click.stop="prepareReply(fb)"
+                        >
+                          <i class="fa-solid fa-reply mr-4"></i> Répondre
+                        </button>
 
-                  <!-- Bouton Toggle -->
-                  <button 
-                    class="btn btn-xs btn-ghost" 
-                    @click.stop="toggleCollapse(fb.id)"
-                    :title="isCollapsed(fb.id) ? 'Déplier' : 'Replier'"
-                  >
-                    <i class="fa-solid" :class="isCollapsed(fb.id) ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
-                  </button>
-                </div>
-              </div>
+                        <!-- Bouton Toggle -->
+                        <button 
+                          class="btn btn-xs btn-ghost" 
+                          @click.stop="toggleCollapse(fb.id)"
+                          :title="isCollapsed(fb.id) ? 'Déplier' : 'Replier'"
+                        >
+                          <i class="fa-solid" :class="isCollapsed(fb.id) ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                        </button>
+                      </div>
+                    </div>
 
-              <!-- Sélecteur pour Rejoindre -->
-              <div v-if="showJoinPickerFor === fb.id" class="px-16 pb-12">
-                <div class="bg-indigo-50 p-12 rounded-md border border-indigo-100 shadow-sm">
-                   <div class="flex justify-between items-center mb-12">
-                     <p class="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Qui rejoint cette {{ translateType(fb.type) }} ?</p>
-                     <button @click.stop="showJoinPickerFor = null" class="text-indigo-400 hover:text-indigo-600 p-4" title="Fermer">
-                        <i class="fa-solid fa-xmark"></i>
-                     </button>
-                   </div>
-                   <div class="flex flex-wrap gap-8">
-                      <button 
-                        v-for="p in getJoinableParticipants(fb)" 
-                        :key="p.user_id"
-                        class="btn btn-xs bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-500 hover:text-white px-12 py-6 rounded shadow-sm"
-                        @click.stop="joinFeedback(fb, p.user_id)"
-                      >
-                        {{ p.user?.name }}
-                      </button>
-                      <span v-if="getJoinableParticipants(fb).length === 0" class="text-xs text-gray-400 italic">Aucun participant éligible.</span>
-                   </div>
-                </div>
-              </div>
-              
-              <div v-if="!isCollapsed(fb.id)" class="mf-body">
-                <!-- Liste des messages (thread) -->
-                <div v-for="msg in allMessages(fb)" :key="msg.id" class="mf-msg" :class="getRoleStyle(msg.author_id)">
-                  <div class="mf-msg-author">
-                    {{ msg.author?.name }} 
-                    <span v-if="getRoleBadge(msg.author_id)" class="role-badge">{{ getRoleBadge(msg.author_id) }}</span>
-                    <span class="text-xs text-gray-400 font-normal ml-8">{{ new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
+                    <!-- Sélecteur pour Rejoindre -->
+                    <div v-if="showJoinPickerFor === fb.id" class="px-16 pb-12">
+                      <div class="bg-indigo-50 p-12 rounded-md border border-indigo-100 shadow-sm">
+                         <div class="flex justify-between items-center mb-12">
+                           <p class="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Qui rejoint cette {{ translateType(fb.type) }} ?</p>
+                           <button @click.stop="showJoinPickerFor = null" class="text-indigo-400 hover:text-indigo-600 p-4" title="Fermer">
+                              <i class="fa-solid fa-xmark"></i>
+                           </button>
+                         </div>
+                         <div class="flex flex-wrap gap-8">
+                            <button 
+                              v-for="p in getJoinableParticipants(fb)" 
+                              :key="p.user_id"
+                              class="btn btn-xs bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-500 hover:text-white px-12 py-6 rounded shadow-sm"
+                              @click.stop="joinFeedback(fb, p.user_id)"
+                            >
+                              {{ p.user?.name }}
+                            </button>
+                            <span v-if="getJoinableParticipants(fb).length === 0" class="text-xs text-gray-400 italic">Aucun participant éligible.</span>
+                         </div>
+                      </div>
+                    </div>
+                    
+                    <div v-if="!isCollapsed(fb.id)" class="mf-body">
+                      <!-- Liste des messages (thread) -->
+                      <div v-for="msg in allMessages(fb)" :key="msg.id" class="mf-msg" :class="getRoleStyle(msg.author_id)">
+                        <div class="mf-msg-author">
+                          {{ msg.author?.name }} 
+                          <span v-if="getRoleBadge(msg.author_id)" class="role-badge">{{ getRoleBadge(msg.author_id) }}</span>
+                          <span class="text-xs text-gray-400 font-normal ml-8">{{ new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
+                        </div>
+                        <div class="mf-msg-content">{{ msg.content }}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="mf-msg-content">{{ msg.content }}</div>
-                </div>
+                </template>
+
+                <!-- Bloc spécifique pour les Réactions -->
+                <template v-else>
+                  <div v-for="fb in filteredFeedbacks" :key="fb.id" class="mf-card" :class="{'fb-closed': isClosed(fb)}">
+                    <div class="mf-header" @click.stop="toggleCollapse(fb.id)" style="cursor: pointer;">
+                      <div class="flex items-center gap-8">
+                        <span :class="typeBadge(fb.type)" class="badge badge-xs uppercase px-6 font-bold text-[9px]">
+                          {{ translateType(fb.type) }}
+                        </span>
+                        <span class="font-bold text-gray-800">{{ fb.author?.name }}</span>
+                      </div>
+                      
+                      <div class="ml-auto flex items-center gap-12">
+                        <button 
+                          class="btn btn-xs btn-ghost" 
+                          @click.stop="toggleCollapse(fb.id)"
+                          :title="isCollapsed(fb.id) ? 'Déplier' : 'Replier'"
+                        >
+                          <i class="fa-solid" :class="isCollapsed(fb.id) ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div v-if="!isCollapsed(fb.id)" class="mf-body">
+                      <div class="text-gray-700 whitespace-pre-wrap">{{ fb.content }}</div>
+                    </div>
+                  </div>
+                </template>
               </div>
             </div>
-          </template>
-
-          <!-- Bloc spécifique pour les Réactions -->
-          <template v-else>
-            <div v-for="fb in filteredFeedbacks" :key="fb.id" class="mf-card" :class="{'fb-closed': isClosed(fb)}">
-              <div class="mf-header" @click.stop="toggleCollapse(fb.id)" style="cursor: pointer;">
-                <div class="flex items-center gap-8">
-                  <span :class="typeBadge(fb.type)" class="badge badge-xs uppercase px-6 font-bold text-[9px]">
-                    {{ translateType(fb.type) }}
-                  </span>
-                  <span class="font-bold text-gray-800">{{ fb.author?.name }}</span>
-                </div>
-                
-                <div class="ml-auto flex items-center gap-12">
-                  <button 
-                    class="btn btn-xs btn-ghost" 
-                    @click.stop="toggleCollapse(fb.id)"
-                    :title="isCollapsed(fb.id) ? 'Déplier' : 'Replier'"
-                  >
-                    <i class="fa-solid" :class="isCollapsed(fb.id) ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
-                  </button>
-                </div>
-              </div>
-              
-              <div v-if="!isCollapsed(fb.id)" class="mf-body">
-                <div class="text-gray-700 whitespace-pre-wrap">{{ fb.content }}</div>
-              </div>
-            </div>
-          </template>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-</div>
+
+    <!-- Panneau Édition en Direct -->
+    <div v-if="isDirectEditing" class="direct-edit-overlay">
+      <div class="direct-edit-container premium-card shadow-2xl animate-scale-in">
+        <div class="pc-header pc-header-emerald">
+          <div class="pc-header-icon"><i class="fa-solid fa-pen-to-square"></i></div>
+          <div class="pc-header-content">
+            <div class="pc-header-title">Édition en direct de la proposition</div>
+            <div class="pc-header-sub">Modifiez le contenu et les pièces jointes avant publication</div>
+          </div>
+          <button class="btn btn-ghost text-white ml-auto" @click="isDirectEditing = false">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        
+        <div class="direct-edit-body flex gap-24 p-24" style="height: calc(90vh - 120px);">
+          <!-- Éditeur Principal -->
+          <div class="flex-1 flex flex-col min-w-0">
+            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Contenu de la proposition</label>
+            <RichTextEditor 
+              v-model="directEditDraft.content"
+              class="flex-1"
+              placeholder="Rédigez la nouvelle version de la proposition ici..."
+            />
+          </div>
+          
+          <!-- Panneau latéral : Pièces jointes -->
+          <div class="w-320 flex-shrink-0 flex flex-col">
+            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Pièces jointes</label>
+            <AttachmentPanel 
+              :attachments="directEditDraft.attachments"
+              :editable="true"
+              @uploaded="onDirectEditAttachmentAdded"
+              @removed="onDirectEditAttachmentRemoved"
+              class="flex-1 overflow-y-auto"
+            />
+          </div>
+        </div>
+
+        <div class="pc-footer bg-gray-50 flex justify-between items-center p-16 border-t border-gray-200">
+          <button class="btn btn-outline" @click="isDirectEditing = false">
+            Annuler
+          </button>
+          <div class="flex gap-12">
+            <button class="btn btn-emerald" @click="publishDirectEdit" :disabled="publishingDirectEdit">
+              <i class="fa-solid fa-paper-plane mr-8" v-if="!publishingDirectEdit"></i>
+              <i class="fa-solid fa-circle-notch fa-spin mr-8" v-else></i>
+              Publier directement en OBJECTION
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Panneau du Secrétaire (Flottant ou Docké) -->
     <Teleport v-if="isMounted && isAnimator" to="#secretary-dock-target" :disabled="!isPanelDocked">
@@ -324,6 +398,7 @@
         :is-docked="isPanelDocked"
         @dock="handleDock"
         @undock="isPanelDocked = false"
+        @direct-edit="startDirectEdit"
         @phase-change="$emit('phase-change', $event)"
         @refresh-data="refreshAll"
         @cancel-reply="replyTarget = null"
@@ -331,6 +406,7 @@
         @version-change="$emit('version-change', $event)"
         @drag-start="isDraggingPanel = true"
         @drag-end="isDraggingPanel = false"
+        @publish-revision="publishDirectEdit"
       />
     </Teleport>
 
@@ -355,6 +431,8 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import axios from 'axios';
 import MeetingSecretaryPanel from './MeetingSecretaryPanel.vue';
 import FloatingWindow from './FloatingWindow.vue';
+import RichTextEditor from './RichTextEditor.vue';
+import AttachmentPanel from './AttachmentPanel.vue';
 import { useConfigStore } from '../stores/config';
 
 const configStore = useConfigStore();
@@ -391,6 +469,10 @@ watch(() => props.decision.status?.value || props.decision.status, (newStatus) =
   if (newStatus === 'clarification') activeTab.value = 'clarifications';
   if (newStatus === 'reaction') activeTab.value = 'reactions';
   if (newStatus === 'objection') activeTab.value = 'objections';
+  
+  if (newStatus === 'revision') {
+    startDirectEdit();
+  }
 }, { immediate: true });
 
 const replyTarget = ref(null);
@@ -399,6 +481,54 @@ const collapsedFeedbacks = ref({}); // { fbId: true/false }
 const showCelebration = ref(false);
 const showJoinPickerFor = ref(null);
 const isDocSidebarCollapsed = ref(false);
+const isDirectEditing = ref(false);
+const publishingDirectEdit = ref(false);
+const directEditDraft = ref({
+  content: '',
+  attachments: [],
+  attachmentIds: []
+});
+
+const startDirectEdit = () => {
+  directEditDraft.value = {
+    content: props.currentVersion.content,
+    attachments: [...(props.attachments || [])],
+    attachmentIds: (props.attachments || []).map(a => a.id)
+  };
+  isDirectEditing.value = true;
+};
+
+const onDirectEditAttachmentAdded = (att) => {
+  directEditDraft.value.attachmentIds.push(att.id);
+  // We don't necessarily need to push to .attachments as AttachmentPanel handles its local state
+};
+
+const onDirectEditAttachmentRemoved = (attId) => {
+  directEditDraft.value.attachmentIds = directEditDraft.value.attachmentIds.filter(id => id !== attId);
+};
+
+const publishDirectEdit = async (targetPhase = 'objection') => {
+  if (publishingDirectEdit.value) return;
+  publishingDirectEdit.value = true;
+  
+  try {
+    const res = await axios.post(`/api/v1/decisions/${props.decision.id}/versions`, {
+      content: directEditDraft.value.content,
+      attachment_ids: directEditDraft.value.attachmentIds,
+      status: targetPhase, 
+      notify: true
+    });
+    
+    isDirectEditing.value = false;
+    emit('refresh-data'); // Rafraîchir tout le monde
+    logAction(`Proposition modifiée en direct et publiée en ${targetPhase.toUpperCase()}.`);
+  } catch (err) {
+    console.error("Error publishing direct edit", err);
+    alert("Erreur lors de la publication : " + (err.response?.data?.message || err.message));
+  } finally {
+    publishingDirectEdit.value = false;
+  }
+};
 
 const isSidebarCollapsed = ref(false);
 const isPanelDocked = ref(true);
@@ -1633,6 +1763,38 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 16px 0;
+}
+.direct-edit-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.direct-edit-container {
+  width: 100%;
+  max-width: 1200px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: white;
+  border-radius: 20px;
+}
+.direct-edit-body {
+  overflow: hidden;
+}
+.w-320 { width: 320px; }
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 </style>
 

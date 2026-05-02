@@ -1,6 +1,6 @@
 <template>
   <div class="premium-card">
-    <div class="pc-header pc-header-blue">
+    <div v-if="!hideHeader" class="pc-header pc-header-blue">
       <div class="pc-header-icon"><i class="fa-solid fa-paperclip"></i></div>
       <div class="pc-header-content">
         <div class="pc-header-title">Pièces jointes</div>
@@ -19,6 +19,12 @@
         class="hidden-input"
         multiple
         @change="handleFileSelection"
+      >
+      <input
+        ref="reloadInputRef"
+        type="file"
+        class="hidden-input"
+        @change="handleReloadSelection"
       >
 
       <div
@@ -88,6 +94,14 @@
                 <i class="fa-solid fa-download"></i> Télécharger
               </a>
               <button
+                v-if="canReload && attachment.id"
+                type="button"
+                class="btn btn-amber btn-sm"
+                @click="reloadAttachment(attachment)"
+              >
+                <i class="fa-solid fa-sync mr-4"></i> Charger à nouveau
+              </button>
+              <button
                 v-if="editable && attachment.id"
                 type="button"
                 class="btn btn-danger btn-sm"
@@ -127,13 +141,23 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  hideHeader: {
+    type: Boolean,
+    default: false,
+  },
+  canReload: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['changed', 'uploaded', 'removed']);
 
 const fileInputRef = ref(null);
+const reloadInputRef = ref(null);
 const dragActive = ref(false);
 const localAttachments = ref([]);
+const reloadingAttachment = ref(null);
 
 const hydrateAttachments = () => {
   localAttachments.value = (props.attachments || []).map((attachment) => ({
@@ -247,6 +271,49 @@ const removeAttachment = async (attachment) => {
     emit('changed');
   } catch (error) {
     window.alert(error.response?.data?.message || 'Suppression impossible pour le moment.');
+  }
+};
+
+const reloadAttachment = (attachment) => {
+  reloadingAttachment.value = attachment;
+  reloadInputRef.value?.click();
+};
+
+const handleReloadSelection = async (event) => {
+  const file = event.target.files[0];
+  if (!file || !reloadingAttachment.value) return;
+
+  const attachment = reloadingAttachment.value;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('replace_id', attachment.id);
+
+  try {
+    attachment.uploading = true;
+    attachment.progress = 0;
+
+    const { data } = await axios.post('/api/v1/attachments', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (p) => {
+        if (p.total) attachment.progress = Math.round((p.loaded * 100) / p.total);
+      }
+    });
+
+    // Update local data
+    Object.assign(attachment, data.attachment, {
+      url: data.url,
+      uploading: false,
+      progress: 100
+    });
+
+    emit('uploaded', data.attachment);
+    emit('changed');
+  } catch (error) {
+    attachment.uploading = false;
+    window.alert(error.response?.data?.message || 'Erreur lors du remplacement du fichier.');
+  } finally {
+    event.target.value = '';
+    reloadingAttachment.value = null;
   }
 };
 

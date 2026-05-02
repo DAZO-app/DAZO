@@ -109,14 +109,6 @@
           />
         </div>
 
-        <div class="draft-actions">
-          <button class="btn btn-secondary" :disabled="savingDraft" @click="$emit('save-revision')">
-            {{ savingDraft ? 'Enregistrement...' : 'Enregistrer le brouillon' }}
-          </button>
-          <button class="btn btn-primary" :disabled="publishing || savingDraft" @click="$emit('publish-revision')">
-            {{ publishing ? 'Publication...' : 'Publier cette version' }}
-          </button>
-        </div>
       </div>
     </div>
   </div>

@@ -88,25 +88,11 @@
                 <p class="help-text mt-8 mb-32">Les thèmes personnalisés seront disponibles dans une future mise à jour.</p>
               </div>
 
-              <hr class="mb-32" style="border: none; border-top: 1px solid var(--gray-200);" />
-              <h3 class="font-bold text-gray-800 mb-16"><i class="fa-solid fa-link mr-8 text-blue-500"></i> Liens Légaux (Pied de page)</h3>
-              
-              <div class="form-group mb-24">
-                <label class="config-label">Mentions Légales (URL)</label>
-                <input v-model="config.legal_mentions_url" class="input" placeholder="https://...">
-                <div class="config-key">variable : <code>legal_mentions_url</code></div>
-              </div>
-              <div class="form-group mb-24">
-                <label class="config-label">Politique de Confidentialité (URL)</label>
-                <input v-model="config.privacy_policy_url" class="input" placeholder="https://...">
-                <div class="config-key">variable : <code>privacy_policy_url</code></div>
-              </div>
-              <div class="form-group mb-24">
-                <label class="config-label">CGU / Conditions d'utilisation (URL)</label>
-                <input v-model="config.terms_of_service_url" class="input" placeholder="https://...">
-                <div class="config-key">variable : <code>terms_of_service_url</code></div>
-              </div>
-
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer Identity
+              </button>
             </div>
           </div>
 
@@ -150,6 +136,11 @@
                 <div class="config-key">variable : <code>decision_revision_months</code></div>
                 <p class="help-text">Délai suggéré avant de ré-examiner une proposition adoptée.</p>
               </div>
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer Gouvernance
+              </button>
             </div>
           </div>
 
@@ -226,6 +217,11 @@
               </div>
 
             </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer Sécurité
+              </button>
+            </div>
           </div>
 
           <!-- SECTION NOTIFICATIONS -->
@@ -260,6 +256,11 @@
                 <div class="config-key">variable : <code>reminder_hours_before</code></div>
                 <p class="help-text">Les utilisateurs recevront un rappel automatique X heures avant l'échéance d'une décision.</p>
               </div>
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer Alertes
+              </button>
             </div>
           </div>
 
@@ -309,6 +310,11 @@
                 </select>
               </div>
             </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer Serveur Mail
+              </button>
+            </div>
           </div>
 
           <!-- SECTION EMAILS -->
@@ -320,18 +326,228 @@
                 <div class="pc-header-sub">Éditez le contenu des messages envoyés aux utilisateurs</div>
               </div>
             </div>
-            <div class="pc-body p-24">
-              <div class="form-group mb-24">
-                <label class="config-label">Sujet de l'email de relance</label>
-                <input v-model="config.reminder_email_subject" class="input" placeholder="⚠️ Rappel : La décision '{title}' arrive à échéance">
-                <p class="help-text">Variables disponibles : <code>{title}</code></p>
-              </div>
+            <div class="pc-body">
+              <div class="accordion-container">
+                <!-- TEMPLATE GÉNÉRAL (PREMIER MENU) -->
+                <div class="accordion-item" :class="{ open: activeAccordionEmail === 'general' }">
+                  <div class="accordion-header" @click="toggleAccordionEmail('general')">
+                    <div class="flex items-center gap-12">
+                      <i class="fa-solid fa-gears text-indigo-600"></i>
+                      <span class="font-bold text-indigo-700">Template Général (Global Wrapper)</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down arrow"></i>
+                  </div>
+                  <div class="accordion-body">
+                    <div class="p-24 border-top bg-indigo-50/10">
+                      
+                      <div class="alert alert-info mb-24">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <div>
+                          <p class="font-bold mb-4">Variables disponibles :</p>
+                          <div class="flex flex-wrap gap-8">
+                            <code class="bg-blue-100 text-blue-700 px-4 py-2 rounded"> {logo} </code>
+                            <code class="bg-blue-100 text-blue-700 px-4 py-2 rounded"> {logo_perso} </code>
+                            <code class="bg-blue-100 text-blue-700 px-4 py-2 rounded"> {site_link} </code>
+                            <code class="bg-blue-100 text-blue-700 px-4 py-2 rounded"> {site_link_register} </code>
+                            <code class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded font-bold"> {message} </code>
+                          </div>
+                          <p class="mt-8 text-xs opacity-80">Les variables sont alimentées par les configurations correspondantes (Branding, Identité, etc.).</p>
+                        </div>
+                      </div>
 
-              <div class="form-group">
-                <label class="config-label">Corps de l'email de relance</label>
-                <textarea v-model="config.reminder_email_body" class="textarea" style="height: 150px;" placeholder="Bonjour {name}, ceci est un rappel..."></textarea>
-                <p class="help-text">Variables disponibles : <code>{name}</code>, <code>{title}</code>, <code>{phase}</code>, <code>{deadline}</code>, <code>{url}</code></p>
+                      <div class="form-group mb-32">
+                        <label class="config-label">Structure HTML du Wrapper</label>
+                        <textarea v-model="config.mail_template_wrapper" class="input font-mono text-sm" rows="12" placeholder="<html>... {message} ...</html>"></textarea>
+                        <p class="help-text mt-8">C'est le squelette HTML commun à tous les envois.</p>
+                      </div>
+
+                      <!-- PREVIEW SECTION -->
+                      <div class="preview-section mt-32 border-top pt-24">
+                        <div class="flex items-center justify-between mb-16">
+                          <h4 class="font-bold text-gray-800"><i class="fa-solid fa-eye mr-8 text-blue-500"></i> Prévisualisation en temps réel</h4>
+                          <div class="flex items-center gap-12">
+                            <span class="text-xs font-bold text-gray-500">Simuler le message :</span>
+                            <select v-model="previewMailType" class="select select-sm py-4 px-12 h-auto text-xs">
+                              <option v-for="mail in emailList" :key="mail.key" :value="mail.key">{{ mail.label }}</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div class="mail-preview-container border rounded-xl overflow-hidden shadow-sm bg-white">
+                          <div class="preview-header bg-gray-100 border-bottom p-12 text-xs flex gap-8 items-center">
+                            <div class="flex gap-4">
+                              <div class="w-8 h-8 rounded-full bg-red-400"></div>
+                              <div class="w-8 h-8 rounded-full bg-amber-400"></div>
+                              <div class="w-8 h-8 rounded-full bg-green-400"></div>
+                            </div>
+                            <span class="text-gray-400 ml-8">Sujet : {{ mockedSubject }}</span>
+                          </div>
+                          <div class="preview-body" v-html="renderedPreview"></div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+                <!-- AUTRES EMAILS -->
+                <div v-for="mail in emailList" :key="mail.key" class="accordion-item" :class="{ open: activeAccordionEmail === mail.key }">
+                  <div class="accordion-header" @click="toggleAccordionEmail(mail.key)">
+                    <div class="flex items-center gap-12">
+                      <i :class="mail.icon" class="text-indigo-500 opacity-60"></i>
+                      <span class="font-bold">{{ mail.label }}</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down arrow"></i>
+                  </div>
+                  <div class="accordion-body">
+                    <div class="p-24 border-top">
+                      <div class="form-group mb-24">
+                        <label class="config-label">Sujet de l'email</label>
+                        <input v-model="config['mail_' + mail.key + '_subject']" class="input" :placeholder="'Sujet de ' + mail.label">
+                      </div>
+                      <div class="form-group mb-32">
+                        <label class="config-label">Corps de l'email</label>
+                        <RichTextEditor v-model="config['mail_' + mail.key + '_body']" />
+                        <p class="help-text mt-8"><code>{{ mail.help }}</code></p>
+                      </div>
+
+                      <!-- TEST D'ENVOI -->
+                      <div class="p-20 bg-gray-50 border rounded-xl">
+                        <h4 class="font-bold text-sm mb-12"><i class="fa-solid fa-paper-plane mr-8 text-indigo-500"></i> Tester cet email</h4>
+                        <div class="flex gap-12">
+                          <input type="email" v-model="testEmailAddress" class="input" placeholder="Adresse email de test">
+                          <button class="btn btn-primary btn-icon" @click="sendTestEmail(mail.key)" :disabled="sendingTest === mail.key" title="Envoyer un test">
+                             <i class="fa-solid" :class="sendingTest === mail.key ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
+                          </button>
+                        </div>
+                        <p class="help-text mt-8">L'email sera envoyé avec des données fictives à <strong>{{ testEmailAddress || 'votre adresse' }}</strong>.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer Emails
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION OAUTH -->
+          <div v-if="activeSection === 'oauth'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-teal">
+              <div class="pc-header-icon"><i class="fa-solid fa-key"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Clés OAuth</div>
+                <div class="pc-header-sub">Configurez les services d'identification tiers</div>
+              </div>
+            </div>
+            <div class="pc-body">
+              <div class="accordion-container">
+                <div v-for="prov in oauthList" :key="prov.key" class="accordion-item" :class="{ open: activeAccordionOAuth === prov.key }">
+                  <div class="accordion-header" @click="toggleAccordionOAuth(prov.key)">
+                    <div class="flex items-center gap-12">
+                      <i :class="prov.icon" class="text-teal-500 opacity-60"></i>
+                      <span class="font-bold">{{ prov.label }}</span>
+                      <span v-if="config['auth_' + prov.key + '_enabled'] === 'true'" class="badge badge-teal ml-8">Actif</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down arrow"></i>
+                  </div>
+                  <div class="accordion-body">
+                    <div class="p-24 border-top">
+                      <div class="toggle-card mb-24 bg-white border">
+                        <div class="toggle-content">
+                           <div class="toggle-title">Activer {{ prov.label }}</div>
+                           <div class="toggle-description">Permettre aux utilisateurs de se connecter avec leur compte {{ prov.label }}.</div>
+                        </div>
+                        <label class="switch-lg">
+                          <input type="checkbox" :checked="config['auth_' + prov.key + '_enabled'] === 'true'" @change="config['auth_' + prov.key + '_enabled'] = $event.target.checked ? 'true' : 'false'">
+                          <span class="slider round"></span>
+                        </label>
+                      </div>
+                      <div class="grid-2 gap-24 mb-24">
+                        <div class="form-group">
+                          <label class="config-label">Client ID</label>
+                          <input v-model="config['auth_' + prov.key + '_client_id']" class="input" placeholder="ID client fourni par le service">
+                        </div>
+                        <div class="form-group">
+                          <label class="config-label">Client Secret</label>
+                          <input type="password" v-model="config['auth_' + prov.key + '_client_secret']" class="input" placeholder="Clé secrète confidentielle">
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label class="config-label">URL de callback (Lecture seule)</label>
+                        <input :value="configStore.appUrl + '/api/v1/auth/social/' + prov.key + '/callback'" class="input bg-gray-100" readonly>
+                        <p class="help-text">Copiez cette URL dans les paramètres de votre application chez {{ prov.label }}.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer OAuth
+              </button>
+            </div>
+          </div>
+
+
+          <!-- SECTION PAGES -->
+          <div v-if="activeSection === 'pages'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-blue">
+              <div class="pc-header-icon"><i class="fa-solid fa-file-lines"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Gestion des Pages</div>
+                <div class="pc-header-sub">Éditez le contenu des pages légales et informatives</div>
+              </div>
+            </div>
+            <div class="pc-body">
+              <div class="accordion-container">
+                <div v-for="page in pagesList" :key="page.key" class="accordion-item" :class="{ open: activeAccordion === page.key }">
+                  <div class="accordion-header" @click="toggleAccordion(page.key)">
+                    <div class="flex items-center gap-12">
+                      <i :class="page.icon" class="text-blue-500 opacity-60"></i>
+                      <span class="font-bold">{{ page.label }} ({{ config['page_' + page.key + '_slug'] }})</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down arrow"></i>
+                  </div>
+                  <div class="accordion-body">
+                    <div class="p-24 border-top">
+                      <div class="toggle-card mb-24 bg-white border">
+                        <div class="toggle-content">
+                           <div class="toggle-title">Activer la page {{ page.label }}</div>
+                           <div class="toggle-description">Rendre cette page accessible publiquement via son URL et dans le pied de page.</div>
+                        </div>
+                        <label class="switch-lg">
+                          <input type="checkbox" :checked="config['page_' + page.key + '_enabled'] === 'true'" @change="config['page_' + page.key + '_enabled'] = $event.target.checked ? 'true' : 'false'">
+                          <span class="slider round"></span>
+                        </label>
+                      </div>
+                      <div class="grid-2 gap-24 mb-24">
+                        <div class="form-group">
+                          <label class="config-label">Titre de la page</label>
+                          <input v-model="config['page_' + page.key + '_title']" class="input" placeholder="Ex: Mentions Légales">
+                        </div>
+                        <div class="form-group">
+                          <label class="config-label">Slug (URL)</label>
+                          <input v-model="config['page_' + page.key + '_slug']" class="input" placeholder="ex: mentions-legales">
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label class="config-label">Contenu HTML</label>
+                        <RichTextEditor v-model="config['page_' + page.key + '_content']" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer Pages
+              </button>
             </div>
           </div>
 
@@ -368,11 +584,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
+import RichTextEditor from '../../components/RichTextEditor.vue';
 
 const config = ref({});
 const loading = ref(true);
 const saving = ref(false);
+const sendingTest = ref(null);
+const testEmailAddress = ref('');
 const activeSection = ref('identity');
+const currentUser = ref(null);
+const previewMailType = ref('reminder');
 
 const sections = [
   { id: 'identity', label: 'Identité', icon: 'fa-solid fa-fingerprint' },
@@ -381,7 +602,50 @@ const sections = [
   { id: 'notifications', label: 'Alertes', icon: 'fa-solid fa-bell' },
   { id: 'mail_server', label: 'Serveur Mail', icon: 'fa-solid fa-server' },
   { id: 'emails', label: 'Contenu Emails', icon: 'fa-solid fa-envelope-open-text' },
+  { id: 'oauth', label: 'Clés OAuth', icon: 'fa-solid fa-key' },
+  { id: 'pages', label: 'Pages de contenu', icon: 'fa-solid fa-file-lines' },
   { id: 'system', label: 'Maintenance', icon: 'fa-solid fa-triangle-exclamation' },
+];
+
+const activeAccordion = ref(null);
+const activeAccordionEmail = ref(null);
+const activeAccordionOAuth = ref(null);
+
+const toggleAccordion = (key) => {
+  activeAccordion.value = activeAccordion.value === key ? null : key;
+};
+
+const toggleAccordionEmail = (key) => {
+  activeAccordionEmail.value = activeAccordionEmail.value === key ? null : key;
+};
+
+const toggleAccordionOAuth = (key) => {
+  activeAccordionOAuth.value = activeAccordionOAuth.value === key ? null : key;
+};
+
+const pagesList = [
+  { key: 'legal', label: 'Mentions Légales', icon: 'fa-solid fa-scale-balanced' },
+  { key: 'privacy', label: 'Politique de Confidentialité', icon: 'fa-solid fa-user-lock' },
+  { key: 'terms', label: 'Conditions Générales (CGU)', icon: 'fa-solid fa-handshake-angle' }
+];
+
+const emailList = [
+  { key: 'reminder', label: 'Rappel de décision', icon: 'fa-solid fa-clock-rotate-left', help: 'Variables : {name}, {title}, {phase}, {deadline}, {url}' },
+  { key: 'invitation', label: 'Invitation au cercle', icon: 'fa-solid fa-envelope-open-text', help: 'Variables : {inviter}, {circle}, {description}, {url}' },
+  { key: 'notification', label: 'Nouvelle phase', icon: 'fa-solid fa-bullhorn', help: 'Variables : {name}, {title}, {phase}, {url}' },
+  { key: 'contact', label: 'Message de contact', icon: 'fa-solid fa-message', help: 'Variables : {name}, {email}, {subject}, {message}' },
+];
+
+const oauthList = [
+  { key: 'google', label: 'Google', icon: 'fa-brands fa-google' },
+  { key: 'github', label: 'GitHub', icon: 'fa-brands fa-github' },
+  { key: 'facebook', label: 'Facebook', icon: 'fa-brands fa-facebook' },
+  { key: 'twitter', label: 'X (Twitter)', icon: 'fa-brands fa-x-twitter' },
+  { key: 'linkedin-openid', label: 'LinkedIn', icon: 'fa-brands fa-linkedin' },
+  { key: 'gitlab', label: 'GitLab', icon: 'fa-brands fa-gitlab' },
+  { key: 'microsoft', label: 'Microsoft', icon: 'fa-brands fa-microsoft' },
+  { key: 'apple', label: 'Apple', icon: 'fa-brands fa-apple' },
+  { key: 'franceconnect', label: 'FranceConnect', icon: 'fa-solid fa-id-card' },
 ];
 
 const publicRegistrationBool = computed({
@@ -410,15 +674,152 @@ const processedLogoUrl = computed(() => {
   return '/storage/' + config.value.app_logo;
 });
 
+const configStore = { appUrl: window.location.origin }; // Fallback simple ou import direct si nécessaire
+
 onMounted(async () => {
   try {
     const { data } = await axios.get('/api/v1/admin/config');
     config.value = data.config || data || {};
+    
+    const meRes = await axios.get('/api/v1/auth/me');
+    currentUser.value = meRes.data.user || meRes.data;
+    if (currentUser.value && currentUser.value.email) {
+      testEmailAddress.value = currentUser.value.email;
+    }
   } catch (e) {
     console.error("Config fetch error", e);
   } finally {
     loading.value = false;
   }
+});
+
+// Fallback watch for testEmailAddress if currentUser is slow
+import { watch } from 'vue';
+watch(() => currentUser.value, (newVal) => {
+  if (newVal && newVal.email) {
+    testEmailAddress.value = newVal.email;
+  }
+}, { immediate: true });
+
+const sendTestEmail = async (mailKey) => {
+  if (!testEmailAddress.value) return alert('Veuillez saisir une adresse email.');
+  
+  sendingTest.value = mailKey;
+  try {
+    let body = config.value['mail_' + mailKey + '_body'];
+    let subject = config.value['mail_' + mailKey + '_subject'];
+    
+    const baseUrl = window.location.origin;
+
+    const mockData = {
+      '{name}': currentUser.value?.name || 'Utilisateur',
+      '{title}': 'DÉCISION DE TEST',
+      '{phase}': 'Objection',
+      '{deadline}': '31/12/2026 à 18:00',
+      '{url}': baseUrl + '/decisions/test',
+      '{inviter}': 'Administrateur',
+      '{circle}': 'Cercle Pilote',
+      '{description}': 'Ceci est une description de test pour le cercle.',
+      '{email}': currentUser.value?.email || 'test@example.com',
+      '{subject}': 'Sujet de test',
+      '{message}': 'Ceci est un message de test envoyé depuis le panneau de configuration.'
+    };
+    
+    for (const [key, val] of Object.entries(mockData)) {
+      body = body.split(key).join(val);
+      subject = subject.split(key).join(val);
+    }
+
+    // Ensure absolute URLs for any internal links in body if any
+    const logo = config.value.mail_template_logo || config.value.app_logo || '';
+    let absoluteLogo = logo;
+    if (logo && !logo.startsWith('http')) {
+      absoluteLogo = baseUrl + (logo.startsWith('/') ? '' : '/storage/') + (logo.startsWith('/') ? logo.substring(1) : logo);
+    }
+
+    await axios.post('/api/v1/admin/config/test-email', {
+      to_email: testEmailAddress.value,
+      subject: subject,
+      body: body,
+      // Pass extra config for the wrapper on backend if needed, 
+      // but usually the backend should use its own config. 
+      // Our API supports custom body/subject.
+    });
+    
+    alert('Email de test envoyé !');
+  } catch (e) {
+    alert('Erreur lors de l\'envoi du test : ' + (e.response?.data?.message || e.message));
+  } finally {
+    sendingTest.value = null;
+  }
+};
+
+const mockedSubject = computed(() => {
+  if (!config.value || !previewMailType.value) return '';
+  return config.value['mail_' + previewMailType.value + '_subject'] || '';
+});
+
+const renderedPreview = computed(() => {
+  if (!config.value || !config.value.mail_template_wrapper) return '';
+  
+  let body = config.value['mail_' + previewMailType.value + '_body'] || '';
+  const wrapper = config.value.mail_template_wrapper;
+
+  // 1. Mock content variables
+  const mockData = {
+    '{name}': currentUser.value?.name || 'Utilisateur',
+    '{title}': 'TITRE DE LA DÉCISION',
+    '{phase}': 'Objection',
+    '{deadline}': '31/12/2026 à 18:00',
+    '{url}': '#',
+    '{inviter}': 'Jean Dupont',
+    '{circle}': 'Cercle de Gouvernance',
+    '{description}': 'Ceci est une description de test pour le cercle.',
+    '{email}': currentUser.value?.email || 'admin@dazo.app',
+    '{subject}': 'Sujet de test',
+    '{message}': 'Contenu du message envoyé par le formulaire de contact.'
+  };
+
+  for (const [key, val] of Object.entries(mockData)) {
+    body = body.split(key).join(val);
+  }
+
+  // 2. Wrap it
+  let logo = config.value.mail_template_logo || config.value.app_logo || '';
+  if (logo && !logo.startsWith('http') && !logo.startsWith('/')) {
+    logo = '/storage/' + logo;
+  }
+  if (logo && (logo.startsWith('/') || !logo.startsWith('http'))) {
+    logo = window.location.origin + (logo.startsWith('/') ? '' : '/storage/') + logo;
+  }
+
+  const wrapData = {
+    '{logo}': logo,
+    '{logo_perso}': config.value.mail_template_logo_perso || '',
+    '{site_link}': config.value.mail_template_site_link || window.location.origin,
+    '{site_link_register}': config.value.mail_template_site_link_register || (window.location.origin + '/register'),
+    '{message}': body
+  };
+
+  let html = wrapper;
+  for (const [key, val] of Object.entries(wrapData)) {
+    // Escape message if needed, but since it's HTML from editor we use it as is
+    html = html.split(key).join(val);
+  }
+
+  // Ensure internal absolute URLs for preview images
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  const imgs = tempDiv.getElementsByTagName('img');
+  for (let img of imgs) {
+    if (img.src.startsWith(window.location.origin + '/storage/')) {
+       // already absolute
+    } else if (img.src.startsWith('/storage/')) {
+       img.src = window.location.origin + img.src;
+    }
+  }
+
+  return tempDiv.innerHTML;
 });
 
 const saveConfig = async () => {
@@ -555,6 +956,27 @@ const handleLogoUpload = async (event) => {
 input:checked + .slider { background-color: var(--blue-600); }
 input:checked + .slider:before { transform: translateX(28px); }
 .switch-lg.danger input:checked + .slider { background-color: var(--red-600); }
+
+/* Accordion */
+.accordion-container { border-radius: 0 0 16px 16px; overflow: hidden; }
+.accordion-item { border-bottom: 1px solid var(--gray-100); background: white; }
+.accordion-item:last-child { border-bottom: none; }
+.accordion-header { 
+  display: flex; justify-content: space-between; align-items: center; 
+  padding: 20px 24px; cursor: pointer; transition: background 0.2s;
+  user-select: none;
+}
+.accordion-header:hover { background: var(--gray-50); }
+.accordion-item.open .accordion-header { background: var(--blue-50); }
+.accordion-header .arrow { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0.5; }
+.accordion-item.open .arrow { transform: rotate(180deg); opacity: 1; color: var(--blue-600); }
+
+.accordion-body { 
+  max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background: white;
+}
+.accordion-item.open .accordion-body { max-height: 2000px; transition: max-height 0.5s ease-in; }
+
+.border-top { border-top: 1px solid var(--gray-100); }
 
 @media (max-width: 1024px) {
   .config-layout { flex-direction: column; }

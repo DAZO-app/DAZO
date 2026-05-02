@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CircleSeeder::class,
             DecisionSeeder::class,
             WikiPageSeeder::class,
+            ConfigSeeder::class,
         ]);
     }
 }

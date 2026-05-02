@@ -43,6 +43,8 @@ class PublicDecisionController extends Controller
 
         $decision = $this->buildBaseQuery()
                          ->with([
+                             'versions.attachments',
+                             'versions.feedbacks.author:id,name',
                              'currentVersion.attachments',
                              'currentVersion.feedbacks.author:id,name',
                              'participants:id,decision_id,user_id,role',
@@ -303,5 +305,19 @@ class PublicDecisionController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * Increment share counter for a decision.
+     */
+    public function incrementShare($id): JsonResponse
+    {
+        $decision = Decision::findOrFail($id);
+        $decision->increment('share_count');
+
+        return response()->json([
+            'message' => 'Compteur mis à jour.',
+            'share_count' => $decision->share_count
+        ]);
     }
 }

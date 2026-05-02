@@ -16,13 +16,12 @@
     </div>
 
     <!-- Panel des Pièces jointes (si pas en édition) -->
-    <div v-if="!((isDraft || isRevision) && isAuthorOrAnimator)" class="mb-16">
-      <AttachmentPanel
-        :attachments="displayAttachments"
-        :editable="false"
-        :version-id="viewingVersionId || currentVersionId || ''"
-      />
-    </div>
+    <AttachmentPanel
+      :attachments="displayAttachments"
+      :editable="false"
+      :can-reload="canReloadAttachments"
+      :version-id="viewingVersionId || currentVersionId || ''"
+    />
     
     <!-- Vue contextuelle pendant une révision -->
     <div v-if="isRevision && !isDraft" class="premium-card mb-16">
@@ -48,6 +47,7 @@ defineProps({
   isDraft: Boolean,
   isRevision: Boolean,
   isAuthorOrAnimator: Boolean,
+  canReloadAttachments: Boolean,
   viewingVersionId: { type: [String, Number], default: null },
   historicalVersionNumber: { type: [String, Number], default: '' },
   currentVersionNumber: { type: [String, Number], default: '' },

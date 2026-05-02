@@ -43,6 +43,9 @@ const props = defineProps({
   }
 });
 
+import { useConfigStore } from '../stores/config';
+
+const configStore = useConfigStore();
 const loadingProvider = ref(null);
 const error = ref('');
 
@@ -75,7 +78,7 @@ const allProviders = [
   {
     key: 'gitlab',
     label: 'GitLab',
-    icon: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="#E24329" d="m12 22.167 4.05-12.457H7.95z"/><path fill="#FC6D26" d="M12 22.167 7.95 9.71H1.514z"/><path fill="#FCA326" d="M1.514 9.71.047 14.223a1 1 0 0 0 .363 1.118L12 22.167z"/><path fill="#E24329" d="M1.514 9.71h6.436L5.263 1.667a.5.5 0 0 0-.952 0z"/><path fill="#FC6D26" d="M12 22.167 16.05 9.71h6.436z"/><path fill="#FCA326" d="m22.486 9.71 1.467 4.513a1 1 0 0 1-.363 1.118L12 22.167z"/><path fill="#E24329" d="M22.486 9.71H16.05l2.687-8.043a.5.5 0 0 1 .952 0z"/></svg>'
+    icon: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="#E24329" d="m12 22.167 4.05-12.457H7.95z"/><path fill="#FC6D26" d="M12 22.167 7.95 9.71H1.514z"/><path fill="#FCA326" d="M1.514 9.71.047 14.223a1 1 0 0 0 .363 1.118L12 22.167z"/><path fill="#E24329" d="M1.514 9.71h6.436L5.263 1.667a.5.5 0 0 0-.952 0z"/><path fill="#FC6D26" d="M12 22.167 16.05 9.71h6.436z"/><path fill="#FCA326" d="m22.486 9.71 1.467 4.513a1 1 0 0 1-.363 1.118L12 22.167z"/><path fill="#E24329" d="M22.486 9.71H16.05l2.687-8043a.5.5 0 0 1 .952 0z"/></svg>'
   },
   {
     key: 'twitter',
@@ -94,9 +97,17 @@ const allProviders = [
   },
 ];
 
-// Only show providers that have been configured (have a client_id in env)
-// For now, show all — the backend will return an error if not configured
-const enabledProviders = computed(() => allProviders);
+const enabledProviders = computed(() => {
+  return allProviders.filter(provider => {
+    // 1. Must be enabled in config
+    const isEnabled = configStore.config['auth_' + provider.key + '_enabled'] === 'true';
+    
+    // 2. Must have a client_id (optional but recommended check)
+    const hasClientId = !!configStore.config['auth_' + provider.key + '_client_id'];
+
+    return isEnabled && hasClientId;
+  });
+});
 
 const handleSocialLogin = async (providerKey) => {
   loadingProvider.value = providerKey;

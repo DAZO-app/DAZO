@@ -40,6 +40,11 @@
                 <i class="fa-solid fa-house"></i>
                 <span class="btn-text-mobile-hide ml-6">Tableau de bord</span>
               </router-link>
+              <router-link v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'superadmin'" 
+                           to="/" class="btn btn-indigo btn-sm shadow-md btn-auth" title="Retour à l'administration">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span class="btn-text-mobile-hide ml-6">Admin</span>
+              </router-link>
             </div>
           </template>
         </div>
@@ -58,9 +63,14 @@
       <div class="public-container-wide footer-inner">
         <p class="footer-text">&copy; {{ new Date().getFullYear() }} {{ configStore.appName }}. Tous droits réservés.</p>
         <div class="footer-links">
-          <a v-if="configStore.config.legal_mentions_url" :href="configStore.config.legal_mentions_url" target="_blank" rel="noopener noreferrer">Mentions Légales</a>
-          <a v-if="configStore.config.privacy_policy_url" :href="configStore.config.privacy_policy_url" target="_blank" rel="noopener noreferrer">Confidentialité</a>
-          <a v-if="configStore.config.terms_of_service_url" :href="configStore.config.terms_of_service_url" target="_blank" rel="noopener noreferrer">CGU</a>
+          <!-- Pages de contenu dynamiques -->
+          <template v-for="pageKey in ['legal', 'privacy', 'terms']">
+            <router-link v-if="configStore.config['page_' + pageKey + '_enabled'] === 'true'" 
+                         :key="pageKey"
+                         :to="{ name: 'PublicPage', params: { slug: configStore.config['page_' + pageKey + '_slug'] } }">
+              {{ configStore.config['page_' + pageKey + '_title'] }}
+            </router-link>
+          </template>
           <router-link to="/login">Espace Membre</router-link>
         </div>
       </div>
@@ -241,6 +251,17 @@ const resetAndGoHome = () => {
 .btn-white-ghost:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: white;
+}
+
+.btn-indigo {
+  background: var(--blue-600);
+  color: white;
+  border: none;
+}
+.btn-indigo:hover {
+  background: var(--blue-500);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 /* Main */

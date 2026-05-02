@@ -64,6 +64,21 @@
             {{ (decision.status?.value || decision.status) === 'objection' ? 'Adopter la décision' : 'Passer à l\'étape suivante' }}
           </button>
 
+          <!-- Actions spécifiques Phase Révision -->
+          <template v-if="(decision.status?.value || decision.status) === 'revision'">
+             <div class="flex flex-col gap-8 w-full">
+                <button class="btn btn-sm btn-secondary w-full" @click="handleQuickAction('suspend')" :disabled="loading">
+                  <i class="fa-solid fa-clock-rotate-left mr-8"></i> Réviser ultérieurement
+                </button>
+                <button class="btn btn-sm btn-indigo w-full" @click="publishRevision('clarification')" :disabled="loading">
+                  <i class="fa-solid fa-recycle mr-8"></i> Cycle complet
+                </button>
+                <button class="btn btn-sm btn-emerald w-full" @click="publishRevision('objection')" :disabled="loading">
+                  <i class="fa-solid fa-paper-plane mr-8"></i> Direct objections
+                </button>
+             </div>
+          </template>
+
           <button 
             class="btn btn-sm btn-secondary" 
             @click.stop="showQuickActions = !showQuickActions" 
@@ -102,7 +117,15 @@
               </div>
            </button>
 
-           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="handleQuickAction('revision')" v-if="!['revision', 'adopted', 'abandoned'].includes(decision.status?.value || decision.status)">
+            <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="$emit('direct-edit')">
+              <i class="fa-solid fa-pen-to-square mr-12 text-emerald-500 w-16"></i>
+              <div class="flex flex-col items-start">
+                <span class="font-bold">Éditer en direct</span>
+                <span class="text-[10px] text-gray-500">Modifier le texte et passer en objection</span>
+              </div>
+            </button>
+
+            <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="handleQuickAction('revision')" v-if="!['revision', 'adopted', 'abandoned'].includes(decision.status?.value || decision.status)">
               <i class="fa-solid fa-file-signature mr-12 text-indigo-500 w-16"></i>
               <div class="flex flex-col items-start">
                 <span class="font-bold">Créer une révision</span>
@@ -278,7 +301,7 @@ const props = defineProps({
   replyTrigger: { type: Number, default: 0 }
 });
 
-const emit = defineEmits(['refresh-data', 'phase-change', 'cancel-reply', 'action-logged', 'version-change', 'dock', 'undock', 'drag-start', 'drag-end']);
+const emit = defineEmits(['refresh-data', 'phase-change', 'cancel-reply', 'action-logged', 'version-change', 'dock', 'undock', 'drag-start', 'drag-end', 'direct-edit', 'publish-revision']);
 
 const authStore = useAuthStore();
 
@@ -673,6 +696,10 @@ const resolveFeedback = async (status) => {
   } finally {
     loading.value = false;
   }
+};
+
+const publishRevision = (targetPhase) => {
+  emit('publish-revision', targetPhase);
 };
 
 const transitionError = ref(null);
