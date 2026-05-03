@@ -78,6 +78,18 @@
           />
         </div>
 
+        <div class="mb-16">
+          <AttachmentPanel
+            :attachments="revisionAttachments"
+            :editable="true"
+            version-id=""
+            :hide-header="true"
+            :can-reload="false"
+            @uploaded="(file) => $emit('upload-revision-file', file)"
+            @removed="(file) => $emit('remove-revision-file', file)"
+          />
+        </div>
+
         <div v-if="currentVersion?.attachments?.length > 0" class="mb-16 p-12 bg-gray-50 border-radius-sm">
           <div class="flex items-center justify-between mb-8">
             <label class="label mb-0" style="font-size: 13px;">Conserver des pièces jointes de la version précédente</label>
@@ -97,16 +109,6 @@
               <label :for="'prev-att-' + att.id" class="text-sm cursor-pointer" style="margin-bottom: 0;">{{ att.filename }}</label>
             </div>
           </div>
-        </div>
-
-        <div class="mb-16">
-          <AttachmentPanel
-            :attachments="revisionAttachments"
-            :editable="true"
-            version-id=""
-            @uploaded="(file) => $emit('upload-revision-file', file)"
-            @removed="(file) => $emit('remove-revision-file', file)"
-          />
         </div>
 
       </div>

@@ -146,11 +146,14 @@
            </button>
 
            <!-- 5. Annuler dernière action -->
-           <button v-if="canUndo" class="btn btn-sm btn-outline-gray justify-start h-auto py-12 border-amber-100 hover:bg-amber-50" @click="confirmAction('undo')">
-              <i class="fa-solid fa-rotate-left mr-12 text-amber-500 w-16"></i>
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12 border-gray-200 hover:bg-gray-50 transition-opacity" 
+                   :disabled="!canUndo" 
+                   :class="{'opacity-40 cursor-not-allowed': !canUndo}" 
+                   @click="canUndo ? confirmAction('undo') : null">
+              <i class="fa-solid fa-rotate-left mr-12 text-gray-500 w-16" :class="{'text-amber-600': canUndo}"></i>
               <div class="flex flex-col items-start">
-                <span class="font-bold text-amber-700">Annuler</span>
-                <span class="text-[10px] text-gray-500">Annuler la dernière action</span>
+                <span class="font-bold" :class="canUndo ? 'text-amber-600' : 'text-gray-400'">Annuler dernière action</span>
+                <span class="text-[10px] text-gray-500">Revenir sur la dernière validation</span>
               </div>
            </button>
         </div>
@@ -295,12 +298,61 @@
 
     </div> <!-- Fin de card-body (25) -->
   </div> <!-- Fin de panel (2) -->
+
+  <!-- Custom Alert/Confirm Modal for Fullscreen -->
+  <div v-if="showConfirmModal" class="modal-overlay" style="z-index: 2147483647;" @click.self="closeCustomModal(false)">
+    <div class="modal-container rounded-lg shadow-xl overflow-hidden" style="max-width: 400px; width: 100%; background: white; animation: modalIn 0.2s ease;">
+      <div class="modal-header flex items-center justify-between p-16 border-b border-gray-200">
+        <h3 class="modal-title m-0 text-base font-bold text-gray-900">{{ modalConfig.title }}</h3>
+        <button class="modal-close bg-transparent border-none text-gray-400 hover:text-gray-600 cursor-pointer text-lg p-4" @click="closeCustomModal(false)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body p-20 text-gray-700 text-sm leading-relaxed">
+        {{ modalConfig.message }}
+      </div>
+      <div class="modal-footer flex justify-end gap-12 p-16 bg-gray-50 border-t border-gray-200">
+        <button v-if="!modalConfig.isAlert" class="btn btn-gray" @click="closeCustomModal(false)">Annuler</button>
+        <button class="btn btn-primary" @click="closeCustomModal(true)">{{ modalConfig.isAlert ? 'OK' : 'Confirmer' }}</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
+
+// Modal state
+const showConfirmModal = ref(false);
+const modalConfig = ref({
+  title: 'Confirmation',
+  message: '',
+  isAlert: false,
+  resolve: null
+});
+
+const customConfirm = (message, title = 'Confirmation') => {
+  showConfirmModal.value = true;
+  return new Promise(resolve => {
+    modalConfig.value = { title, message, isAlert: false, resolve };
+  });
+};
+
+const customAlert = (message, title = 'Information') => {
+  showConfirmModal.value = true;
+  return new Promise(resolve => {
+    modalConfig.value = { title, message, isAlert: true, resolve };
+  });
+};
+
+const closeCustomModal = (result) => {
+  showConfirmModal.value = false;
+  if (modalConfig.value.resolve) {
+    modalConfig.value.resolve(result);
+  }
+};
 
 const props = defineProps({
   decision: Object,
@@ -644,7 +696,7 @@ const sendQuickSignal = async (userId, signalType = null) => {
     emit('action-logged', { type: 'consent', id: res.data.consent.id });
     emit('refresh-data');
   } catch (err) {
-    alert(err.response?.data?.message || "Erreur lors de l'enregistrement.");
+    customAlert(err.response?.data?.message || "Erreur lors de l'enregistrement.");
   } finally {
     loading.value = false;
   }
@@ -667,7 +719,7 @@ const submitFeedback = async (type) => {
     showForm.value = false;
     emit('refresh-data');
   } catch (err) {
-    alert(err.response?.data?.message || "Erreur lors de la publication.");
+    customAlert(err.response?.data?.message || "Erreur lors de la publication.");
   } finally {
     loading.value = false;
   }
@@ -689,7 +741,7 @@ const submitReply = async () => {
     emit('refresh-data');
     emit('cancel-reply');
   } catch (err) {
-    alert(err.response?.data?.message || "Erreur lors de la réponse.");
+    customAlert(err.response?.data?.message || "Erreur lors de la réponse.");
   } finally {
     loading.value = false;
   }
@@ -706,7 +758,8 @@ const resolveFeedback = async (status) => {
     emit('refresh-data');
     cancelFeedback();
   } catch (err) {
-    alert(err.response?.data?.message || "Erreur lors de la mise à jour.");
+    console.error('Feedback Delete Error:', err);
+    customAlert(err.response?.data?.message || "Erreur lors de la mise à jour.");
   } finally {
     loading.value = false;
   }
@@ -746,18 +799,20 @@ const nextPhase = async () => {
     loading.value = false;
   }
 };
-const confirmMessages = {
-  'suspend': 'Voulez-vous mettre cette décision en pause ?',
-  'resume': 'Voulez-vous reprendre le processus ?',
-  'revision-direct': 'Créer une révision et ouvrir l\'éditeur en direct ?',
-  'revision-later': 'Passer en mode révision (brouillon) ? La révision pourra être rédigée ultérieurement.',
-  'abandon': 'Êtes-vous sûr de vouloir abandonner définitivement cette décision ?',
-  'undo': 'Êtes-vous sûr de vouloir annuler la dernière action effectuée ?'
-};
 
-const confirmAction = (type) => {
+const confirmAction = async (type) => {
+  const confirmMessages = {
+    'suspend': 'Voulez-vous mettre cette décision en pause ?',
+    'resume': 'Voulez-vous reprendre le processus ?',
+    'revision-direct': 'Créer une révision et ouvrir l\'éditeur en direct ?',
+    'revision-later': 'Passer en mode révision (brouillon) ? La révision pourra être rédigée ultérieurement.',
+    'abandon': 'Êtes-vous sûr de vouloir abandonner définitivement cette décision ?',
+    'undo': 'Êtes-vous sûr de vouloir annuler la dernière action effectuée ?'
+  };
+  
   const msg = confirmMessages[type] || 'Confirmer cette action ?';
-  if (!confirm(msg)) return;
+  const confirmed = await customConfirm(msg);
+  if (!confirmed) return;
   
   if (type === 'undo') {
     showQuickActions.value = false;
@@ -802,7 +857,7 @@ const handleQuickAction = async (type) => {
     }
   } catch (err) {
     console.error('Quick Action Error:', err);
-    transitionError.value = err.response?.data?.message || "Erreur lors de l'action.";
+    customAlert(err.response?.data?.message || "Erreur lors de l'action.");
   } finally {
     loading.value = false;
   }

@@ -127,33 +127,11 @@
             <div class="sidebar-content" v-show="!isDocSidebarCollapsed">
               <!-- Prose en affichage fluide (Mode Flat) -->
               <div class="meeting-prose-container flex-1">
-                <template v-if="currentStatus === 'revision' && isAnimator">
-                   <div class="flex flex-col gap-16">
-                     <div class="form-group">
-                       <RichTextEditor 
-                         v-model="directEditDraft.content"
-                         class="meeting-inline-editor"
-                         placeholder="Modifiez le texte de la proposition ici..."
-                       />
-                     </div>
-                     <div class="form-group">
-                       <AttachmentPanel 
-                         :attachments="directEditDraft.attachments"
-                         :editable="true"
-                         :unlink-only="true"
-                         :hide-header="true"
-                         @uploaded="onDirectEditAttachmentAdded"
-                         @removed="onDirectEditAttachmentRemoved"
-                         class="bg-white rounded-xl border border-gray-100"
-                       />
-                     </div>
-                   </div>
-                </template>
-                <div v-else class="meeting-prose prose-sm" v-html="displayContent"></div>
+                <div class="meeting-prose prose-sm" v-html="displayContent"></div>
               </div>
 
-              <!-- Pièces jointes (Lecture seule si pas en édition) -->
-              <div v-if="!(currentStatus === 'revision' && isAnimator) && attachments && attachments.length > 0" class="meeting-attachments-panel mt-24 pt-24 border-t border-gray-200">
+              <!-- Pièces jointes (Lecture seule) -->
+              <div v-if="attachments && attachments.length > 0" class="meeting-attachments-panel mt-24 pt-24 border-t border-gray-200">
                 <h3 class="text-xs font-bold mb-12 text-gray-400 uppercase tracking-wider">Pièces jointes</h3>
                 <div class="flex flex-col gap-8">
                   <button 
@@ -334,7 +312,7 @@
 
     <!-- Panneau Édition en Direct -->
     <div v-if="isDirectEditing" class="direct-edit-overlay">
-      <div class="direct-edit-container premium-card shadow-2xl animate-scale-in">
+      <div class="direct-edit-container premium-card shadow-2xl animate-scale-in" style="background: white;">
         <div class="pc-header pc-header-emerald">
           <div class="pc-header-icon"><i class="fa-solid fa-pen-to-square"></i></div>
           <div class="pc-header-content">
@@ -360,14 +338,23 @@
           <!-- Panneau latéral : Pièces jointes -->
           <div class="w-320 flex-shrink-0 flex flex-col">
             <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Pièces jointes</label>
-            <AttachmentPanel 
-              :attachments="directEditDraft.attachments"
-              :editable="true"
-              :unlink-only="isDirectEditing"
-              @uploaded="onDirectEditAttachmentAdded"
-              @removed="onDirectEditAttachmentRemoved"
-              class="flex-1 overflow-y-auto"
-            />
+            <div class="mb-12 text-[10px] text-amber-600 bg-amber-50 p-8 rounded border border-amber-100">
+              <i class="fa-solid fa-circle-info mr-4"></i>
+              La modification des pièces jointes n'est pas possible en mode édition en direct. Celles de la version précédente sont conservées avec leurs droits.
+            </div>
+            
+            <div class="flex flex-col gap-8 flex-1 overflow-y-auto">
+              <div 
+                v-for="(att, idx) in directEditDraft.attachments" 
+                :key="att.id"
+                class="attachment-row flex items-center p-8 rounded hover:bg-gray-50 border border-transparent hover:border-gray-100 cursor-pointer transition-all"
+                @click.stop.prevent="openFloatingAttachment(att)"
+              >
+                <i class="fa-solid fa-paperclip mr-12 text-indigo-400"></i>
+                <span class="text-sm font-medium truncate flex-1">{{ att.filename }}</span>
+                <i class="fa-solid fa-chevron-right ml-auto text-[10px] opacity-30"></i>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -427,6 +414,24 @@
       @focus="bringToFront"
       @close="closeFloatingAttachment"
     />
+    <!-- Custom Alert/Confirm Modal for Fullscreen -->
+    <div v-if="showConfirmModal" class="modal-overlay" style="z-index: 2147483647;" @click.self="closeCustomModal(false)">
+      <div class="modal-container rounded-lg shadow-xl overflow-hidden" style="max-width: 400px; width: 100%; background: white; animation: modalIn 0.2s ease;">
+        <div class="modal-header flex items-center justify-between p-16 border-b border-gray-200">
+          <h3 class="modal-title m-0 text-base font-bold text-gray-900">{{ modalConfig.title }}</h3>
+          <button class="modal-close bg-transparent border-none text-gray-400 hover:text-gray-600 cursor-pointer text-lg p-4" @click="closeCustomModal(false)">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body p-20 text-gray-700 text-sm leading-relaxed">
+          {{ modalConfig.message }}
+        </div>
+        <div class="modal-footer flex justify-end gap-12 p-16 bg-gray-50 border-t border-gray-200">
+          <button v-if="!modalConfig.isAlert" class="btn btn-gray" @click="closeCustomModal(false)">Annuler</button>
+          <button class="btn btn-primary" @click="closeCustomModal(true)">{{ modalConfig.isAlert ? 'OK' : 'Confirmer' }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -438,12 +443,40 @@ import FloatingWindow from './FloatingWindow.vue';
 import RichTextEditor from './RichTextEditor.vue';
 import AttachmentPanel from './AttachmentPanel.vue';
 import { useConfigStore } from '../stores/config';
+import { useRouter } from 'vue-router';
+import confetti from 'canvas-confetti';
 
 const configStore = useConfigStore();
 
-// On essaie l'import local, mais on prévoira un fallback
-// Suppression de l'import local qui semble poser problème avec le build Vite
-// On utilisera un chargement dynamique via CDN
+// Modal state
+const showConfirmModal = ref(false);
+const modalConfig = ref({
+  title: 'Confirmation',
+  message: '',
+  isAlert: false,
+  resolve: null
+});
+
+const customConfirm = (message, title = 'Confirmation') => {
+  showConfirmModal.value = true;
+  return new Promise(resolve => {
+    modalConfig.value = { title, message, isAlert: false, resolve };
+  });
+};
+
+const customAlert = (message, title = 'Information') => {
+  showConfirmModal.value = true;
+  return new Promise(resolve => {
+    modalConfig.value = { title, message, isAlert: true, resolve };
+  });
+};
+
+const closeCustomModal = (result) => {
+  showConfirmModal.value = false;
+  if (modalConfig.value.resolve) {
+    modalConfig.value.resolve(result);
+  }
+};
 
 const props = defineProps({
   decision: { type: Object, required: true },
@@ -519,15 +552,13 @@ const startDirectEdit = () => {
 
   if (!isRev) return;
 
-  const content = (d.revision_content !== null && d.revision_content !== undefined) 
-    ? d.revision_content 
-    : (props.currentVersion?.content || '');
+  const content = d.revision_content || props.currentVersion?.content || '';
     
-  const attachments = (d.revision_attachments !== null && d.revision_attachments !== undefined)
+  const attachments = (d.revision_attachments && d.revision_attachments.length > 0)
     ? [...d.revision_attachments] 
     : [...(props.attachments || [])];
     
-  const attachmentIds = d.revision_attachment_ids
+  const attachmentIds = (d.revision_attachment_ids && d.revision_attachment_ids.length > 0)
     ? [...d.revision_attachment_ids] 
     : (props.attachments || []).map(a => a.id);
 
@@ -566,7 +597,7 @@ const publishDirectEdit = async (targetPhase = 'objection') => {
     logAction(`Proposition modifiée en direct et publiée en ${targetPhase.toUpperCase()}.`);
   } catch (err) {
     console.error("Error publishing direct edit", err);
-    alert("Erreur lors de la publication : " + (err.response?.data?.message || err.message));
+    customAlert("Erreur lors de la publication : " + (err.response?.data?.message || err.message));
   } finally {
     publishingDirectEdit.value = false;
   }
@@ -712,9 +743,9 @@ const joinFeedback = async (fb, userId) => {
   try {
     await axios.post(`/api/v1/feedback/${fb.id}/join`, { user_id: userId });
     refreshAll();
-  } catch (err) {
-    console.error("Erreur joining feedback", err);
-    alert("Impossible d'ajouter ce soutien.");
+  } catch (error) {
+    console.error("Erreur lors de l'ajout du soutien :", error);
+    customAlert("Impossible d'ajouter ce soutien.");
   }
 };
 
@@ -815,7 +846,8 @@ const undoLastAction = async () => {
   
   // Confirmation already handled by SecretaryPanel confirmAction, 
   // but still confirm for keyboard shortcut (Ctrl+Z)
-  if (!confirm(`Êtes-vous sûr de vouloir annuler la dernière action effectuée en live ?`)) {
+  const confirmed = await customConfirm(`Êtes-vous sûr de vouloir annuler la dernière action effectuée en live ?`);
+  if (!confirmed) {
     return;
   }
 
@@ -839,7 +871,7 @@ const undoLastAction = async () => {
     actionHistory.value.pop();
     refreshAll();
   } catch (err) {
-    alert(err.response?.data?.message || "Erreur lors de l'annulation.");
+    customAlert(err.response?.data?.message || "Erreur lors de l'annulation.");
   }
 };
 

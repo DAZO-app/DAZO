@@ -90,6 +90,7 @@ const props = defineProps({
   previousDecisionId: { type: [String, Number], default: null },
   nextDecisionId: { type: [String, Number], default: null },
   isRevision: { type: Boolean, default: false },
+  isAuthorOrAnimator: { type: Boolean, default: false },
   savingDraft: { type: Boolean, default: false },
   publishing: { type: Boolean, default: false },
 });
@@ -102,7 +103,6 @@ defineEmits([
 
 const decisionStore = useDecisionStore();
 
-const isAuthorOrAnimator = computed(() => decisionStore.isAuthorOrAnimator(props.decision?.id));
 const isFavorite = computed(() => decisionStore.mySettings?.is_favorite || false);
 const notifLevelIcon = computed(() => {
   const level = decisionStore.mySettings?.notification_level;

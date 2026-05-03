@@ -42,6 +42,7 @@
         :previous-decision-id="previousDecisionId"
         :next-decision-id="nextDecisionId"
         :is-revision="isRevision"
+        :is-author-or-animator="isAuthorOrAnimator"
         :saving-draft="savingDraft"
         :publishing="publishing"
         @save-revision="saveRevision"
@@ -624,6 +625,8 @@ const isRevision = computed(() => {
   return s === 'revision';
 });
 
+const reusedAttachmentIds = computed(() => revisionAttachments.value.map(a => a.id));
+
 const isFavorite = computed(() => decisionStore.mySettings?.is_favorite || false);
 const currentNotifLevel = computed(() => decisionStore.mySettings?.notification_level || 'all');
 
@@ -974,13 +977,18 @@ const updateDraftForm = () => {
   // Hydrate revision attachments if any
   if (status === 'revision') {
     // Priority 1: Use full attachment objects from the API (includes draft new uploads)
-    if (value.revision_attachments) {
+    if (value.revision_attachments && value.revision_attachments.length > 0) {
       revisionAttachments.value = [...value.revision_attachments];
     } 
-    // Priority 2: Fallback to filtering current version attachments (backward compatibility/safety)
-    else if (value.revision_attachment_ids && value.current_version?.attachments) {
+    // Priority 2: Fallback to filtering current version attachments
+    else if (value.revision_attachment_ids && value.revision_attachment_ids.length > 0 && value.current_version?.attachments) {
       revisionAttachments.value = value.current_version.attachments.filter(a => value.revision_attachment_ids.includes(a.id));
-    } else {
+    } 
+    // DEFAULT: If no revision attachments are set yet, we reuse ALL from previous version as default
+    else if (value.current_version?.attachments) {
+      revisionAttachments.value = [...value.current_version.attachments];
+    }
+    else {
       revisionAttachments.value = [];
     }
   } else {
