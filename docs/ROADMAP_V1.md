@@ -73,6 +73,13 @@ Toutes les briques fondamentales du moteur de décision sociocratique, de l'inte
 ## ✅ Bloc 19 — Authentification & Accès (Évolutions)
 - [x] **Social Login** : Connexion via fournisseurs tiers (Google, Microsoft, Github).
 - [x] Maintien du support de mot de passe par défaut.
+
+## ✅ Bloc 20 — Interface Publique & Partage Social
+- [x] **Consultation Publique** : Interface dédiée pour les décisions ouvertes au grand public.
+- [x] **Filtrage Avancé** : Recherche cumulative par thématique, cercle et phase.
+- [x] **Partage Social Premium** : Popin de partage avec prévisualisation dynamique et tracking des intentions.
+- [x] **Intégration Admin** : Visualisation du taux de partage dans le back-office.
+
 ## 🚀 Prochaines Étapes (V1.5 / V2)
 - [ ] **Snippet Generator** : Générateur d'extraits HTML/JS pour l'intégration web facilitée.
 - [ ] **Notification Push** : Intégration Firebase pour alertes mobiles en temps réel.

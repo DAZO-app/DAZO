@@ -201,19 +201,34 @@
 | `GET` | `/api/v1/admin/tools/server/logs` | Lire les logs Laravel |
 
 ---
-203: 
-204: ## 📡 API Publique (XML/JSON pour CMS tiers)
-205: 
-206: Cette API permet d'exposer les décisions validées à des sites externes. Elle est accessible sans authentification utilisateur (Sanctum) mais nécessite une **Clé d'API** configurée dans le backoffice.
-207: 
-208: | Méthode | Endpoint | Description |
-209: |---|---|---|
-210: | `GET` | `/api/v1/public/decisions` | Liste des décisions exposées (filtrée par périmètre) |
-211: | `GET` | `/api/v1/public/decisions/{id}` | Détail XML/JSON d'une décision spécifique |
-212: 
-213: > **Authentification** : Envoyer la clé via l'en-tête `X-API-Key: {votre_cle}` ou via le paramètre d'URL `?api_key={votre_cle}`.
-214: 
-215: ---
+
+## 📡 API Publique (XML/JSON pour CMS tiers)
+
+Cette API permet d'exposer les décisions validées à des sites externes. Elle est accessible sans authentification utilisateur (Sanctum) mais nécessite une **Clé d'API** configurée dans le backoffice.
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/public/decisions` | Liste des décisions exposées (filtrée par périmètre) |
+| `GET` | `/api/v1/public/decisions/{id}` | Détail XML/JSON d'une décision spécifique |
+
+---
+
+## 🏛 Interface Publique (Frontend)
+
+Ces endpoints alimentent l'interface de consultation publique de DAZO. Ils sont accessibles sans authentification.
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/front/decisions` | Liste paginée des décisions publiques (avec filtres : search, status, circle, category, author) |
+| `GET` | `/api/v1/front/decisions/{id}` | Détail complet d'une décision pour l'affichage public |
+| `GET` | `/api/v1/front/decisions/suggestions` | Suggestions de recherche (titres, cercles, thématiques) |
+| `POST` | `/api/v1/front/decisions/{id}/share` | Incrémenter le compteur de partage social |
+
+---
+
+> **Authentification** : Envoyer la clé via l'en-tête `X-API-Key: {votre_cle}` ou via le paramètre d'URL `?api_key={votre_cle}`.
+
+---
 
 ## ⚡ Rate Limiting
 

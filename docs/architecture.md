@@ -81,6 +81,7 @@ app/
 │       ├── FeedbackController.php
 │       ├── ConsentController.php
 │       ├── AttachmentController.php     # Upload sécurisé + téléchargement privé
+│       ├── PublicDecisionController.php # API publique pour l'interface frontend
 │       └── ...
 │
 ├── Http/

@@ -109,6 +109,7 @@ Ajouter un audit log pour :
 - Impersonnation
 - Suppression d'utilisateurs
 - Génération de snippets d'intégration
+- **Social Sharing** : Améliorer la précision du tracking (intentions vs partages réels via callbacks API si supportés). Actuellement, nous trackons les clics.
 
 ### Snippet Generator (API Publique)
 - Créer une interface pour générer du code `<script>` ou `<iframe>`

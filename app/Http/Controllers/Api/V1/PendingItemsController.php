@@ -28,6 +28,8 @@ class PendingItemsController extends Controller
         }
 
         $items = [];
+        $feedbacks = collect();
+        $pendingDecisionIds = [];
 
         // ==== CASE 1: Decisions the user is a member of but hasn't acted on yet ====
         // (Applicable for all 3 phases - user must vote or post a feedback)
@@ -54,6 +56,8 @@ class PendingItemsController extends Controller
                 || Feedback::where('decision_version_id', $versionId)->where('author_id', $user->id)->exists();
 
             if (!$hasActed) {
+                $pendingDecisionIds[] = $d->id;
+
                 $role = $d->participants()->where('user_id', $user->id)->first()?->role->value;
                 if (!$role) {
                      $role = $d->circle->members()->where('user_id', $user->id)->first()?->role->value;
@@ -106,12 +110,12 @@ class PendingItemsController extends Controller
 
         // We now return the Decision models directly, enriched with user_status
         $decisionIds = array_unique(array_merge(
-            $decisions->pluck('id')->toArray(),
+            $pendingDecisionIds,
             $feedbacks->map(fn($f) => $f->version->decision_id)->toArray()
         ));
         
         $fullDecisions = Decision::whereIn('id', $decisionIds)
-            ->with(['circle', 'category', 'currentVersion', 'author.user', 'decisionModel', 'participants.user'])
+            ->with(['circle', 'categories', 'currentVersion', 'author.user', 'decisionModel', 'participants.user'])
             ->get();
             
         $this->attachUserActionStatus($fullDecisions, $user->id);

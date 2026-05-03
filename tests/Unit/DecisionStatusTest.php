@@ -23,7 +23,8 @@ class DecisionStatusTest extends TestCase
 
         $this->assertNotNull($config);
         $this->assertSame([FeedbackType::CLARIFICATION->value], $config['feedback_types']);
-        $this->assertSame([ConsentSignal::NO_QUESTIONS->value], $config['consent_signals']);
+        $this->assertContains(ConsentSignal::NO_QUESTIONS->value, $config['consent_signals']);
+        $this->assertContains(ConsentSignal::ABSTENTION->value, $config['consent_signals']);
     }
 
     public function test_reaction_phase_config_returns_correct_types(): void
@@ -32,7 +33,8 @@ class DecisionStatusTest extends TestCase
 
         $this->assertNotNull($config);
         $this->assertSame([FeedbackType::REACTION->value], $config['feedback_types']);
-        $this->assertSame([ConsentSignal::NO_REACTION->value], $config['consent_signals']);
+        $this->assertContains(ConsentSignal::NO_REACTION->value, $config['consent_signals']);
+        $this->assertContains(ConsentSignal::ABSTENTION->value, $config['consent_signals']);
     }
 
     public function test_objection_phase_config_returns_correct_types(): void

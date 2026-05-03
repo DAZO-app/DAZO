@@ -50,7 +50,12 @@ resources/js/
 │       ├── WikiDetail.vue   # Article aide détaillé
 │       ├── AdminWiki.vue    # Gestion CRUD wiki
 │       └── WikiEditor.vue   # Éditeur riche d'articles
+│   ├── public/
+│   │   ├── PublicFront.vue          # Portail public (listing + filtres)
+│   │   └── PublicDecisionDetail.vue # Vue détaillée publique
 └── components/
+    ├── public/
+    │   └── SharePopin.vue       # Popin de partage social avec prévisualisation
     ├── AttachmentPanel.vue      # Upload + aperçu des pièces jointes
     ├── FeedbackEngine.vue       # Threads d'objections, clarifications, suggestions
     ├── MeetingModeOverlay.vue   # Interface plein écran immersive pour les réunions

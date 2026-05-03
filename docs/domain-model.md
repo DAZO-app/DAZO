@@ -100,6 +100,7 @@
 | `anonymous_votes` | boolean | false |
 | `anonymous_public` | boolean | false |
 | `emergency_mode` | boolean | false — priorité dans dashboards/notifs |
+| `share_count` | integer | 0 — compteur de partages publics |
 | `objection_round_deadline` | timestamp | nullable |
 | `revision_content` | text | nullable — brouillon préparé par l'auteur en phase révision |
 | `revision_attachment_ids` | json | nullable — IDs des pièces jointes prêtes pour la nouvelle version |
