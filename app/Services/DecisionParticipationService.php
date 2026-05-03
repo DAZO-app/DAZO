@@ -218,7 +218,7 @@ class DecisionParticipationService
     /**
      * Calculate if the user needs to act on a decision.
      */
-    public function calculateUserActionStatus(Decision $decision, $userId): array
+    public function getUserActionStatus(Decision $decision, $userId): array
     {
         $status = ['needs_action' => false, 'reason' => null];
 
@@ -306,7 +306,7 @@ class DecisionParticipationService
         ]);
 
         foreach ($decisions as $decision) {
-            $decision->setAttribute('user_status', $this->calculateUserActionStatus($decision, $userId));
+            $decision->setAttribute('user_status', $this->getUserActionStatus($decision, $userId));
         }
     }
 }

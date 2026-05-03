@@ -21,6 +21,8 @@ class DecisionVersionResource extends JsonResource
             'updated_at' => $this->updated_at,
             
             'attachments' => AttachmentResource::collection($this->whenLoaded('attachments')),
+            'feedbacks' => FeedbackResource::collection($this->whenLoaded('feedbacks')),
+            'author_role' => $this->when(isset($this->author_role), $this->author_role),
         ];
     }
 }

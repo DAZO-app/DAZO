@@ -64,4 +64,16 @@ enum DecisionStatus: string
             self::DESERTED,
         ], true);
     }
+
+    /**
+     * Retourne la liste des valeurs de statuts actifs.
+     */
+    public static function activePhases(): array
+    {
+        return [
+            self::CLARIFICATION->value,
+            self::REACTION->value,
+            self::OBJECTION->value,
+        ];
+    }
 }

@@ -71,6 +71,6 @@ class PendingItemsController extends Controller
             
         $this->participationService->attachUserActionStatus($fullDecisions, $user->id);
         
-        return response()->json(['decisions' => $fullDecisions]);
+        return response()->json(['decisions' => \App\Http\Resources\V1\DecisionResource::collection($fullDecisions)]);
     }
 }

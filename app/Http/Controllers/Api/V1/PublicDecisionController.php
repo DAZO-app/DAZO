@@ -19,7 +19,8 @@ class PublicDecisionController extends Controller
 {
     public function __construct(
         private ConfigService $configService,
-        private XmlResponseService $xmlService
+        private XmlResponseService $xmlService,
+        private \App\Services\DecisionParticipationService $participationService
     ) {}
 
     public function indexFront(Request $request): AnonymousResourceCollection
@@ -35,6 +36,13 @@ class PublicDecisionController extends Controller
         $this->applyFilters($query, $request);
         
         $decisions = $query->paginate($perPage);
+
+        // Attach stats for listing
+        $decisions->getCollection()->each(function ($decision) {
+            if ($decision->currentVersion) {
+                $decision->setAttribute('participation_stats', $this->participationService->getParticipationStats($decision, $decision->currentVersion));
+            }
+        });
 
         return DecisionResource::collection($decisions);
     }
@@ -63,6 +71,12 @@ class PublicDecisionController extends Controller
             $role = $roleMap[$fb->author_id] ?? 'participant';
             $fb->author_role = (is_object($role) && isset($role->value)) ? $role->value : $role;
         });
+
+        // ATTACH MISSING DATA FOR FRONTEND
+        if ($decision->currentVersion) {
+            $decision->setAttribute('participation_stats', $this->participationService->getParticipationStats($decision, $decision->currentVersion));
+        }
+        $decision->setAttribute('user_status', $this->participationService->getUserActionStatus($decision, auth()->id()));
 
         return new DecisionResource($decision);
     }

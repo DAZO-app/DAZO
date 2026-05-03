@@ -20,6 +20,7 @@ class FeedbackResource extends JsonResource
             'updated_at' => $this->updated_at,
             
             'author' => new UserResource($this->whenLoaded('author')),
+            'author_role' => $this->when(isset($this->author_role), $this->author_role),
             'joins_count' => $this->whenCounted('joins'),
             'messages_count' => $this->whenCounted('messages'),
         ];

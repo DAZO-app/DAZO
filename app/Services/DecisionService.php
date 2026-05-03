@@ -19,7 +19,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use App\Mail\DecisionNotificationMail;
 use App\Services\ConfigService;
-
+class DecisionService
+{
     public function __construct(
         private ConfigService $configService,
         private DecisionParticipationService $participationService
