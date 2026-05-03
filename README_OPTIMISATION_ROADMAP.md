@@ -62,20 +62,17 @@ Actions réalisées :
 - [x] Mise à jour des vues Frontend (`DecisionList`, `AdminUsers`, `AdminCircles`, `AdminCategories`) pour utiliser le filtrage et la pagination serveur.
 - [x] Suppression de la logique de filtrage/tri/pagination côté client devenue redondante.
 
-## Lot 3 - Service de participation
+## Lot 3 - Service de participation [TERMINE]
 
 Objectif : supprimer les duplications entre `DecisionService`, `DecisionController`, `PendingCountsController`, `PendingItemsController` et `HasUserActionStatus`.
 
-Actions proposees :
-- Creer `DecisionParticipationService`.
-- Y deplacer :
-  - calcul des membres eligibles,
-  - calcul des participants par phase,
-  - detection des utilisateurs en attente,
-  - enregistrement des abstentions automatiques,
-  - construction de la carte de participation par phase.
-- Faire consommer ce service par les controleurs et traits existants.
-- Faire consommer ce service par la `DecisionPolicy` pour centraliser les regles d'acces basees sur la participation.
+Actions réalisées :
+- [x] Création de `DecisionParticipationService` pour isoler la logique métier (quorum, membres éligibles, statistiques).
+- [x] Refactorisation de `DecisionService` pour déléguer les responsabilités de participation.
+- [x] Unification des requêtes optimisées pour `PendingCountsController` et `PendingItemsController` dans le service via des Query Builders dédiés.
+- [x] Migration de la logique du trait `HasUserActionStatus` dans le service et suppression du trait obsolète.
+- [x] Mise à jour de `DecisionController` et `DashboardController` pour utiliser la source de vérité unique.
+- [x] Intégration dans `DecisionPolicy` pour les contrôles d'accès (`participate`).
 
 Tests attendus :
 - Tests unitaires du service.

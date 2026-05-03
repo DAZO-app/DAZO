@@ -20,10 +20,10 @@ use Illuminate\Validation\ValidationException;
 use App\Mail\DecisionNotificationMail;
 use App\Services\ConfigService;
 
-class DecisionService
-{
-    public function __construct(private ConfigService $configService)
-    {
+    public function __construct(
+        private ConfigService $configService,
+        private DecisionParticipationService $participationService
+    ) {
     }
 
     /**
@@ -180,7 +180,7 @@ class DecisionService
         // membres éligibles qui n'ont pas encore exprimé de signal/feedback.
         $fromPhaseConfig = DecisionStatus::tryFrom($fromStatus)?->getPhaseConfig();
         if ($fromPhaseConfig && !in_array($toStatus, $globalTransitions)) {
-            $this->recordAbstentionsForPhase($decision, $fromPhaseConfig, $fromStatus);
+            $this->participationService->recordAbstentionsForPhase($decision, $fromPhaseConfig, $fromStatus);
         }
 
         if ($notify) {
@@ -190,53 +190,6 @@ class DecisionService
         return $decision;
     }
 
-    /**
-     * Enregistre un signal d'abstention pour les participants éligibles
-     * qui ne se sont pas exprimés durant la phase qui se termine.
-     */
-    public function recordAbstentionsForPhase(Decision $decision, array $phaseConfig, string $phase): void
-    {
-        $version = $decision->currentVersion;
-        if (!$version) return;
-
-        $circle = $decision->circle;
-        if (!$circle) return;
-
-        // Membres éligibles (non observateurs, non exclus/porteur/animateur)
-        $allMemberIds = $circle->members()
-            ->where('role', '!=', CircleMemberRole::OBSERVER->value)
-            ->pluck('user_id')->toArray();
-
-        $managingIds = $decision->participants()
-            ->whereIn('role', [
-                DecisionParticipantRole::EXCLUDED->value,
-                DecisionParticipantRole::AUTHOR->value,
-                DecisionParticipantRole::ANIMATOR->value,
-            ])->pluck('user_id')->toArray();
-
-        $eligibleIds = array_diff($allMemberIds, $managingIds);
-
-        // Participants ayant déjà donné un signal ou un feedback sur cette version
-        $hasFeedback = Feedback::where('decision_version_id', $version->id)
-            ->whereIn('type', $phaseConfig['feedback_types'])
-            ->pluck('author_id')->toArray();
-
-        $hasConsent = Consent::where('decision_version_id', $version->id)
-            ->where('phase', $phase)
-            ->pluck('user_id')->toArray();
-
-        $alreadyParticipated = array_unique(array_merge($hasFeedback, $hasConsent));
-        $silentIds = array_diff($eligibleIds, $alreadyParticipated);
-
-        foreach ($silentIds as $uid) {
-            Consent::create([
-                'decision_version_id' => $version->id,
-                'user_id' => $uid,
-                'signal' => ConsentSignal::ABSTENTION,
-                'phase' => $phase,
-            ]);
-        }
-    }
 
     /**
      * Calculate the deadline based on the new status and configuration.
@@ -307,134 +260,18 @@ class DecisionService
         });
     }
 
-    /**
-     * Calcule les statistiques de participation pour une version spécifique.
-     * Utilise le helper getPhaseConfig() pour éviter la duplication.
-     */
     public function getParticipationStats(Decision $decision, DecisionVersion $version, ?string $statusOverride = null): array
     {
-        $circle      = $decision->circle;
-        $totalMembers = $circle->members()->where('role', '!=', CircleMemberRole::OBSERVER->value)->pluck('user_id')->toArray();
-        $excludedOrManaging = $decision->participants()
-            ->whereIn('role', [
-                DecisionParticipantRole::EXCLUDED->value,
-                DecisionParticipantRole::AUTHOR->value,
-                DecisionParticipantRole::ANIMATOR->value,
-            ])->pluck('user_id')->toArray();
-
-        $eligible   = array_diff($totalMembers, $excludedOrManaging);
-        $statusEnum = DecisionStatus::tryFrom($statusOverride ?? $decision->status->value);
-        $phaseConfig = $statusEnum?->getPhaseConfig();
-
-        $participated = 0;
-        if ($phaseConfig) {
-            $feedbackAuthors = Feedback::where('decision_version_id', $version->id)
-                ->whereIn('type', $phaseConfig['feedback_types'])
-                ->pluck('author_id')->toArray();
-
-            $consentAuthors = Consent::where('decision_version_id', $version->id)
-                ->whereIn('signal', $phaseConfig['consent_signals'])
-                ->pluck('user_id')->toArray();
-
-            $allParticipants = array_unique(array_merge($feedbackAuthors, $consentAuthors));
-            $participated    = count(array_intersect($eligible, $allParticipants));
-        }
-
-        return [
-            'eligible'    => count($eligible),
-            'participated' => $participated,
-            'pending'     => max(0, count($eligible) - $participated),
-        ];
+        return $this->participationService->getParticipationStats($decision, $version, $statusOverride);
     }
 
-    /**
-     * Construit la map de participation par phase pour une version donnée.
-     * Centralisé ici pour éviter la duplication entre show() et autres méthodes.
-     */
     public function getPhaseParticipationMap(Decision $decision, DecisionVersion $version): array
     {
-        $map = ['clarification' => [], 'reaction' => [], 'objection' => []];
-
-        $versionFeedbacks = $version->feedbacks()->get(['author_id', 'type']);
-        $versionConsents  = $version->consents()->get(['user_id', 'signal', 'phase']);
-
-        foreach ($versionFeedbacks as $fb) {
-            $typeVal = is_object($fb->type) ? $fb->type->value : $fb->type;
-            match ($typeVal) {
-                FeedbackType::CLARIFICATION->value => $map['clarification'][$fb->author_id] = $typeVal,
-                FeedbackType::REACTION->value      => $map['reaction'][$fb->author_id] = $typeVal,
-                FeedbackType::OBJECTION->value,
-                FeedbackType::SUGGESTION->value    => $map['objection'][$fb->author_id] = $typeVal,
-                default => null,
-            };
-        }
-
-        foreach ($versionConsents as $cs) {
-            $signalVal = is_object($cs->signal) ? $cs->signal->value : $cs->signal;
-            $phaseVal  = is_object($cs->phase) ? $cs->phase->value : $cs->phase;
-            
-            // Map terminal statuses back to their logical phase for the participation map
-            if (in_array($phaseVal, [DecisionStatus::ADOPTED->value, DecisionStatus::ADOPTED_OVERRIDE->value])) {
-                $phaseVal = 'objection';
-            }
-
-            if (isset($map[$phaseVal])) {
-                $map[$phaseVal][(string)$cs->user_id] = $signalVal;
-            }
-        }
-
-        return $map;
+        return $this->participationService->getPhaseParticipationMap($decision, $version);
     }
 
-    private function mapAbstention(array &$map, string $userId, Decision $decision): void
-    {
-        // Cette méthode devient obsolète car on utilise maintenant la colonne 'phase' en base,
-        // mais on la garde pour compatibilité si besoin ou on la supprime.
-        // On la laisse vide pour l'instant pour éviter les erreurs d'appel.
-    }
-
-    /**
-     * Retourne les utilisateurs éligibles n'ayant pas encore participé à la phase active.
-     * Utilisé pour la fonctionnalité de relance manuelle.
-     */
     public function getPendingUsers(Decision $decision): \Illuminate\Support\Collection
     {
-        $circle = $decision->circle;
-        if (!$circle) return collect([]);
-
-        $statusEnum = $decision->status;
-        $phaseConfig = $statusEnum->getPhaseConfig();
-        if (!$phaseConfig) return collect([]);
-
-        $v = $decision->currentVersion;
-        if (!$v) return collect([]);
-
-        $eligibleUserIds = $circle->members()
-            ->where('role', '!=', CircleMemberRole::OBSERVER->value)
-            ->pluck('user_id')->toArray();
-
-        $excludedOrManaging = $decision->participants()
-            ->whereIn('role', [
-                DecisionParticipantRole::EXCLUDED->value,
-                DecisionParticipantRole::AUTHOR->value,
-                DecisionParticipantRole::ANIMATOR->value,
-            ])->pluck('user_id')->toArray();
-
-        $targetUserIds = array_diff($eligibleUserIds, $excludedOrManaging);
-
-        $participatedUserIds = array_unique(array_merge(
-            Feedback::where('decision_version_id', $v->id)
-                ->whereIn('type', $phaseConfig['feedback_types'])
-                ->pluck('author_id')->toArray(),
-            Consent::where('decision_version_id', $v->id)
-                ->whereIn('signal', $phaseConfig['consent_signals'])
-                ->pluck('user_id')->toArray()
-        ));
-
-        $pendingUserIds = array_diff($targetUserIds, $participatedUserIds);
-
-        return User::whereIn('id', $pendingUserIds)
-            ->where('is_active', true)
-            ->get(['id', 'name', 'email']);
+        return $this->participationService->getPendingUsers($decision);
     }
 }

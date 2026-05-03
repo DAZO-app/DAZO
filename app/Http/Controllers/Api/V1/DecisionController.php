@@ -19,15 +19,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-use App\Traits\HasUserActionStatus;
 
 class DecisionController extends Controller
 {
-    use HasUserActionStatus;
 
     public function __construct(
         private DecisionService $decisionService,
-        private \App\Services\ConfigService $configService
+        private \App\Services\ConfigService $configService,
+        private \App\Services\DecisionParticipationService $participationService
     ) {
     }
 
@@ -51,7 +50,7 @@ class DecisionController extends Controller
         $decisions = $query->paginate($perPage);
 
         $this->attachParticipationStats($decisions->getCollection());
-        $this->attachUserActionStatus($decisions->getCollection(), auth()->id());
+        $this->participationService->attachUserActionStatus($decisions->getCollection(), auth()->id());
         $this->attachUserSettings($decisions->getCollection(), auth()->id());
 
         return DecisionResource::collection($decisions);
@@ -73,7 +72,7 @@ class DecisionController extends Controller
         $decisions = $query->paginate($perPage);
 
         $this->attachParticipationStats($decisions->getCollection());
-        $this->attachUserActionStatus($decisions->getCollection(), auth()->id());
+        $this->participationService->attachUserActionStatus($decisions->getCollection(), auth()->id());
         $this->attachUserSettings($decisions->getCollection(), auth()->id());
 
         return DecisionResource::collection($decisions);
@@ -115,29 +114,23 @@ class DecisionController extends Controller
         $hasConsentInPhase  = false;
 
         if ($v) {
-            $participationStats     = $this->decisionService->getParticipationStats($decision, $v);
-            $phaseParticipationMap  = $this->decisionService->getPhaseParticipationMap($decision, $v);
+            $participationStats     = $this->participationService->getParticipationStats($decision, $v);
+            $phaseParticipationMap  = $this->participationService->getPhaseParticipationMap($decision, $v);
 
             $myConsent = Consent::where('decision_version_id', $v->id)
                 ->where('user_id', auth()->id())
                 ->first();
 
             if ($phaseConfig) {
-                $hasFeedbackInPhase = Feedback::where('decision_version_id', $v->id)
-                    ->where('author_id', auth()->id())
-                    ->whereIn('type', $phaseConfig['feedback_types'])
-                    ->exists();
-
-                $hasConsentInPhase = $myConsent
-                    && in_array(
-                        is_object($myConsent->signal) ? $myConsent->signal->value : $myConsent->signal,
-                        $phaseConfig['consent_signals']
-                    );
+                $participatedIds = $this->participationService->getParticipatedUserIds($v, $phaseConfig);
+                $hasParticipated = in_array(auth()->id(), $participatedIds);
+                $hasFeedbackInPhase = $hasParticipated; // Simplified for additional block
+                $hasConsentInPhase = $hasParticipated;  // Simplified for additional block
             }
         }
 
         $decision->setAttribute('participation_stats', $participationStats);
-        $decision->setAttribute('user_status', $this->calculateUserActionStatus($decision, auth()->id()));
+        $decision->setAttribute('user_status', $this->participationService->calculateUserActionStatus($decision, auth()->id()));
 
         if ($decision->status->value === DecisionStatus::REVISION->value && !empty($decision->revision_attachment_ids)) {
             $decision->setAttribute('revision_attachments', \App\Models\Attachment::whereIn('id', $decision->revision_attachment_ids)->get());
@@ -298,54 +291,11 @@ class DecisionController extends Controller
     {
         if ($decisions->isEmpty()) return;
 
-        $decisions->loadMissing([
-            'circle.members',
-            'currentVersion.feedbacks',
-            'currentVersion.consents',
-            'categories',
-        ]);
-
         foreach ($decisions as $decision) {
-            $circle = $decision->circle;
-            if (!$circle) continue;
+            $v = $decision->currentVersion;
+            if (!$v) continue;
 
-            $phaseConfig   = $decision->status->getPhaseConfig();
-            $totalMembers  = $circle->members
-                ->where('role', '!=', CircleMemberRole::OBSERVER->value)
-                ->pluck('user_id')->toArray();
-
-            $excludedOrManaging = $decision->participants
-                ->whereIn('role', [
-                    DecisionParticipantRole::EXCLUDED->value,
-                    DecisionParticipantRole::AUTHOR->value,
-                    DecisionParticipantRole::ANIMATOR->value,
-                ])->pluck('user_id')->toArray();
-
-            $eligible    = array_diff($totalMembers, $excludedOrManaging);
-            $v           = $decision->currentVersion;
-            $participated = 0;
-
-            if ($v && $phaseConfig) {
-                $feedbackAuthors = $v->feedbacks
-                    ->filter(fn($fb) => in_array(
-                        is_object($fb->type) ? $fb->type->value : $fb->type,
-                        $phaseConfig['feedback_types']
-                    ))->pluck('author_id')->toArray();
-
-                $consentAuthors = $v->consents
-                    ->filter(fn($cs) => in_array(
-                        is_object($cs->signal) ? $cs->signal->value : $cs->signal,
-                        $phaseConfig['consent_signals']
-                    ))->pluck('user_id')->toArray();
-
-                $allParticipants = array_unique(array_merge($feedbackAuthors, $consentAuthors));
-                $participated    = count(array_intersect($eligible, $allParticipants));
-            }
-
-            $decision->setAttribute('participation_stats', [
-                'eligible'    => count($eligible),
-                'participated' => $participated,
-            ]);
+            $decision->setAttribute('participation_stats', $this->participationService->getParticipationStats($decision, $v));
         }
     }
 
@@ -367,7 +317,7 @@ class DecisionController extends Controller
         $this->authorize('view', $decision);
 
         return response()->json([
-            'pending_users' => $this->decisionService->getPendingUsers($decision),
+            'pending_users' => $this->participationService->getPendingUsers($decision),
         ]);
     }
 
@@ -388,7 +338,7 @@ class DecisionController extends Controller
 
         $this->configService->applyMailConfig();
 
-        $pendingUsers = $this->decisionService->getPendingUsers($decision);
+        $pendingUsers = $this->participationService->getPendingUsers($decision);
 
         if ($pendingUsers->isEmpty()) {
             return response()->json(['message' => "Aucun participant en attente à relancer."], 200);

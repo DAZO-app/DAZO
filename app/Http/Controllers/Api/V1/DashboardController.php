@@ -11,11 +11,14 @@ use App\Enums\DecisionStatus;
 use App\Enums\DecisionParticipantRole;
 use App\Enums\CircleMemberRole;
 use App\Enums\FeedbackStatus;
-use App\Traits\HasUserActionStatus;
+use App\Services\DecisionParticipationService;
 
 class DashboardController extends Controller
 {
-    use HasUserActionStatus;
+    public function __construct(private DecisionParticipationService $participationService)
+    {
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -42,9 +45,9 @@ class DashboardController extends Controller
             return $grouped;
         };
 
-        // Attach action status (handles eager loading internally)
-        $this->attachUserActionStatus($authorDecisions, $user->id);
-        $this->attachUserActionStatus($animatorDecisions, $user->id);
+        // Attach action status (delegated to service)
+        $this->participationService->attachUserActionStatus($authorDecisions, $user->id);
+        $this->participationService->attachUserActionStatus($animatorDecisions, $user->id);
 
         $myDecisionsGrouped   = $groupByCircle($authorDecisions);
         $myAnimatedGrouped    = $groupByCircle($animatorDecisions);
@@ -59,7 +62,7 @@ class DashboardController extends Controller
             ->with(['circle', 'currentVersion.attachments', 'participants.user'])->get();
 
         $circleDecisionsGrouped = $groupByCircle($circleDecisions);
-        $this->attachUserActionStatus($circleDecisions, $user->id);
+        $this->participationService->attachUserActionStatus($circleDecisions, $user->id);
 
         // 3. My Clarifications (active threads)
         $terminal = [FeedbackStatus::WITHDRAWN->value, FeedbackStatus::ACKNOWLEDGED->value, FeedbackStatus::REJECTED->value, FeedbackStatus::TREATED->value];
@@ -86,7 +89,7 @@ class DashboardController extends Controller
             ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'messages.author'])
             ->orderByDesc('created_at')->get();
 
-        // 5. STATS (Query optimized: count in DB instead of loading all in memory)
+        // 5. STATS (Query optimized)
         $visibleQuery = Decision::where(function ($q) use ($user) {
             $q->whereHas('circle.members', function ($q2) use ($user) {
                 $q2->where('user_id', $user->id);
@@ -110,7 +113,7 @@ class DashboardController extends Controller
             'abandoned'    => (clone $visibleQuery)->whereIn('status', [DecisionStatus::ABANDONED->value, DecisionStatus::DESERTED->value, DecisionStatus::LAPSED->value])->count(),
         ];
 
-        // Cache categories for 1 hour (common for 500 users load)
+        // Cache categories for 1 hour
         $categories = \Illuminate\Support\Facades\Cache::remember('categories_all', 3600, function () {
             return \App\Models\Category::all();
         });
@@ -126,4 +129,3 @@ class DashboardController extends Controller
         ]);
     }
 }
-

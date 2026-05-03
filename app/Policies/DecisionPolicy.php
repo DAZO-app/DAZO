@@ -7,12 +7,24 @@ use App\Models\User;
 
 class DecisionPolicy
 {
+    public function __construct(private \App\Services\DecisionParticipationService $participationService)
+    {
+    }
+
     /**
      * Determine whether the user can view the model.
      */
     public function view(User $user, Decision $decision): bool
     {
         return $user->can('view', $decision->circle);
+    }
+
+    /**
+     * Determine whether the user can participate in the decision (vote/feedback).
+     */
+    public function participate(User $user, Decision $decision): bool
+    {
+        return in_array($user->id, $this->participationService->getEligibleUserIds($decision));
     }
 
     /**
