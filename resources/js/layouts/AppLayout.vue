@@ -40,16 +40,18 @@
           <template v-if="isAdmin">
             <div class="mobile-menu-divider"></div>
             <div class="sidebar-section" style="padding-left:20px; color:rgba(255,255,255,0.4)">Administration</div>
+            <router-link :to="{ name: 'AdminDashboard' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gauge-high" style="margin-right: 8px;"></i> Dashboard Admin</router-link>
             <router-link :to="{ name: 'AdminUsers' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-users" style="margin-right: 8px;"></i> Utilisateurs</router-link>
             <router-link :to="{ name: 'AdminCircles' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-circle-nodes" style="margin-right: 8px;"></i> Cercles Admin</router-link>
             <router-link :to="{ name: 'AdminCategories' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-tags" style="margin-right: 8px;"></i> Catégories</router-link>
+            <router-link :to="{ name: 'AdminSiteConfig' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-sliders" style="margin-right: 8px;"></i> Configuration site</router-link>
             <router-link :to="{ name: 'AdminPublication' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-globe" style="margin-right: 8px;"></i> Publication API</router-link>
             
             <template v-if="isSuperAdmin">
               <div class="mobile-menu-divider"></div>
               <div class="sidebar-section" style="padding-left:20px; color:rgba(255,255,255,0.4)">Système</div>
-              <router-link :to="{ name: 'Admin' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gauge-high" style="margin-right: 8px;"></i> Dashboard Admin</router-link>
-              <router-link :to="{ name: 'AdminConfig' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gears" style="margin-right: 8px;"></i> Configuration</router-link>
+              <router-link :to="{ name: 'AdminSystemDashboard' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-microchip" style="margin-right: 8px;"></i> Dashboard Système</router-link>
+              <router-link :to="{ name: 'AdminConfig' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gears" style="margin-right: 8px;"></i> Configuration Système</router-link>
               <router-link :to="{ name: 'AdminDatabase' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-database" style="margin-right: 8px;"></i> BDD</router-link>
               <router-link :to="{ name: 'AdminServer' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-server" style="margin-right: 8px;"></i> Serveur</router-link>
             </template>
@@ -139,6 +141,9 @@
           </div>
           <transition name="sidebar-fade">
             <div v-show="sectionsOpen.admin" class="sidebar-collapsible">
+              <router-link :to="{ name: 'AdminDashboard' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-gauge-high"></i></span> Dashboard Admin
+              </router-link>
               <router-link :to="{ name: 'AdminUsers' }" class="sidebar-item" active-class="active">
                 <span><i class="fa-solid fa-users"></i></span> Utilisateurs
               </router-link>
@@ -147,6 +152,9 @@
               </router-link>
               <router-link :to="{ name: 'AdminCategories' }" class="sidebar-item" active-class="active">
                 <span><i class="fa-solid fa-tags"></i></span> Catégories
+              </router-link>
+              <router-link :to="{ name: 'AdminSiteConfig' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-sliders"></i></span> Configuration site
               </router-link>
               <router-link :to="{ name: 'AdminPublication' }" class="sidebar-item" active-class="active">
                 <span><i class="fa-solid fa-globe"></i></span> Publication API
@@ -162,11 +170,11 @@
           </div>
           <transition name="sidebar-fade">
             <div v-show="sectionsOpen.system" class="sidebar-collapsible">
-              <router-link :to="{ name: 'Admin' }" class="sidebar-item" active-class="active">
-                <span><i class="fa-solid fa-gauge-high"></i></span> Dashboard Admin
+              <router-link :to="{ name: 'AdminSystemDashboard' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-microchip"></i></span> Dashboard Système
               </router-link>
               <router-link :to="{ name: 'AdminConfig' }" class="sidebar-item" active-class="active">
-                <span><i class="fa-solid fa-gears"></i></span> Configuration
+                <span><i class="fa-solid fa-gears"></i></span> Configuration Système
               </router-link>
               <router-link :to="{ name: 'AdminDatabase' }" class="sidebar-item" active-class="active">
                 <span><i class="fa-solid fa-database"></i></span> BDD

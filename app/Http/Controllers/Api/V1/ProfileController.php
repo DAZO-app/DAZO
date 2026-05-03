@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\UpdatePasswordRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -19,8 +22,19 @@ class ProfileController extends Controller
             ];
             $user->save();
         }
+        if (empty($user->dashboard_widgets)) {
+            $user->dashboard_widgets = [
+                ['id' => 'stats', 'label' => 'Statistiques générales', 'enabled' => true, 'width' => 'full'],
+                ['id' => 'tickets', 'label' => 'Mes tickets actifs', 'enabled' => true, 'width' => 'half'],
+                ['id' => 'urgencies', 'label' => 'Urgences & Échéances', 'enabled' => true, 'width' => 'half'],
+                ['id' => 'my_proposals', 'label' => 'Mes propositions', 'enabled' => true, 'width' => 'third'],
+                ['id' => 'my_animated', 'label' => 'Mes animations', 'enabled' => true, 'width' => 'third'],
+                ['id' => 'circles_watch', 'label' => 'À surveiller', 'enabled' => true, 'width' => 'third'],
+            ];
+            $user->save();
+        }
         return response()->json([
-            'user' => $user
+            'user' => $user->fresh()
         ]);
     }
 
@@ -35,11 +49,34 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function updatePassword(\App\Http\Requests\Auth\UpdatePasswordRequest $request): JsonResponse
+    public function updateAvatar(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if it exists and is local
+            if ($user->avatar_url && !str_starts_with($user->avatar_url, 'http')) {
+                Storage::disk('public')->delete($user->avatar_url);
+            }
+
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $user->update(['avatar_url' => $path]);
+
+            return response()->json([
+                'message' => 'Avatar mis à jour.',
+                'avatar_url' => Storage::disk('public')->url($path),
+                'user' => $user->fresh()
+            ]);
+        }
+
+        return response()->json(['message' => 'Aucun fichier reçu.'], 422);
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
     {
         $user = $request->user();
         $user->update([
-            'password' => \Illuminate\Support\Facades\Hash::make($request->password)
+            'password' => Hash::make($request->password)
         ]);
 
         return response()->json([

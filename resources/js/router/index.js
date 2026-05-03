@@ -94,12 +94,18 @@ const routes = [
                 name: 'CircleDetail',
                 component: () => import('../views/CircleDetail.vue')
             },
-            // Admin
+            // Admin (Site Level)
             {
                 path: 'admin',
-                name: 'Admin',
-                component: () => import('../views/admin/AdminDashboard.vue'),
-                meta: { requiresSuperAdmin: true }
+                name: 'AdminDashboard',
+                component: () => import('../views/admin/AdminDashboardNew.vue'),
+                meta: { requiresAdmin: true }
+            },
+            {
+                path: 'admin/site-config',
+                name: 'AdminSiteConfig',
+                component: () => import('../views/admin/AdminSiteConfig.vue'),
+                meta: { requiresAdmin: true }
             },
             {
                 path: 'admin/circles',
@@ -124,6 +130,14 @@ const routes = [
                 name: 'AdminPublication',
                 component: () => import('../views/admin/AdminPublication.vue'),
                 meta: { requiresAdmin: true }
+            },
+
+            // Système (Global Level)
+            {
+                path: 'admin/system',
+                name: 'AdminSystemDashboard',
+                component: () => import('../views/admin/AdminDashboard.vue'),
+                meta: { requiresSuperAdmin: true }
             },
             {
                 path: 'admin/config',

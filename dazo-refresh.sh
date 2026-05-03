@@ -25,6 +25,7 @@ docker compose exec app php artisan event:clear
 
 # 2. Reset permissions
 echo -e "${YELLOW}🔐 Resetting permissions...${NC}"
+docker compose exec app mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views storage/app/public/branding bootstrap/cache
 docker compose exec app chown -R www-data:www-data storage bootstrap/cache
 docker compose exec app chmod -R 775 storage bootstrap/cache
 

@@ -16,7 +16,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'avatar_url', 'role', 'is_global_animator', 'is_active', 'custom_views'])]
+#[Fillable(['name', 'email', 'password', 'avatar_url', 'role', 'is_global_animator', 'is_active', 'custom_views', 'dashboard_widgets'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordContract
 {
@@ -43,6 +43,7 @@ class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordC
             'is_global_animator' => 'boolean',
             'is_active' => 'boolean',
             'custom_views' => 'array',
+            'dashboard_widgets' => 'array',
         ];
     }
 

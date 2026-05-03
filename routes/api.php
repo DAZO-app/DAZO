@@ -48,6 +48,7 @@ Route::prefix('v1')->group(function () {
         
         Route::get('/auth/me', [ProfileController::class, 'me']);
         Route::put('/auth/me', [ProfileController::class, 'update']);
+        Route::post('/auth/avatar', [ProfileController::class, 'updateAvatar']);
         Route::put('/auth/password', [ProfileController::class, 'updatePassword']);
         Route::get('/auth/notifications', [ProfileController::class, 'getNotificationPreferences']);
         Route::put('/auth/notifications', [ProfileController::class, 'updateNotificationPreferences']);
@@ -169,7 +170,7 @@ Route::prefix('v1')->group(function () {
         // Administration
         Route::prefix('admin')->as('admin.')->middleware(['admin'])->group(function () {
             Route::get('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'index']);
-            Route::put('/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'update']);
+            Route::match(['put', 'post'], '/config', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'update']);
             Route::post('/config/logo', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'uploadLogo']);
             Route::post('/config/test-email', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'testEmail']);
             Route::post('/config/api-key', [\App\Http\Controllers\Api\V1\Admin\ConfigController::class, 'generateApiKey']);

@@ -9,7 +9,8 @@
             <div class="hero-subtitle">Gérez vos informations personnelles, votre sécurité et vos préférences.</div>
           </div>
           <div class="hero-action">
-            <div class="avatar av-blue" style="width:56px; height:56px; font-size:20px; border: 2px solid rgba(255,255,255,0.3);">{{ userInitials }}</div>
+            <img v-if="authStore.user?.avatar_url" :src="processedUserAvatar" class="avatar shadow-lg" style="width:56px; height:56px; object-fit: cover; border: 2px solid rgba(255,255,255,0.3);" />
+            <div v-else class="avatar av-blue" style="width:56px; height:56px; font-size:20px; border: 2px solid rgba(255,255,255,0.3);">{{ userInitials }}</div>
           </div>
         </div>
       </div>
@@ -36,10 +37,31 @@
               <div class="pc-header-icon"><i class="fa-solid fa-user-circle"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Mon Profil</div>
-                <div class="pc-header-sub">Informations publiques et identité sur DAZO</div>
+                <div class="pc-header-sub">Identité et informations personnelles</div>
               </div>
             </div>
             <div class="pc-body p-24">
+              <!-- AVATAR UPLOAD -->
+              <div class="form-group mb-32">
+                <label class="config-label">Photo de profil</label>
+                <div class="flex items-center gap-24">
+                  <div class="avatar-preview-wrap" @click="$refs.avatarInput.click()">
+                    <img v-if="processedUserAvatar" :src="processedUserAvatar" alt="Avatar" class="avatar-preview-img" />
+                    <div v-else class="avatar-preview-placeholder">{{ userInitials }}</div>
+                    <div class="avatar-edit-overlay">
+                      <i class="fa-solid fa-camera"></i>
+                    </div>
+                  </div>
+                  <div class="avatar-upload-info">
+                    <button class="btn btn-white btn-sm mb-8" @click="$refs.avatarInput.click()">
+                      <i class="fa-solid fa-upload mr-8"></i> Choisir une image
+                    </button>
+                    <p class="text-xs text-muted">Format JPG, PNG ou GIF. Max 2Mo.</p>
+                    <input type="file" ref="avatarInput" style="display:none" @change="handleAvatarUpload" accept="image/*">
+                  </div>
+                </div>
+              </div>
+
               <form @submit.prevent="updateProfile">
                 <div v-if="successMsg" class="alert alert-success mb-24">{{ successMsg }}</div>
                 <div v-if="errorMsg" class="alert alert-error mb-24">{{ errorMsg }}</div>
@@ -64,6 +86,154 @@
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+
+          <!-- SECTION TABLEAU DE BORD (MODULAIRE) -->
+          <div v-if="activeSection === 'dashboard'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-indigo">
+              <div class="pc-header-icon"><i class="fa-solid fa-gauge-high"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Mon Tableau de bord</div>
+                <div class="pc-header-sub">Personnalisez l'affichage de votre cockpit personnel</div>
+              </div>
+            </div>
+            <div class="pc-body p-24">
+              <div v-if="dashSuccessMsg" class="alert alert-success mb-24">{{ dashSuccessMsg }}</div>
+              
+              <div class="mb-32">
+                <h4 class="config-label mb-8">Widgets disponibles</h4>
+                <p class="help-text mb-24">Activez ou désactivez les blocs d'information que vous souhaitez voir sur votre page d'accueil.</p>
+                
+                <div class="widgets-config-list">
+                  <div v-for="w in userWidgets" :key="w.id" class="widget-config-row" :class="{ disabled: !w.enabled }">
+                    <div class="widget-config-info">
+                      <div class="widget-config-icon">
+                        <i :class="getWidgetIcon(w.id)"></i>
+                      </div>
+                      <div>
+                        <div class="widget-config-label">{{ w.label }}</div>
+                        <div class="widget-config-desc">{{ getWidgetDesc(w.id) }}</div>
+                      </div>
+                    </div>
+                    <div class="widget-config-actions">
+                      <div class="widget-width-selector" v-if="w.enabled">
+                         <button @click="setWidgetWidth(w, 'third')" class="ww-btn" :class="{active: w.width === 'third'}" title="1/3 de largeur">1/3</button>
+                         <button @click="setWidgetWidth(w, 'half')" class="ww-btn" :class="{active: w.width === 'half'}" title="1/2 de largeur">1/2</button>
+                         <button @click="setWidgetWidth(w, 'full')" class="ww-btn" :class="{active: w.width === 'full'}" title="Pleine largeur">1/1</button>
+                      </div>
+                      <label class="switch-sm">
+                        <input type="checkbox" v-model="w.enabled">
+                        <span class="slider round"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-16 border-top">
+                <button @click="saveDashboardConfig" class="btn btn-primary btn-lg" :disabled="loading">
+                  <i class="fa-solid fa-save mr-8"></i>
+                  Enregistrer la configuration
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION MES VUES -->
+          <div v-if="activeSection === 'views'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-teal">
+              <div class="pc-header-icon"><i class="fa-solid fa-layer-group"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Mes Vues Personnalisées</div>
+                <div class="pc-header-sub">Configurez vos raccourcis de filtrage dans la barre latérale</div>
+              </div>
+            </div>
+            <div class="pc-body p-24">
+              <div v-if="viewsSuccessMsg" class="alert alert-success mb-24">{{ viewsSuccessMsg }}</div>
+              
+              <div class="mb-32">
+                <h4 class="config-label mb-8">Vues actives</h4>
+                <p class="help-text mb-16">Sélectionnez les filtres que vous souhaitez voir apparaître dans votre menu "Mes Vues".</p>
+                
+                <div class="views-grid">
+                  <div v-for="opt in viewOptions" :key="opt.id" class="view-opt-card" :class="{ active: isViewActive(opt.id) }" @click="toggleView(opt)">
+                    <div class="view-opt-check">
+                      <i :class="isViewActive(opt.id) ? 'fa-solid fa-check-circle' : 'fa-regular fa-circle'"></i>
+                    </div>
+                    <div class="view-opt-icon"><i :class="opt.icon"></i></div>
+                    <div class="view-opt-label">{{ opt.label }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-16 border-top">
+                <button @click="saveViews" class="btn btn-primary btn-lg" :disabled="loading">
+                  <i class="fa-solid fa-save mr-8"></i>
+                  Enregistrer mes vues
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- SECTION NOTIFICATIONS -->
+          <div v-if="activeSection === 'notifications'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-blue">
+              <div class="pc-header-icon"><i class="fa-solid fa-bell"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Notifications</div>
+                <div class="pc-header-sub">Préférences d'alertes et de rappels</div>
+              </div>
+            </div>
+            <div class="pc-body p-24">
+              <div class="alert alert-info mb-32">
+                <i class="fa-solid fa-lightbulb mr-12"></i>
+                <span><strong>Conseil :</strong> Les notifications <strong>Web (Push)</strong> sont recommandées pour une meilleure réactivité.</span>
+              </div>
+
+              <div v-if="notifSuccessMsg" class="alert alert-success mb-24">{{ notifSuccessMsg }}</div>
+              
+              <div class="notif-table-container">
+                <table class="notif-table">
+                  <thead>
+                    <tr>
+                      <th>Événement</th>
+                      <th class="text-center">Email</th>
+                      <th class="text-center">Push / Web</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="cat in notifCategories" :key="cat.id">
+                      <td>
+                        <div class="notif-cat-info">
+                          <div class="notif-cat-label"><i :class="cat.icon" class="mr-8"></i>{{ cat.label }}</div>
+                          <div class="notif-cat-desc" style="font-size: 11px; opacity: 0.6; margin-top: 2px; padding-left: 24px;">{{ cat.desc }}</div>
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <label class="switch-sm">
+                          <input type="checkbox" v-model="notifPrefs[cat.id].email">
+                          <span class="slider round"></span>
+                        </label>
+                      </td>
+                      <td class="text-center">
+                        <label class="switch-sm">
+                          <input type="checkbox" v-model="notifPrefs[cat.id].web">
+                          <span class="slider round"></span>
+                        </label>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="pt-24 border-top mt-24">
+                <button @click="saveNotificationPrefs" class="btn btn-primary btn-lg" :disabled="notifLoading">
+                  <i class="fa-solid fa-bell mr-8"></i>
+                  {{ notifLoading ? 'Enregistrement...' : 'Enregistrer mes préférences' }}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -150,6 +320,9 @@
                       </button>
                     </div>
                   </div>
+                  <div v-if="socialProviders.length === 0" class="p-32 text-center text-muted">
+                    Aucun fournisseur de connexion sociale n'est actuellement activé sur cette instance.
+                  </div>
                 </div>
 
                 <div v-if="!socialHasPassword" class="alert alert-warning mt-24">
@@ -160,104 +333,6 @@
             </div>
           </div>
 
-          <!-- SECTION NOTIFICATIONS -->
-          <div v-if="activeSection === 'notifications'" class="premium-card animate-fade-in">
-            <div class="pc-header pc-header-blue">
-              <div class="pc-header-icon"><i class="fa-solid fa-bell"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title">Notifications</div>
-                <div class="pc-header-sub">Préférences d'alertes et de rappels</div>
-              </div>
-            </div>
-            <div class="pc-body p-24">
-              
-              <div class="alert alert-info mb-32">
-                <i class="fa-solid fa-lightbulb mr-12"></i>
-                <span><strong>Conseil :</strong> Les notifications <strong>Web (Push)</strong> sont recommandées pour une meilleure réactivité et pour réduire l'encombrement de votre boîte mail.</span>
-              </div>
-
-              <div v-if="notifSuccessMsg" class="alert alert-success mb-24">{{ notifSuccessMsg }}</div>
-              
-              <div class="notif-table-container">
-                <table class="notif-table">
-                  <thead>
-                    <tr>
-                      <th>Événement</th>
-                      <th class="text-center">Email</th>
-                      <th class="text-center">Push / Web</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="cat in notifCategories" :key="cat.id">
-                      <td>
-                        <div class="notif-cat-info">
-                          <div class="notif-cat-label"><i :class="cat.icon" class="mr-8"></i>{{ cat.label }}</div>
-                          <div class="notif-cat-desc" style="font-size: 11px; opacity: 0.6; margin-top: 2px; padding-left: 24px;">{{ cat.desc }}</div>
-                        </div>
-                      </td>
-                      <td class="text-center">
-                        <label class="switch-sm">
-                          <input type="checkbox" v-model="notifPrefs[cat.id].email">
-                          <span class="slider round"></span>
-                        </label>
-                      </td>
-                      <td class="text-center">
-                        <label class="switch-sm">
-                          <input type="checkbox" v-model="notifPrefs[cat.id].web">
-                          <span class="slider round"></span>
-                        </label>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="pt-24 border-top mt-24">
-                <button @click="saveNotificationPrefs" class="btn btn-primary btn-lg" :disabled="notifLoading">
-                  <i class="fa-solid fa-bell mr-8"></i>
-                  {{ notifLoading ? 'Enregistrement...' : 'Enregistrer mes préférences' }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- SECTION MES VUES -->
-          <div v-if="activeSection === 'views'" class="premium-card animate-fade-in">
-            <div class="pc-header pc-header-teal">
-              <div class="pc-header-icon"><i class="fa-solid fa-layer-group"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title">Mes Vues Personnalisées</div>
-                <div class="pc-header-sub">Configurez vos raccourcis de filtrage dans la barre latérale</div>
-              </div>
-            </div>
-            <div class="pc-body p-24">
-              <div v-if="viewsSuccessMsg" class="alert alert-success mb-24">{{ viewsSuccessMsg }}</div>
-              
-              <div class="mb-32">
-                <h4 class="config-label mb-8">Vues actives</h4>
-                <p class="help-text mb-16">Sélectionnez les filtres que vous souhaitez voir apparaître dans votre menu "Mes Vues".</p>
-                
-                <div class="views-grid">
-                  <div v-for="opt in viewOptions" :key="opt.id" class="view-opt-card" :class="{ active: isViewActive(opt.id) }" @click="toggleView(opt)">
-                    <div class="view-opt-check">
-                      <i :class="isViewActive(opt.id) ? 'fa-solid fa-check-circle' : 'fa-regular fa-circle'"></i>
-                    </div>
-                    <div class="view-opt-icon"><i :class="opt.icon"></i></div>
-                    <div class="view-opt-label">{{ opt.label }}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="pt-16 border-top">
-                <button @click="saveViews" class="btn btn-primary btn-lg" :disabled="loading">
-                  <i class="fa-solid fa-save mr-8"></i>
-                  {{ loading ? 'Enregistrer mes vues' : 'Enregistrer mes vues' }}
-                </button>
-              </div>
-
-            </div>
-          </div>
-
         </div>
       </div>
     </div>
@@ -265,21 +340,24 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useDecisionStore } from '../stores/decision';
+import { useConfigStore } from '../stores/config';
 import axios from 'axios';
 
 const authStore = useAuthStore();
 const decisionStore = useDecisionStore();
+const configStore = useConfigStore();
 
 const activeSection = ref('profile');
 const sections = [
   { id: 'profile', label: 'Mon profil', icon: 'fa-solid fa-user-circle' },
+  { id: 'dashboard', label: 'Mon tableau de bord', icon: 'fa-solid fa-gauge-high' },
+  { id: 'views', label: 'Mes vues', icon: 'fa-solid fa-layer-group' },
+  { id: 'notifications', label: 'Notifications', icon: 'fa-solid fa-bell' },
   { id: 'password', label: 'Mot de passe', icon: 'fa-solid fa-key' },
   { id: 'social', label: 'Comptes liés', icon: 'fa-solid fa-link' },
-  { id: 'notifications', label: 'Notifications', icon: 'fa-solid fa-bell' },
-  { id: 'views', label: 'Mes vues', icon: 'fa-solid fa-layer-group' },
 ];
 
 const notifCategories = [
@@ -301,6 +379,8 @@ const viewOptions = [
 
 const userViews = ref([]);
 const viewsSuccessMsg = ref('');
+const userWidgets = ref([]);
+const dashSuccessMsg = ref('');
 
 const notifPrefs = reactive({});
 notifCategories.forEach(c => {
@@ -308,7 +388,7 @@ notifCategories.forEach(c => {
 });
 
 const notifLoading = ref(false);
-const notifSuccessMsg = ref(false);
+const notifSuccessMsg = ref('');
 
 const fetchNotifPrefs = async () => {
   try {
@@ -358,8 +438,52 @@ const saveViews = async () => {
     await axios.put('/api/v1/auth/me', { custom_views: userViews.value });
     viewsSuccessMsg.value = 'Vos vues ont été mises à jour.';
     await authStore.fetchUser();
+    setTimeout(() => viewsSuccessMsg.value = '', 3000);
   } catch (e) {
     alert('Erreur lors de la sauvegarde des vues.');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const getWidgetIcon = (id) => {
+  const icons = {
+    stats: 'fa-solid fa-chart-line',
+    tickets: 'fa-solid fa-comments',
+    urgencies: 'fa-solid fa-triangle-exclamation',
+    my_proposals: 'fa-solid fa-bullhorn',
+    my_animated: 'fa-solid fa-user-tie',
+    circles_watch: 'fa-solid fa-user-group'
+  };
+  return icons[id] || 'fa-solid fa-cube';
+};
+
+const getWidgetDesc = (id) => {
+  const descs = {
+    stats: 'Résumé chiffré de votre activité sur la plateforme.',
+    tickets: 'Liste de vos clarifications et objections en attente.',
+    urgencies: 'Décisions dont l\'échéance est proche (< 24h).',
+    my_proposals: 'Décisions dont vous êtes le porteur.',
+    my_animated: 'Décisions que vous facilitez.',
+    circles_watch: 'Flux des décisions actives dans vos cercles.'
+  };
+  return descs[id] || '';
+};
+
+const setWidgetWidth = (w, width) => {
+  w.width = width;
+};
+
+const saveDashboardConfig = async () => {
+  loading.value = true;
+  dashSuccessMsg.value = '';
+  try {
+    await axios.put('/api/v1/auth/me', { dashboard_widgets: userWidgets.value });
+    dashSuccessMsg.value = 'Configuration du tableau de bord enregistrée.';
+    await authStore.fetchUser();
+    setTimeout(() => dashSuccessMsg.value = '', 3000);
+  } catch (e) {
+    alert('Erreur lors de la sauvegarde.');
   } finally {
     loading.value = false;
   }
@@ -384,19 +508,50 @@ const userInitials = computed(() => {
   return authStore.user.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 });
 
-const favorites = computed(() => {
-  return decisionStore.decisions.filter(d => d.my_settings?.is_favorite);
+const processedUserAvatar = computed(() => {
+    const avatar = authStore.user?.avatar_url;
+    if (!avatar) return null;
+    if (avatar.startsWith('http')) return avatar;
+    return `/storage/${avatar}`;
 });
+
+const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+        await axios.post('/api/v1/auth/avatar', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        await authStore.fetchUser();
+        successMsg.value = "Photo de profil mise à jour.";
+        setTimeout(() => successMsg.value = '', 3000);
+    } catch (error) {
+        alert("Erreur lors de l'upload de l'avatar.");
+    }
+};
 
 onMounted(() => {
     if (authStore.user) {
         profileForm.value.name = authStore.user.name;
         profileForm.value.email = authStore.user.email;
         userViews.value = JSON.parse(JSON.stringify(authStore.user.custom_views || []));
+        userWidgets.value = JSON.parse(JSON.stringify(authStore.user.dashboard_widgets || []));
     }
-    decisionStore.fetchDecisions();
     fetchNotifPrefs();
     fetchSocialAccounts();
+});
+
+watch(() => authStore.user, (u) => {
+    if (u) {
+        profileForm.value.name = u.name;
+        profileForm.value.email = u.email;
+        userViews.value = JSON.parse(JSON.stringify(u.custom_views || []));
+        userWidgets.value = JSON.parse(JSON.stringify(u.dashboard_widgets || []));
+    }
 });
 
 const updateProfile = async () => {
@@ -409,6 +564,7 @@ const updateProfile = async () => {
         const { data } = await axios.put('/api/v1/auth/me', profileForm.value);
         successMsg.value = data.message || 'Profil mis à jour avec succès.';
         await authStore.fetchUser();
+        setTimeout(() => successMsg.value = '', 3000);
     } catch (error) {
         if (error.response?.status === 422) {
             validationErrors.value = error.response.data.errors;
@@ -430,6 +586,7 @@ const updatePassword = async () => {
         const { data } = await axios.put('/api/v1/auth/password', pwdForm.value);
         pwdSuccessMsg.value = data.message;
         pwdForm.value = { current_password: '', password: '', password_confirmation: '' };
+        setTimeout(() => pwdSuccessMsg.value = '', 3000);
     } catch (error) {
         if (error.response?.status === 422) {
             pwdValidationErrors.value = error.response.data.errors;
@@ -454,11 +611,12 @@ const socialIcons = {
   'github': 'fa-brands fa-github',
   'facebook': 'fa-brands fa-facebook',
   'twitter': 'fa-brands fa-x-twitter',
+  'linkedin': 'fa-brands fa-linkedin',
   'linkedin-openid': 'fa-brands fa-linkedin',
   'gitlab': 'fa-brands fa-gitlab',
   'microsoft': 'fa-brands fa-microsoft',
   'apple': 'fa-brands fa-apple',
-  'franceconnect': 'fa-solid fa-flag',
+  'franceconnect': 'fa-solid fa-id-card',
 };
 
 const fetchSocialAccounts = async () => {
@@ -532,10 +690,48 @@ const unlinkSocial = async (provider) => {
 .animate-fade-in { animation: fadeIn 0.3s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Toggle Cards */
-.toggle-card { display: flex; justify-content: space-between; align-items: center; padding: 24px; background: var(--gray-50); border-radius: 16px; border: 1px solid var(--gray-100); }
-.toggle-title { font-size: 16px; font-weight: 800; color: var(--gray-800); }
-.toggle-description { font-size: 13px; color: var(--gray-500); margin-top: 4px; }
+/* Avatar Preview */
+.avatar-preview-wrap {
+  width: 100px; height: 100px; border-radius: 20px; background: var(--gray-100); border: 2px solid var(--gray-200);
+  position: relative; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.avatar-preview-wrap:hover { border-color: var(--blue-400); }
+.avatar-preview-img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-preview-placeholder { font-size: 32px; font-weight: 800; color: var(--gray-400); }
+.avatar-edit-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.4); color: white; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; opacity: 0; transition: opacity 0.2s;
+}
+.avatar-preview-wrap:hover .avatar-edit-overlay { opacity: 1; }
+
+/* Dashboard Config */
+.widgets-config-list { display: flex; flex-direction: column; gap: 12px; }
+.widget-config-row { 
+  display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; 
+  background: white; border: 1px solid var(--gray-200); border-radius: 16px; transition: all 0.2s;
+}
+.widget-config-row:hover { border-color: var(--blue-300); background: var(--gray-50); }
+.widget-config-row.disabled { opacity: 0.6; background: var(--gray-100); }
+.widget-config-info { display: flex; align-items: center; gap: 16px; }
+.widget-config-icon { 
+  width: 44px; height: 44px; border-radius: 12px; background: white; border: 1px solid var(--gray-200);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--indigo-600);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+.widget-config-label { font-size: 14px; font-weight: 800; color: var(--gray-800); }
+.widget-config-desc { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+.widget-config-actions { display: flex; align-items: center; gap: 20px; }
+
+.widget-width-selector { 
+  display: flex; background: var(--gray-100); padding: 3px; border-radius: 8px; border: 1px solid var(--gray-200);
+}
+.ww-btn {
+  padding: 4px 10px; font-size: 10px; font-weight: 800; border-radius: 6px; border: none;
+  background: transparent; color: var(--gray-500); cursor: pointer; transition: all 0.2s;
+}
+.ww-btn:hover { color: var(--blue-600); }
+.ww-btn.active { background: white; color: var(--blue-600); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
 /* Views */
 .views-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
@@ -552,7 +748,7 @@ const unlinkSocial = async (provider) => {
 .view-opt-label { font-size: 13px; font-weight: 700; color: var(--gray-700); }
 
 /* Notifications Table */
-.notif-table-container { background: var(--gray-50); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--gray-200); }
+.notif-table-container { background: var(--gray-50); border-radius: 12px; overflow: hidden; border: 1px solid var(--gray-200); }
 .notif-table { width: 100%; border-collapse: collapse; }
 .notif-table th { background: var(--gray-100); padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--gray-500); border-bottom: 1px solid var(--gray-200); }
 .notif-table td { padding: 16px; border-bottom: 1px solid var(--gray-200); vertical-align: middle; }
@@ -580,16 +776,6 @@ const unlinkSocial = async (provider) => {
 .switch-sm .slider.round { border-radius: 22px; }
 .switch-sm .slider.round:before { border-radius: 50%; }
 
-/* Favorites */
-.empty-state-sm { text-align: center; padding: 32px; background: var(--gray-50); border-radius: 16px; border: 1px dashed var(--gray-200); color: var(--gray-500); font-size: 13px; }
-.favorites-list { display: flex; flex-direction: column; gap: 8px; }
-.fav-item { display: flex; align-items: center; gap: 16px; padding: 12px 16px; background: white; border: 1px solid var(--gray-200); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
-.fav-item:hover { border-color: var(--blue-400); background: var(--blue-50); transform: translateX(4px); }
-.fav-icon { font-size: 16px; }
-.fav-content { flex: 1; }
-.fav-title { font-weight: 700; font-size: 13px; color: var(--gray-900); }
-.fav-meta { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
-
 @media (max-width: 1024px) {
   .config-layout { flex-direction: column; }
   .config-nav { width: 100%; position: static; flex-direction: row; display: flex; overflow-x: auto; gap: 8px; padding-bottom: 8px; }
@@ -598,65 +784,13 @@ const unlinkSocial = async (provider) => {
 }
 
 /* Social Accounts */
-.social-accounts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.social-account-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  background: var(--gray-50);
-  border: 1px solid var(--gray-100);
-  border-radius: 12px;
-  transition: all 0.15s;
-}
-
-.social-account-row:hover {
-  border-color: var(--gray-200);
-  background: white;
-}
-
-.social-account-info {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.social-account-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: white;
-  border: 1px solid var(--gray-200);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  color: var(--gray-600);
-  flex-shrink: 0;
-}
-
-.social-account-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--gray-800);
-}
-
-.social-account-status {
-  font-size: 11px;
-  font-weight: 600;
-  margin-top: 2px;
-}
-
-.social-account-status.linked {
-  color: var(--teal-600);
-}
-
-.social-account-status.unlinked {
-  color: var(--gray-400);
-}
+.social-accounts-list { display: flex; flex-direction: column; gap: 8px; }
+.social-account-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: var(--gray-50); border: 1px solid var(--gray-100); border-radius: 12px; transition: all 0.15s; }
+.social-account-row:hover { border-color: var(--gray-200); background: white; }
+.social-account-info { display: flex; align-items: center; gap: 14px; }
+.social-account-icon { width: 36px; height: 36px; border-radius: 10px; background: white; border: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--gray-600); flex-shrink: 0; }
+.social-account-name { font-size: 13px; font-weight: 700; color: var(--gray-800); }
+.social-account-status { font-size: 11px; font-weight: 600; margin-top: 2px; }
+.social-account-status.linked { color: var(--teal-600); }
+.social-account-status.unlinked { color: var(--gray-400); }
 </style>

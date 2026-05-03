@@ -21,6 +21,7 @@ class ConfigService
             'app_logo'              => null,
             'decision_reaction_days' => '3',
             'decision_objection_days' => '3',
+            'decision_revision_months' => '6',
             'reminder_hours_before' => '24',
             'public_registration'   => 'true',
             'mail_sender_name'      => 'DAZO Notifications',
@@ -29,6 +30,7 @@ class ConfigService
             // Publication API Publique & Front
             'enable_public_front'   => 'true',
             'require_admin_approval'=> 'false',
+            'allowed_domains'       => '',
             'recaptcha_site_key'    => '',
             'recaptcha_secret_key'  => '',
             'public_circles'        => '[]',
@@ -36,64 +38,57 @@ class ConfigService
             'public_statuses'       => '[]',
             'public_filters'        => '[]',
             'public_api_key'        => '',
-            'legal_mentions_url'    => '',
-            'privacy_policy_url'    => '',
-            'terms_of_service_url'  => '',
-            // Pages de contenu (Title, Slug, Content)
-            'page_legal_title'      => 'Mentions Légales',
-            'page_legal_slug'       => 'mentions-legales',
+            
+            // Pages de contenu (Content stored as HTML)
             'page_legal_content'    => '<h1>Mentions Légales</h1><p>Contenu par défaut à personnaliser...</p>',
-            'page_privacy_title'    => 'Politique de Confidentialité',
-            'page_privacy_slug'     => 'politique-confidentialite',
             'page_privacy_content'  => '<h1>Politique de Confidentialité</h1><p>Contenu par défaut à personnaliser...</p>',
-            'page_terms_title'      => 'Conditions Générales d\'Utilisation',
-            'page_terms_slug'       => 'cgu',
             'page_terms_content'    => '<h1>Conditions Générales d\'Utilisation</h1><p>Contenu par défaut à personnaliser...</p>',
-            // Pièces jointes — laisser vide pour accepter tous les types non-bloqués
-            'allowed_file_types'    => '',
-            'max_file_size_mb'      => '10',
-            'mail_host'             => '',
-            'mail_port'             => '587',
-            'mail_username'         => '',
-            'mail_password'         => '',
-            'mail_encryption'       => 'tls',
-            // Sujets et corps des emails par défaut
-            'mail_reminder_subject'     => "⚠️ Rappel : La décision '{title}' arrive à échéance",
-            'mail_reminder_body'        => "Bonjour {name},\n\nCeci est un rappel concernant la décision : **{title}**.\n\nLa phase actuelle (**{phase}**) arrive bientôt à échéance. Votre participation est attendue afin de faire progresser le processus.\n\n**Échéance :** {deadline}\n\nMerci de votre contribution.",
-            'mail_extended_subject'     => "⏳ Prolongation : La décision '{title}' a été prolongée",
-            'mail_extended_body'        => "Bonjour {name},\n\nL'échéance de la phase de **{phase}** pour la décision **{title}** a été prolongée.\n\nVotre participation est toujours requise.\n\n**Nouvelle échéance :** {deadline}\n\nMerci de votre contribution.",
+            
+            // Mail Templates Subjects & Bodies
+            'mail_new_decision_subject' => 'Nouvelle proposition de décision',
+            'mail_new_decision_body'    => '<h1>Nouvelle décision</h1><p>Bonjour {user_name},</p><p>Une nouvelle proposition "{decision_title}" a été publiée.</p><p><a href="{link}">Voir la décision</a></p>',
+            
+            'mail_phase_change_subject' => 'Changement de Phase',
+            'mail_phase_change_body'    => '<h1>Changement de phase</h1><p>Bonjour {user_name},</p><p>La décision "{decision_title}" est passée en nouvelle phase.</p><p><a href="{link}">Voir la décision</a></p>',
+            
+            'mail_reminder_subject'     => 'Rappel : Action requise sur une décision',
+            'mail_reminder_body'        => '<h1>Rappel échéance</h1><p>Bonjour {user_name},</p><p>Une action est attendue de votre part sur "{decision_title}".</p><p><a href="{link}">Accéder à la décision</a></p>',
+            
+            'mail_decision_adopted_subject' => 'Une décision a été adoptée',
+            'mail_decision_adopted_body'    => '<h1>Décision adoptée !</h1><p>Bonjour {user_name},</p><p>La proposition "{decision_title}" a été officiellement adoptée.</p><p><a href="{link}">Voir le résultat</a></p>',
+            
+            'mail_decision_rejected_subject' => 'Une décision n\'a pas été adoptée',
+            'mail_decision_rejected_body'    => '<h1>Décision refusée</h1><p>Bonjour {user_name},</p><p>La proposition "{decision_title}" n\'a pas recueilli le consensus nécessaire.</p><p><a href="{link}">Voir les détails</a></p>',
+
             'mail_invitation_subject'   => "📩 Invitation à rejoindre le cercle '{circle}'",
             'mail_invitation_body'      => "Bonjour,\n\nVous avez été invité à rejoindre le cercle **{circle}** sur la plateforme DAZO par **{inviter}**.\n\nCe cercle traite des sujets suivants : {description}\n\n[Accepter l'invitation]({url})",
-            'mail_notification_subject' => "📢 Nouvelle étape pour : {title}",
-            'mail_notification_body'    => "Bonjour {name},\n\nLa décision **{title}** vient de passer en phase de **{phase}**.\n\nVous pouvez consulter les détails et participer ici : [Voir la décision]({url})",
-            'mail_contact_subject'      => "✉️ Nouveau message de contact : {subject}",
-            'mail_contact_body'         => "Nom : {name}\nEmail : {email}\n\nMessage :\n{message}",
             
-            // Configuration OAuth
-            'auth_google_enabled'       => 'false',
-            'auth_google_client_id'     => '',
-            'auth_google_client_secret' => '',
-            'auth_github_enabled'       => 'false',
-            'auth_github_client_id'     => '',
-            'auth_github_client_secret' => '',
-            'auth_microsoft_enabled'    => 'false',
-            'auth_microsoft_client_id'  => '',
-            'auth_microsoft_client_secret' => '',
-            'auth_facebook_enabled'     => 'false',
-            'auth_facebook_client_id'   => '',
-            'auth_facebook_client_secret' => '',
-            'auth_apple_enabled'        => 'false',
-            'auth_apple_client_id'      => '',
-            'auth_apple_client_secret'  => '',
-            'auth_franceconnect_enabled' => 'false',
-            'auth_franceconnect_client_id' => '',
-            'auth_franceconnect_client_secret' => '',
+            // SMTP Settings
+            'mail_host'             => '',
+            'mail_port'             => '1025',
+            'mail_username'         => '',
+            'mail_password'         => '',
+            'mail_encryption'       => 'null',
+            
+            // OAuth Providers (Matches AdminConfig.vue key + _client_id)
+            'google_client_id'      => '',
+            'google_client_secret'  => '',
+            'github_client_id'      => '',
+            'github_client_secret'  => '',
+            'facebook_client_id'    => '',
+            'facebook_client_secret' => '',
+            'twitter_client_id'     => '',
+            'twitter_client_secret' => '',
+            'linkedin_client_id'    => '',
+            'linkedin_client_secret' => '',
+            'microsoft_client_id'   => '',
+            'microsoft_client_secret' => '',
+            'franceconnect_client_id' => '',
+            'franceconnect_client_secret' => '',
 
             // TEMPLATE GÉNÉRAL EMAILS
-            'mail_template_logo'            => '', // URL ou path vers le logo
-            'mail_template_logo_perso'      => '', // Deuxième logo
+            'mail_template_logo'            => '',
             'mail_template_site_link'       => 'https://dazo.app',
-            'mail_template_site_link_register' => 'https://dazo.app/register',
             'mail_template_wrapper'         => '<div style="font-family: \'Inter\', sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #1e293b;">
   <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
     <div style="padding: 32px; text-align: center; border-bottom: 1px solid #f1f5f9;">
@@ -108,8 +103,6 @@ class ConfigService
       <p style="margin: 0 0 16px 0;">Vous recevez cet email car vous participez à la gouvernance sur notre plateforme.</p>
       <div style="display: flex; justify-content: center; gap: 16px;">
         <a href="{site_link}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">Notre Site</a>
-        <span style="color: #cbd5e1;">&bull;</span>
-        <a href="{site_link_register}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">S\'inscrire</a>
       </div>
     </div>
   </div>

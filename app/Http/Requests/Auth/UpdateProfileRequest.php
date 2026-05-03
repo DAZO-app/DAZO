@@ -18,8 +18,10 @@ class UpdateProfileRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $userId],
-            'avatar_url' => ['sometimes', 'nullable', 'url', 'max:255'],
+            'avatar' => ['sometimes', 'nullable', 'image', 'max:2048'], // Max 2MB
+            'avatar_url' => ['sometimes', 'nullable', 'url', 'max:500'],
             'custom_views' => ['sometimes', 'nullable', 'array'],
+            'dashboard_widgets' => ['sometimes', 'nullable', 'array'],
         ];
     }
 }

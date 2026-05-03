@@ -146,6 +146,11 @@ class SocialAuthController extends Controller
 
         $providers = [];
         foreach (SocialAuthService::PROVIDERS as $provider) {
+            // Check if provider is configured (has client_id)
+            if (!config("services.{$provider}.client_id")) {
+                continue;
+            }
+
             $providers[] = [
                 'provider' => $provider,
                 'label'    => SocialAuthService::PROVIDER_LABELS[$provider],
