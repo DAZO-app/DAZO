@@ -62,4 +62,28 @@ class DecisionTransitionController extends Controller
             'decision' => $decision->fresh()
         ]);
     }
+
+    public function extend(Request $request, string $decision_id): JsonResponse
+    {
+        $decision = Decision::findOrFail($decision_id);
+        
+        $user = $request->user();
+        $isAuthorOrAnimator = $decision->participants()
+            ->where('user_id', $user->id)
+            ->whereIn('role', [
+                \App\Enums\DecisionParticipantRole::AUTHOR->value,
+                \App\Enums\DecisionParticipantRole::ANIMATOR->value,
+            ])->exists();
+
+        if (!$isAuthorOrAnimator && $user->role->value !== \App\Enums\UserRole::ADMIN->value && $user->role->value !== \App\Enums\UserRole::SUPERADMIN->value) {
+            abort(403, "Seul le porteur ou l'animateur peut prolonger la décision.");
+        }
+
+        $decision = $this->decisionService->extendDeadline($decision);
+
+        return response()->json([
+            'message' => 'La phase a été prolongée avec succès.',
+            'decision' => $decision->fresh()
+        ]);
+    }
 }

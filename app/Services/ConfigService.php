@@ -60,6 +60,8 @@ class ConfigService
             // Sujets et corps des emails par défaut
             'mail_reminder_subject'     => "⚠️ Rappel : La décision '{title}' arrive à échéance",
             'mail_reminder_body'        => "Bonjour {name},\n\nCeci est un rappel concernant la décision : **{title}**.\n\nLa phase actuelle (**{phase}**) arrive bientôt à échéance. Votre participation est attendue afin de faire progresser le processus.\n\n**Échéance :** {deadline}\n\nMerci de votre contribution.",
+            'mail_extended_subject'     => "⏳ Prolongation : La décision '{title}' a été prolongée",
+            'mail_extended_body'        => "Bonjour {name},\n\nL'échéance de la phase de **{phase}** pour la décision **{title}** a été prolongée.\n\nVotre participation est toujours requise.\n\n**Nouvelle échéance :** {deadline}\n\nMerci de votre contribution.",
             'mail_invitation_subject'   => "📩 Invitation à rejoindre le cercle '{circle}'",
             'mail_invitation_body'      => "Bonjour,\n\nVous avez été invité à rejoindre le cercle **{circle}** sur la plateforme DAZO par **{inviter}**.\n\nCe cercle traite des sujets suivants : {description}\n\n[Accepter l'invitation]({url})",
             'mail_notification_subject' => "📢 Nouvelle étape pour : {title}",

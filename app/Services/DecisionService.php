@@ -206,6 +206,20 @@ class DecisionService
         return $days ? now()->addDays($days) : null;
     }
 
+    public function extendDeadline(Decision $decision): Decision
+    {
+        // Add basic reaction delay according to user instructions.
+        // If it's objection phase, the config used by calculateDeadline will apply the correct delay for that phase.
+        // Wait, calculateDeadline returns the exact length from now.
+        $newDeadline = $this->calculateDeadline($decision->status->value);
+        if ($newDeadline) {
+            $decision->current_deadline = $newDeadline;
+            $decision->reminder_sent = false; // Reset so reminder job can send again if needed.
+            $decision->save();
+        }
+        return $decision;
+    }
+
     private function dispatchEventForTransition(Decision $decision, string $toStatus): void
     {
         match ($toStatus) {

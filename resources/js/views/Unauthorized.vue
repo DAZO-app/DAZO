@@ -43,7 +43,7 @@ const configStore = useConfigStore();
 .empty-state-img {
   width: 280px;
   height: 280px;
-  opacity: 0.15;
+  opacity: 0.8;
   pointer-events: none;
 }
 

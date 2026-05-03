@@ -631,6 +631,7 @@ const pagesList = [
 
 const emailList = [
   { key: 'reminder', label: 'Rappel de décision', icon: 'fa-solid fa-clock-rotate-left', help: 'Variables : {name}, {title}, {phase}, {deadline}, {url}' },
+  { key: 'extended', label: 'Relance Prolongation', icon: 'fa-solid fa-clock-rotate-left', help: 'Variables : {name}, {title}, {phase}, {deadline}, {url}' },
   { key: 'invitation', label: 'Invitation au cercle', icon: 'fa-solid fa-envelope-open-text', help: 'Variables : {inviter}, {circle}, {description}, {url}' },
   { key: 'notification', label: 'Nouvelle phase', icon: 'fa-solid fa-bullhorn', help: 'Variables : {name}, {title}, {phase}, {url}' },
   { key: 'contact', label: 'Message de contact', icon: 'fa-solid fa-message', help: 'Variables : {name}, {email}, {subject}, {message}' },

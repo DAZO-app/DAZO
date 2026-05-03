@@ -15,7 +15,8 @@
     <ReminderModal 
       v-if="showReminderModal" 
       :decision="decision" 
-      @close="showReminderModal = false" 
+      :type="reminderModalType"
+      @close="showReminderModal = false; reminderModalType = 'reminder'" 
     />
     
     <MeetingModeOverlay
@@ -548,6 +549,7 @@ const showReminderModal = ref(false);
 const targetRevisionStatus = ref('clarification');
 const pendingPublishType = ref(null);
 const revisionAttachments = ref([]);
+const reminderModalType = ref('reminder');
 
 // Navigation Historique
 const allVersions = ref([]);
@@ -837,6 +839,12 @@ const isUrgent = computed(() => {
     return (deadline.getTime() - new Date().getTime()) < 24 * 60 * 60 * 1000;
 });
 
+const isOverdue = computed(() => {
+    if (!decision.value?.current_deadline) return false;
+    const deadline = new Date(decision.value.current_deadline);
+    return deadline.getTime() < new Date().getTime();
+});
+
 const deadlineLabel = computed(() => {
     if (!decision.value?.current_deadline) return '';
     const deadline = new Date(decision.value.current_deadline);
@@ -883,6 +891,30 @@ const stepActions = computed(() => {
       primary: true,
       run: publishDecision,
     });
+    return actions; // Early return for draft
+  }
+
+  // Si la décision est dans une phase active avec échéance dépassée
+  if (isOverdue.value && ['clarification', 'reaction', 'objection'].includes(currentStatus.value)) {
+    actions.push({
+      key: 'extend',
+      label: 'Prolonger',
+      primary: true,
+      run: extendDecision,
+    });
+    actions.push({
+      key: 'to-revision',
+      label: 'Réviser',
+      primary: false,
+      run: () => transitionStatus('revision'),
+    });
+    actions.push({
+      key: 'to-abandon',
+      label: 'Abandonner',
+      primary: false,
+      run: () => handleManualAction('abandon'),
+    });
+    return actions; // Return these actions instead of normal ones
   }
 
   if (currentStatus.value === 'clarification') {
@@ -1201,6 +1233,24 @@ const transitionStatus = async (to) => {
     await refreshDecision();
   } catch (error) {
     window.alert(error.response?.data?.message || `Transition impossible vers ${to}.`);
+  } finally {
+    transitioning.value = false;
+  }
+};
+
+const extendDecision = async () => {
+  if (!decision.value) return;
+
+  transitioning.value = true;
+
+  try {
+    await axios.post(`/api/v1/decisions/${decision.value.id}/extend`);
+    await refreshDecision();
+    showReminderModal.value = true;
+    // On doit passer le type 'extend' à ReminderModal, on ajoutera un ref reminderModalType
+    reminderModalType.value = 'extend';
+  } catch (error) {
+    window.alert(error.response?.data?.message || `Impossible de prolonger l'échéance.`);
   } finally {
     transitioning.value = false;
   }

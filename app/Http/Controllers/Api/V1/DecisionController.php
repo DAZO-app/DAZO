@@ -348,9 +348,15 @@ class DecisionController extends Controller
         }
 
         foreach ($pendingUsers as $user) {
-            \Illuminate\Support\Facades\Mail::to($user->email)->queue(
-                new \App\Mail\DecisionReminderMail($decision, $user)
-            );
+            if ($request->input('type') === 'extend') {
+                \Illuminate\Support\Facades\Mail::to($user->email)->queue(
+                    new \App\Mail\DecisionExtendedMail($decision, $user)
+                );
+            } else {
+                \Illuminate\Support\Facades\Mail::to($user->email)->queue(
+                    new \App\Mail\DecisionReminderMail($decision, $user)
+                );
+            }
         }
 
         return response()->json([

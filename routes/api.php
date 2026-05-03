@@ -124,6 +124,8 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:20,1');
         Route::post('/decisions/{decision_id}/abandon', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'abandon'])
             ->middleware('throttle:20,1');
+        Route::post('/decisions/{decision_id}/extend', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'extend'])
+            ->middleware('throttle:20,1');
 
         // Feedback & Joins
         Route::get('/decisions/{id}/feedback', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'index']);

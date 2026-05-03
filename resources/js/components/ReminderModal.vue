@@ -95,6 +95,10 @@ const props = defineProps({
   decision: {
     type: Object,
     required: true
+  },
+  type: {
+    type: String,
+    default: 'reminder'
   }
 });
 
@@ -129,7 +133,7 @@ const fetchPending = async () => {
 const sendReminders = async () => {
   sending.value = true;
   try {
-    const { data } = await axios.post(`/api/v1/decisions/${props.decision.id}/remind`);
+    const { data } = await axios.post(`/api/v1/decisions/${props.decision.id}/remind`, { type: props.type });
     // On pourrait utiliser un toast ici au lieu d'un alert
     alert(data.message);
     emit('close');

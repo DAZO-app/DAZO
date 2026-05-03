@@ -10,6 +10,16 @@ Ce document decoupe les recommandations d'audit en chantiers independants. L'obj
 - Base de test : `phpunit.xml` utilise PostgreSQL sur `127.0.0.1`, base `dazo_test`, utilisateur `dazo_user`, mot de passe `secret`.
 - Corrections deja faites : `PendingItemsController` ne retourne plus les decisions deja traitees, gere correctement la phase `reaction`, et charge `categories` au lieu de `category`.
 
+## ✅ Sécurité & Gestion des Échéances (Réalisé)
+
+Objectif : Sécuriser la plateforme et assouplir le flux décisionnel en cas de retard.
+
+Actions réalisées :
+- [x] **Contrôle d'accès dynamique** : Création de la page `Unauthorized`, sécurisation des routes côté client (`requiresAdmin`, `requiresSuperAdmin`) et mise à jour dynamique des menus (`AppLayout`) lors de l'impersonation de rôles.
+- [x] **Échéances dépassées** : Remplacement automatique des boutons de validation par "Prolonger", "Réviser", et "Abandonner" dans `DecisionDetail.vue` dès que la date limite est franchie.
+- [x] **Prolongation serveur** : Ajout du point d'API `POST /api/v1/decisions/{id}/extend` ajoutant le délai légal standard à l'échéance.
+- [x] **Notifications** : Implémentation du nouvel email configurable "Relance Prolongation" (`DecisionExtendedMail`) gérable depuis le back-office `AdminConfig.vue`.
+
 ## Lot ✅ 0 - Stabilisation des tests (Réalisé)
 
 Objectif : garder une base de regression fiable avant toute optimisation.
