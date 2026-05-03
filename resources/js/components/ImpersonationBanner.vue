@@ -41,11 +41,14 @@ import axios from 'axios';
 
 const authStore = useAuthStore();
 
-const isImpersonating = computed(() => authStore.isImpersonating);
-const isSuperAdmin = computed(() => authStore.isSuperAdmin);
-const isVisible = computed(() => isImpersonating.value || isSuperAdmin.value);
-
 const user = computed(() => authStore.user);
+const isAdmin = computed(() => {
+  const r = user.value?.role;
+  const roleVal = (typeof r === 'object' && r !== null) ? r.value : r;
+  return roleVal === 'admin' || roleVal === 'superadmin';
+});
+const isImpersonating = computed(() => authStore.isImpersonating);
+const isVisible = computed(() => isImpersonating.value || isAdmin.value);
 const isLoading = ref(false);
 
 const usersList = ref([]);
@@ -62,8 +65,8 @@ const loadUsersList = async () => {
   }
 
   try {
-    const { data } = await axios.get('/api/v1/admin/users', { headers });
-    usersList.value = data.users.filter(u => u.is_active);
+    const { data } = await axios.get('/api/v1/admin/users?per_page=100', { headers });
+    usersList.value = data.data.filter(u => u.is_active);
   } catch (e) {
     console.error("Erreur chargement utilisateurs (Banner):", e);
   }
@@ -75,7 +78,7 @@ onMounted(() => {
 
 watch(isVisible, (newVal) => {
   if (newVal) loadUsersList();
-});
+}, { immediate: true });
 
 const switchImpersonation = async () => {
   if (!selectedUser.value) return;

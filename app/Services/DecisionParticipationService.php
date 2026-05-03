@@ -82,7 +82,13 @@ class DecisionParticipationService
                          ]);
                   });
             })
-            ->whereHas('latestMessage', fn($q) => $q->where('author_id', '!=', $user->id));
+            ->whereHas('messages', function ($q) use ($user) {
+                // Version sécurisée pour PostgreSQL : on vérifie que le message de l'auteur n'est pas le dernier
+                // Mais pour faire simple et performant, on peut juste vérifier s'il existe un message qui n'est pas du user
+                // En réalité, le besoin est : "le dernier message n'est pas de moi"
+                $q->where('author_id', '!=', $user->id)
+                  ->whereRaw('created_at = (select max(created_at) from feedback_messages as fm where fm.feedback_id = feedbacks.id)');
+            });
     }
 
     /**
@@ -252,7 +258,8 @@ class DecisionParticipationService
                     \App\Enums\FeedbackStatus::TREATED->value,
                 ])
                 ->contains(function ($fb) use ($userId) {
-                    $lastMsg = $fb->latestMessage;
+                    // On récupère le dernier message dans la collection déjà chargée
+                    $lastMsg = $fb->messages->sortByDesc('created_at')->first();
                     return $lastMsg && $lastMsg->author_id !== $userId;
                 });
 
@@ -301,7 +308,7 @@ class DecisionParticipationService
 
         $decisions->loadMissing([
             'participants',
-            'currentVersion.feedbacks.latestMessage',
+            'currentVersion.feedbacks.messages', // On charge tous les messages pour éviter le bug latestOfMany/MAX(uuid)
             'currentVersion.consents',
         ]);
 

@@ -37,7 +37,7 @@
             <span class="sub-dot dot-amber"></span> Réactions attendues
           </router-link>
 
-          <template v-if="isActuallyAdmin">
+          <template v-if="isAdmin">
             <div class="mobile-menu-divider"></div>
             <div class="sidebar-section" style="padding-left:20px; color:rgba(255,255,255,0.4)">Administration</div>
             <router-link :to="{ name: 'AdminUsers' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-users" style="margin-right: 8px;"></i> Utilisateurs</router-link>
@@ -45,7 +45,7 @@
             <router-link :to="{ name: 'AdminCategories' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-tags" style="margin-right: 8px;"></i> Catégories</router-link>
             <router-link :to="{ name: 'AdminPublication' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-globe" style="margin-right: 8px;"></i> Publication API</router-link>
             
-            <template v-if="isActuallySuperAdmin">
+            <template v-if="isSuperAdmin">
               <div class="mobile-menu-divider"></div>
               <div class="sidebar-section" style="padding-left:20px; color:rgba(255,255,255,0.4)">Système</div>
               <router-link :to="{ name: 'Admin' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gauge-high" style="margin-right: 8px;"></i> Dashboard Admin</router-link>
@@ -132,7 +132,7 @@
           </transition>
         </template>
 
-        <template v-if="isActuallyAdmin">
+        <template v-if="isAdmin">
           <div class="sidebar-section-header" style="margin-top: 8px;" @click="sectionsOpen.admin = !sectionsOpen.admin">
             <span>Administration</span>
             <i :class="sectionsOpen.admin ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
@@ -155,7 +155,7 @@
           </transition>
         </template>
 
-        <template v-if="isActuallySuperAdmin">
+        <template v-if="isSuperAdmin">
           <div class="sidebar-section-header" style="margin-top: 8px;" @click="sectionsOpen.system = !sectionsOpen.system">
             <span>Système</span>
             <i :class="sectionsOpen.system ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
@@ -248,10 +248,6 @@ const user = computed(() => authStore.user);
 const isAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
 const isSuperAdmin = computed(() => user.value?.role === 'superadmin');
 const isImpersonating = computed(() => authStore.isImpersonating);
-
-// Persistence of admin access during impersonation
-const isActuallyAdmin = computed(() => isAdmin.value || !!authStore.originalRole);
-const isActuallySuperAdmin = computed(() => isSuperAdmin.value || authStore.originalRole === 'superadmin');
 
 const userInitials = computed(() => {
   if (!user.value) return '?';
@@ -352,8 +348,13 @@ onMounted(() => {
 });
 
 const logout = async () => {
-  await authStore.logout();
-  router.push('/');
+  try {
+    await authStore.logout();
+  } catch (e) {
+    console.error('Logout failed', e);
+  } finally {
+    window.location.href = '/';
+  }
 };
 
 const stopImpersonating = async () => {

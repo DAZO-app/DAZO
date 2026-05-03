@@ -140,6 +140,7 @@
                        <AttachmentPanel 
                          :attachments="directEditDraft.attachments"
                          :editable="true"
+                         :unlink-only="true"
                          :hide-header="true"
                          @uploaded="onDirectEditAttachmentAdded"
                          @removed="onDirectEditAttachmentRemoved"
@@ -362,6 +363,7 @@
             <AttachmentPanel 
               :attachments="directEditDraft.attachments"
               :editable="true"
+              :unlink-only="isDirectEditing"
               @uploaded="onDirectEditAttachmentAdded"
               @removed="onDirectEditAttachmentRemoved"
               class="flex-1 overflow-y-auto"
@@ -475,6 +477,25 @@ watch(() => props.decision.status?.value || props.decision.status, (newStatus) =
   }
 }, { immediate: true });
 
+// S'assurer que le brouillon de révision est bien hydraté quand les données arrivent
+watch([() => props.decision.revision_content, () => props.currentVersion?.content], ([revContent, verContent]) => {
+  if (currentStatus.value === 'revision' && !directEditDraft.value.content && (revContent || verContent)) {
+    startDirectEdit();
+  }
+});
+
+watch(() => props.attachments, (newAtts) => {
+  if (currentStatus.value === 'revision' && directEditDraft.value.attachments.length === 0 && newAtts?.length > 0) {
+    startDirectEdit();
+  }
+}, { deep: true, immediate: true });
+
+watch(() => props.decision, (newDec) => {
+  if (currentStatus.value === 'revision' && !isDirectEditing.value && newDec.revision_content) {
+    startDirectEdit();
+  }
+}, { deep: true });
+
 const replyTarget = ref(null);
 const replyTrigger = ref(0);
 const collapsedFeedbacks = ref({}); // { fbId: true/false }
@@ -490,11 +511,30 @@ const directEditDraft = ref({
 });
 
 const startDirectEdit = () => {
+  const d = props.decision;
+  const status = d.status?.value || d.status;
+  const isRev = status === 'revision';
+
+  if (!isRev) return;
+
+  const content = (d.revision_content !== null && d.revision_content !== undefined) 
+    ? d.revision_content 
+    : (props.currentVersion?.content || '');
+    
+  const attachments = (d.revision_attachments !== null && d.revision_attachments !== undefined)
+    ? [...d.revision_attachments] 
+    : [...(props.attachments || [])];
+    
+  const attachmentIds = d.revision_attachment_ids
+    ? [...d.revision_attachment_ids] 
+    : (props.attachments || []).map(a => a.id);
+
   directEditDraft.value = {
-    content: props.currentVersion.content,
-    attachments: [...(props.attachments || [])],
-    attachmentIds: (props.attachments || []).map(a => a.id)
+    content,
+    attachments,
+    attachmentIds
   };
+  
   isDirectEditing.value = true;
 };
 

@@ -26,4 +26,9 @@ class AttachmentPolicy
 
         return $attachment->uploader_id === $user->id || $isDecisionManager || $user->is_global_animator;
     }
+
+    public function update(User $user, Attachment $attachment): bool
+    {
+        return $this->delete($user, $attachment);
+    }
 }

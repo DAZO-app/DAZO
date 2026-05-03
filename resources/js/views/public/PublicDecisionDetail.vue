@@ -6,7 +6,7 @@
       <div class="filters-actions-bar dazo-public-detail-navbar">
         
         <div class="popin-wrapper">
-          <router-link to="/public" class="action-btn dazo-public-back-btn">
+          <router-link to="/front" class="action-btn dazo-public-back-btn">
             <i class="fa-solid fa-arrow-left"></i>
             <span class="btn-label">Retour</span>
           </router-link>
@@ -60,7 +60,7 @@
         <div class="empty-icon"><i class="fa-solid fa-file-circle-xmark"></i></div>
         <h3>Décision introuvable</h3>
         <p class="text-muted">La décision demandée n'existe pas ou n'est pas publique.</p>
-        <router-link to="/public" class="btn btn-primary mt-16">Retour à la liste</router-link>
+        <router-link to="/front" class="btn btn-primary mt-16">Retour à la liste</router-link>
       </div>
 
       <!-- ── Carte principale ── -->
@@ -435,8 +435,8 @@ const fetchDecision = async () => {
   decision.value = null;
   try {
     const { data } = await axios.get(`/api/v1/front/decisions/${route.params.id}`);
-    decision.value = data.decision;
-    originalVersionId.value = data.decision.current_version?.id;
+    decision.value = data.decision.data || data.decision;
+    originalVersionId.value = decision.value.current_version?.id;
   } catch (e) {
     console.error('decision detail fetch error', e);
   } finally {

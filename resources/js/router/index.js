@@ -28,7 +28,7 @@ const routes = [
         component: () => import('../views/ResetPassword.vue')
     },
     {
-        path: '/public',
+        path: '/front',
         component: () => import('../layouts/PublicLayout.vue'),
         children: [
             {
@@ -98,42 +98,50 @@ const routes = [
             {
                 path: 'admin',
                 name: 'Admin',
-                component: () => import('../views/admin/AdminDashboard.vue')
+                component: () => import('../views/admin/AdminDashboard.vue'),
+                meta: { requiresSuperAdmin: true }
             },
             {
                 path: 'admin/circles',
                 name: 'AdminCircles',
-                component: () => import('../views/admin/AdminCircles.vue')
+                component: () => import('../views/admin/AdminCircles.vue'),
+                meta: { requiresAdmin: true }
             },
             {
                 path: 'admin/users',
                 name: 'AdminUsers',
-                component: () => import('../views/admin/AdminUsers.vue')
+                component: () => import('../views/admin/AdminUsers.vue'),
+                meta: { requiresAdmin: true }
             },
             {
                 path: 'admin/categories',
                 name: 'AdminCategories',
-                component: () => import('../views/admin/AdminCategories.vue')
+                component: () => import('../views/admin/AdminCategories.vue'),
+                meta: { requiresAdmin: true }
             },
             {
                 path: 'admin/publication',
                 name: 'AdminPublication',
-                component: () => import('../views/admin/AdminPublication.vue')
+                component: () => import('../views/admin/AdminPublication.vue'),
+                meta: { requiresAdmin: true }
             },
             {
                 path: 'admin/config',
                 name: 'AdminConfig',
-                component: () => import('../views/admin/AdminConfig.vue')
+                component: () => import('../views/admin/AdminConfig.vue'),
+                meta: { requiresSuperAdmin: true }
             },
             {
                 path: 'admin/database',
                 name: 'AdminDatabase',
-                component: () => import('../views/admin/AdminDatabase.vue')
+                component: () => import('../views/admin/AdminDatabase.vue'),
+                meta: { requiresSuperAdmin: true }
             },
             {
                 path: 'admin/server',
                 name: 'AdminServer',
-                component: () => import('../views/admin/AdminServer.vue')
+                component: () => import('../views/admin/AdminServer.vue'),
+                meta: { requiresSuperAdmin: true }
             },
 
             // Wiki
@@ -150,17 +158,25 @@ const routes = [
             {
                 path: 'admin/wiki',
                 name: 'AdminWiki',
-                component: () => import('../views/wiki/AdminWiki.vue')
+                component: () => import('../views/wiki/AdminWiki.vue'),
+                meta: { requiresAdmin: true }
             },
             {
                 path: 'admin/wiki/create',
                 name: 'WikiCreate',
-                component: () => import('../views/wiki/WikiEditor.vue')
+                component: () => import('../views/wiki/WikiEditor.vue'),
+                meta: { requiresAdmin: true }
             },
             {
                 path: 'admin/wiki/:id/edit',
                 name: 'WikiEdit',
-                component: () => import('../views/wiki/WikiEditor.vue')
+                component: () => import('../views/wiki/WikiEditor.vue'),
+                meta: { requiresAdmin: true }
+            },
+            {
+                path: 'unauthorized',
+                name: 'Unauthorized',
+                component: () => import('../views/Unauthorized.vue')
             },
         ]
     }
@@ -198,14 +214,22 @@ router.beforeEach(async (to, from, next) => {
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
         return next({ name: 'Login' });
     }
+
+    if (to.meta.requiresSuperAdmin && !authStore.isSuperAdmin) {
+        return next({ name: 'Unauthorized' });
+    }
+
+    if (to.meta.requiresAdmin && !authStore.isAdmin && !authStore.isSuperAdmin) {
+        return next({ name: 'Unauthorized' });
+    }
     
     if (to.name === 'Login' && authStore.isAuthenticated) {
         return next({ name: 'Dashboard' });
     }
 
-    if (to.name === 'PublicFront' && authStore.isAuthenticated) {
-        return next({ name: 'Dashboard' });
-    }
+    // if (to.name === 'PublicFront' && authStore.isAuthenticated) {
+    //     return next({ name: 'Dashboard' });
+    // }
 
     if (to.name === 'PublicFront' || to.name === 'PublicDecision') {
         if (configStore.config.enable_public_front !== 'true' && configStore.config.enable_public_front !== true) {

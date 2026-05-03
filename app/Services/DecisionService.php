@@ -245,8 +245,18 @@ class DecisionService
             ]);
 
             if (!empty($attachmentIds)) {
-                Attachment::whereIn('id', $attachmentIds)
-                    ->update(['decision_version_id' => $newVersion->id]);
+                $attachments = Attachment::whereIn('id', $attachmentIds)->get();
+                foreach ($attachments as $attachment) {
+                    if ($attachment->decision_version_id !== null) {
+                        // Si la pièce jointe était déjà liée à une version, on la clone pour la nouvelle version (conserver l'historique)
+                        $newAttachment = $attachment->replicate();
+                        $newAttachment->decision_version_id = $newVersion->id;
+                        $newAttachment->save();
+                    } else {
+                        // Sinon (nouvel upload de brouillon), on la lie simplement
+                        $attachment->update(['decision_version_id' => $newVersion->id]);
+                    }
+                }
             }
 
             $decision->update([

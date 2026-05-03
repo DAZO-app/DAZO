@@ -86,7 +86,7 @@ class DecisionController extends Controller
 
         return response()->json([
             'message' => 'Décision initiée.',
-            'decision' => $decision->load(['currentVersion', 'participants.user']),
+            'decision' => $decision->load(['currentVersion', 'participants.user', 'circle.members.user']),
         ], 201);
     }
 
@@ -100,7 +100,10 @@ class DecisionController extends Controller
             'currentVersion.feedbacks',
             'currentVersion.consents.user',
             'participants.user',
+            'circle',
             'circle.members.user',
+            'author.user',
+            'currentAnimator.user',
             'categories',
             'decisionModel',
         ]);
@@ -130,9 +133,9 @@ class DecisionController extends Controller
         }
 
         $decision->setAttribute('participation_stats', $participationStats);
-        $decision->setAttribute('user_status', $this->participationService->calculateUserActionStatus($decision, auth()->id()));
+        $decision->setAttribute('user_status', $this->participationService->getUserActionStatus($decision, auth()->id()));
 
-        if ($decision->status->value === DecisionStatus::REVISION->value && !empty($decision->revision_attachment_ids)) {
+        if ($decision->status->value === DecisionStatus::REVISION->value && is_array($decision->revision_attachment_ids)) {
             $decision->setAttribute('revision_attachments', \App\Models\Attachment::whereIn('id', $decision->revision_attachment_ids)->get());
         }
 

@@ -62,6 +62,7 @@ class AttachmentController extends Controller
         $validator = Validator::make($request->all(), [
             'file'                => "required|file|max:{$maxSizeKb}",
             'decision_version_id' => 'nullable|exists:decision_versions,id',
+            'replace_id'          => 'nullable|exists:attachments,id',
         ], [
             'file.required' => "Aucun fichier n'a été transmis.",
             'file.file'     => "Le fichier transmis est invalide ou a échoué pendant l'upload.",
@@ -102,40 +103,44 @@ class AttachmentController extends Controller
             ], 422);
         }
 
-        $attachment = null;
-        if ($request->filled('replace_id')) {
-            $attachment = Attachment::with('version.decision')->findOrFail($request->replace_id);
-            $this->authorize('update', $attachment->version->decision);
-            // Delete old file
-            Storage::disk('local')->delete($attachment->s3_path);
-        }
-
         $filename = $file->getClientOriginalName();
         $mime     = $file->getMimeType();
         $size     = $file->getSize();
 
         $path = $file->store('attachments', 'local');
 
-        if ($attachment) {
+        if ($request->replace_id) {
+            $attachment = Attachment::findOrFail($request->replace_id);
+            $this->authorize('update', $attachment);
+            
+            // Delete old file
+            Storage::disk('local')->delete($attachment->s3_path);
+            
+            // Update metadata
             $attachment->update([
                 'filename'   => $filename,
                 's3_path'    => $path,
                 'mime_type'  => $mime,
                 'size_bytes' => $size,
             ]);
-        } else {
-            $attachment = Attachment::create([
-                'decision_version_id' => $request->decision_version_id,
-                'uploader_id'         => $request->user()->id,
-                'filename'            => $filename,
-                's3_path'             => $path,
-                'mime_type'           => $mime,
-                'size_bytes'          => $size,
+
+            return response()->json([
+                'message'    => 'Fichier remplacé avec succès.',
+                'attachment' => $attachment,
             ]);
         }
 
+        $attachment = Attachment::create([
+            'decision_version_id' => $request->decision_version_id,
+            'uploader_id'         => $request->user()->id,
+            'filename'            => $filename,
+            's3_path'             => $path,
+            'mime_type'           => $mime,
+            'size_bytes'          => $size,
+        ]);
+
         return response()->json([
-            'message'    => $request->filled('replace_id') ? 'Fichier remplacé.' : 'Fichier uploadé.',
+            'message'    => 'Fichier uploadé.',
             'attachment' => $attachment,
             'url'        => route('attachments.download', $attachment->id),
         ], 201);

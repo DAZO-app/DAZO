@@ -149,6 +149,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  unlinkOnly: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['changed', 'uploaded', 'removed']);
@@ -257,6 +261,13 @@ const uploadFiles = async (files) => {
 
 const removeAttachment = async (attachment) => {
   if (!attachment.id) {
+    return;
+  }
+
+  if (props.unlinkOnly) {
+    localAttachments.value = localAttachments.value.filter((item) => item.localKey !== attachment.localKey);
+    emit('removed', attachment.id);
+    emit('changed');
     return;
   }
 

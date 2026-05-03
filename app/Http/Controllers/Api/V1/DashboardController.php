@@ -26,14 +26,14 @@ class DashboardController extends Controller
         // 1a. Decisions where I am AUTHOR
         $authorDecisions = Decision::whereHas('participants', function ($q) use ($user) {
             $q->where('user_id', $user->id)->where('role', DecisionParticipantRole::AUTHOR->value);
-        })->with(['circle', 'currentVersion.attachments', 'participants.user'])->get();
+        })->with(['circle', 'categories', 'currentVersion.attachments', 'participants.user'])->get();
 
         // 1b. Decisions where I am ANIMATOR (but not author)
         $authorIds = $authorDecisions->pluck('id')->toArray();
         $animatorDecisions = Decision::whereNotIn('id', $authorIds)
             ->whereHas('participants', function ($q) use ($user) {
                 $q->where('user_id', $user->id)->where('role', DecisionParticipantRole::ANIMATOR->value);
-            })->with(['circle', 'currentVersion.attachments', 'participants.user'])->get();
+            })->with(['circle', 'categories', 'currentVersion.attachments', 'participants.user'])->get();
 
         // Group by circle name
         $groupByCircle = function ($decisions) {
@@ -59,7 +59,7 @@ class DashboardController extends Controller
                 $q->where('user_id', $user->id)->where('role', '!=', CircleMemberRole::OBSERVER->value);
             })
             ->whereNotIn('status', [DecisionStatus::DRAFT->value, DecisionStatus::ADOPTED->value, DecisionStatus::ABANDONED->value])
-            ->with(['circle', 'currentVersion.attachments', 'participants.user'])->get();
+            ->with(['circle', 'categories', 'currentVersion.attachments', 'participants.user'])->get();
 
         $circleDecisionsGrouped = $groupByCircle($circleDecisions);
         $this->participationService->attachUserActionStatus($circleDecisions, $user->id);
@@ -74,7 +74,7 @@ class DashboardController extends Controller
                       $q2->where('user_id', $user->id)->whereIn('role', [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value]);
                   });
             })
-            ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'messages.author'])
+            ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'version.decision.participants.user', 'messages.author'])
             ->orderByDesc('created_at')->get();
 
         // 4. My Objections (active threads)
@@ -86,7 +86,7 @@ class DashboardController extends Controller
                       $q2->where('user_id', $user->id)->whereIn('role', [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value]);
                   });
             })
-            ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'messages.author'])
+            ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'version.decision.participants.user', 'messages.author'])
             ->orderByDesc('created_at')->get();
 
         // 5. STATS (Query optimized)

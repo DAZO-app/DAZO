@@ -19,6 +19,7 @@ class CircleResource extends JsonResource
             'updated_at' => $this->updated_at,
             'members_count' => $this->whenCounted('members'),
             'decisions_count' => $this->whenCounted('decisions'),
+            'members' => CircleMemberResource::collection($this->whenLoaded('members')),
         ];
     }
 }

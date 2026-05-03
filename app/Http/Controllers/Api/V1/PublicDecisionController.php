@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use App\Enums\DecisionStatus;
 
 class PublicDecisionController extends Controller
 {
@@ -47,7 +48,7 @@ class PublicDecisionController extends Controller
         return DecisionResource::collection($decisions);
     }
 
-    public function showFront($id): DecisionResource
+    public function showFront($id): JsonResponse
     {
         if (filter_var($this->configService->get('enable_public_front'), FILTER_VALIDATE_BOOLEAN) !== true) {
             abort(404);
@@ -61,7 +62,7 @@ class PublicDecisionController extends Controller
                              'currentVersion.feedbacks.author:id,name',
                              'participants:id,decision_id,user_id,role',
                              'categories',
-                             'circle',
+                             'circle.members.user',
                          ])
                          ->findOrFail($id);
 
@@ -77,8 +78,15 @@ class PublicDecisionController extends Controller
             $decision->setAttribute('participation_stats', $this->participationService->getParticipationStats($decision, $decision->currentVersion));
         }
         $decision->setAttribute('user_status', $this->participationService->getUserActionStatus($decision, auth()->id()));
+        
+        // REVISION DATA FOR MEETING MODE
+        if ($decision->status->value === DecisionStatus::REVISION->value) {
+            if (is_array($decision->revision_attachment_ids)) {
+                $decision->setAttribute('revision_attachments', \App\Models\Attachment::whereIn('id', $decision->revision_attachment_ids)->get());
+            }
+        }
 
-        return new DecisionResource($decision);
+        return response()->json(['decision' => new DecisionResource($decision)]);
     }
 
     /**
@@ -286,7 +294,7 @@ class PublicDecisionController extends Controller
      */
     private function buildBaseQuery()
     {
-        $query = Decision::query()->with(['circle', 'categories', 'currentVersion', 'author.user', 'currentAnimator.user']);
+        $query = Decision::query()->with(['circle.members.user', 'categories', 'currentVersion', 'author.user', 'currentAnimator.user']);
 
         // Rule 1: Decision itself must be public
         $query->where('visibility', 'public');
@@ -305,7 +313,7 @@ class PublicDecisionController extends Controller
         if (!empty($publicCircles)) {
             $query->whereIn('circle_id', $publicCircles);
         } else {
-            // If no circle is configured as public, nothing is public
+            \Illuminate\Support\Facades\Log::warning("PublicDecisionController: No public circles configured.");
             $query->whereRaw('1 = 0');
         }
 
@@ -315,6 +323,7 @@ class PublicDecisionController extends Controller
                 $q->whereIn('categories.id', $publicCategories);
             });
         } else {
+             \Illuminate\Support\Facades\Log::warning("PublicDecisionController: No public categories configured.");
              $query->whereRaw('1 = 0');
         }
 
@@ -322,6 +331,7 @@ class PublicDecisionController extends Controller
         if (!empty($publicStatuses)) {
             $query->whereIn('status', $publicStatuses);
         } else {
+             \Illuminate\Support\Facades\Log::warning("PublicDecisionController: No public statuses configured.");
              $query->whereRaw('1 = 0');
         }
 

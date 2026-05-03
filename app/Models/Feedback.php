@@ -53,6 +53,10 @@ class Feedback extends Model
 
     public function latestMessage(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->hasOne(FeedbackMessage::class, 'feedback_id')->latestOfMany('created_at');
+        // Sur PostgreSQL avec des UUIDs, latestOfMany() (utilisé par hasOne(...)->latest())
+        // génère un MAX(id) qui échoue. On reste sur un hasOne classique trié,
+        // mais il faut éviter de l'eager-loader ('with') car Laravel ne saura pas 
+        // limiter à un seul message par feedback dans la requête groupée.
+        return $this->hasOne(FeedbackMessage::class, 'feedback_id')->latest();
     }
 }
