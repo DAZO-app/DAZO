@@ -92,11 +92,11 @@
       <div v-else-if="error" class="alert alert-error">{{ error }}</div>
       
       <div v-else class="decision-list-container">
-        <EmptyState v-if="filteredAndSorted.length === 0" message="Aucune décision ne correspond à vos critères." />
+        <EmptyState v-if="decisionsList.length === 0" message="Aucune décision ne correspond à vos critères." />
         
         <div v-else>
           <div class="decision-grid">
-            <div v-for="desc in paginatedDecisions" :key="desc.id" class="premium-card decision-card">
+            <div v-for="desc in decisionsList" :key="desc.id" class="premium-card decision-card">
               <DecisionListItem
                 :decision="desc"
                 @click="goToDetail"
@@ -109,27 +109,27 @@
           </div>
 
           <!-- PAGINATION -->
-          <div class="pagination-bar mt-24">
+          <div v-if="pagination && pagination.last_page > 1" class="pagination-bar mt-24">
             <div class="pagination-info">
-              Affichage de <b>{{ startRange }}</b> à <b>{{ endRange }}</b> sur <b>{{ filteredAndSorted.length }}</b> décisions
+              Affichage de <b>{{ pagination.from }}</b> à <b>{{ pagination.to }}</b> sur <b>{{ pagination.total }}</b> décisions
             </div>
             <div class="pagination-controls">
               <div class="per-page-selector mr-16">
                 <label>Par page :</label>
-                <select v-model="pagination.perPage" class="select-xs">
+                <select v-model="pagination.per_page" @change="loadPage(1)" class="select-xs">
                   <option :value="10">10</option>
                   <option :value="20">20</option>
                   <option :value="50">50</option>
                   <option :value="100">100</option>
                 </select>
               </div>
-              <button class="btn btn-ghost btn-xs" :disabled="pagination.page === 1" @click="pagination.page--">
+              <button class="btn btn-ghost btn-xs" :disabled="pagination.current_page === 1" @click="loadPage(pagination.current_page - 1)">
                 <i class="fa-solid fa-chevron-left"></i> Précédent
               </button>
               <div class="page-numbers">
-                Page {{ pagination.page }} / {{ totalPages }}
+                Page {{ pagination.current_page }} / {{ pagination.last_page }}
               </div>
-              <button class="btn btn-ghost btn-xs" :disabled="pagination.page === totalPages" @click="pagination.page++">
+              <button class="btn btn-ghost btn-xs" :disabled="pagination.current_page === pagination.last_page" @click="loadPage(pagination.current_page + 1)">
                 Suivant <i class="fa-solid fa-chevron-right"></i>
               </button>
             </div>
@@ -154,11 +154,13 @@ import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import { useDecisionStore } from '../stores/decision';
 import { useAuthStore } from '../stores/auth';
+import { useCircleStore } from '../stores/circle';
 import DecisionListItem from '../components/DecisionListItem.vue';
 import EmptyState from '../components/EmptyState.vue';
 import NotificationLevelModal from '../components/NotificationLevelModal.vue';
 
-const store = useDecisionStore();
+const decisionStore = useDecisionStore();
+const circleStore = useCircleStore();
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
@@ -172,11 +174,6 @@ const filters = ref({
   category: 'all',
   author: 'all',
   sort: 'created_desc'
-});
-
-const pagination = reactive({
-  page: 1,
-  perPage: 10
 });
 
 const isFavoritesMode = computed(() => route.name === 'DecisionFavorites');
@@ -195,12 +192,31 @@ const pageSubtitle = computed(() => {
 
 const resetFilters = () => {
   filters.value = { search: '', state: 'all', my_role: 'all', action: 'all', circle: 'all', category: 'all', author: 'all', sort: 'created_desc' };
-  pagination.page = 1;
+  loadPage(1);
 };
 
-const decisions = computed(() => store.decisions);
-const loading = computed(() => store.loading);
-const error = computed(() => store.error);
+const decisions = computed(() => decisionStore.decisions);
+const paginationFromStore = computed(() => decisionStore.pagination);
+const loading = computed(() => decisionStore.loading);
+const error = computed(() => decisionStore.error);
+
+// Sync internal pagination reactive with store for UI bindings
+const pagination = reactive({
+  current_page: 1,
+  last_page: 1,
+  per_page: 20,
+  total: 0,
+  from: 0,
+  to: 0
+});
+
+watch(paginationFromStore, (newVal) => {
+    if (newVal) {
+        Object.assign(pagination, newVal);
+    }
+}, { immediate: true, deep: true });
+
+const decisionsList = computed(() => decisions.value);
 
 const uniqueCircles = computed(() => {
   const map = new Map();
@@ -210,119 +226,61 @@ const uniqueCircles = computed(() => {
 
 const allCategories = ref([]);
 
-const filteredAndSorted = computed(() => {
-  let result = decisions.value.filter(d => {
-    // Mode Favoris
-    if (isFavoritesMode.value && !d.my_settings?.is_favorite) return false;
-
-    // Search filter
-    if (filters.value.search) {
-      const s = filters.value.search.toLowerCase();
-      const titleMatch = d.title?.toLowerCase().includes(s);
-      const authorMatch = (getParticipantName(d, 'author') || '').toLowerCase().includes(s);
-      const animatorMatch = (getParticipantName(d, 'animator') || '').toLowerCase().includes(s);
-      if (!titleMatch && !authorMatch && !animatorMatch) return false;
-    }
-
-    if (filters.value.state !== 'all') {
-      const s = filters.value.state;
-      if (s === 'active' && !['clarification','reaction','objection'].includes(d.status)) return false;
-      if (s === 'adopted' && !['adopted','adopted_override'].includes(d.status)) return false;
-      if (s === 'abandoned' && !['abandoned', 'deserted', 'lapsed'].includes(d.status)) return false;
-      if (['draft', 'clarification', 'reaction', 'objection', 'revision'].includes(s) && d.status !== s) return false;
-    }
-    if (filters.value.circle !== 'all' && d.circle_id !== filters.value.circle) return false;
-    if (filters.value.category !== 'all' && !(d.categories || []).some(c => c.id === filters.value.category)) return false;
-    if (filters.value.author !== 'all') {
-      const authorId = d.participants?.find(p => p.role === 'author')?.user_id;
-      if (authorId !== filters.value.author) return false;
-    }
-    if (filters.value.my_role !== 'all') {
-      if (getMyRole(d) !== filters.value.my_role) return false;
-    }
-    if (filters.value.action === 'pending') {
-      if (!d.user_status?.needs_action) return false;
-    }
-    return true;
-  });
-
-  // SORTING
-  const s = filters.value.sort;
-  result.sort((a, b) => {
-    if (s === 'created_desc') return new Date(b.created_at) - new Date(a.created_at);
-    if (s === 'created_asc') return new Date(a.created_at) - new Date(b.created_at);
-    if (s === 'updated_desc') return new Date(b.updated_at) - new Date(a.updated_at);
-    if (s === 'updated_asc') return new Date(a.updated_at) - new Date(b.updated_at);
-    if (s === 'alpha_asc') return a.title.localeCompare(b.title);
-    if (s === 'alpha_desc') return b.title.localeCompare(a.title);
-    return 0;
-  });
-
-  return result;
-});
-
-const paginatedDecisions = computed(() => {
-  const start = (pagination.page - 1) * pagination.perPage;
-  return filteredAndSorted.value.slice(start, start + pagination.perPage);
-});
-
-const totalPages = computed(() => Math.ceil(filteredAndSorted.value.length / pagination.perPage) || 1);
-const startRange = computed(() => filteredAndSorted.value.length === 0 ? 0 : (pagination.page - 1) * pagination.perPage + 1);
-const endRange = computed(() => Math.min(pagination.page * pagination.perPage, filteredAndSorted.value.length));
-
 const applyQueryFilters = (query) => {
-    resetFilters();
     if (query.state) filters.value.state = query.state;
     if (query.role) filters.value.my_role = query.role;
     if (query.action) filters.value.action = query.action;
     if (query.category) filters.value.category = query.category;
 };
 
+const loadPage = async (page = 1) => {
+    const params = {
+        ...filters.value,
+        page,
+        per_page: pagination.per_page,
+        favorites_only: isFavoritesMode.value
+    };
+    await decisionStore.fetchDecisions(params);
+};
+
 onMounted(async () => {
-    store.fetchDecisions();
+    applyQueryFilters(route.query);
+    await loadPage(1);
+    circleStore.fetchCircles();
     try {
         const { data } = await axios.get('/api/v1/categories');
-        allCategories.value = data.categories || [];
+        allCategories.value = data.data || data.categories || [];
     } catch (e) {}
-
-    applyQueryFilters(route.query);
 });
 
 watch(() => route.query, (newQuery) => {
     applyQueryFilters(newQuery);
+    loadPage(1);
 }, { deep: true });
 
-watch([filters, () => pagination.perPage], () => {
-  pagination.page = 1;
+let searchTimeout = null;
+watch(filters, () => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        loadPage(1);
+    }, 400);
 }, { deep: true });
+
+watch(isFavoritesMode, () => {
+    loadPage(1);
+});
 
 const goToDetail = (id) => router.push({ name: 'DecisionDetail', params: { id } });
-
-const getMyRole = (decision) => {
-    if (!authStore.user || !decision.participants) return 'participant';
-    const myRoles = decision.participants.filter(p => p.user_id === authStore.user.id).map(p => p.role);
-    if (myRoles.includes('author')) return 'author';
-    if (myRoles.includes('animator')) return 'animator';
-    if (myRoles.includes('participant')) return 'participant';
-    if (myRoles.includes('observer')) return 'observer';
-    return 'participant';
-};
-
-const getParticipantName = (decision, role) => {
-    if (!decision.participants) return null;
-    const p = decision.participants.find(p => p.role === role);
-    return p?.user?.name || null;
-};
 
 // Actions rapides
 const toggleFavorite = async (decision) => {
   try {
     const { data } = await axios.post(`/api/v1/decisions/${decision.id}/favorite`);
     // Update local state in store
-    const idx = store.decisions.findIndex(d => d.id === decision.id);
+    const idx = decisionStore.decisions.findIndex(d => d.id === decision.id);
     if (idx !== -1) {
-      if (!store.decisions[idx].my_settings) store.decisions[idx].my_settings = {};
-      store.decisions[idx].my_settings.is_favorite = data.is_favorite;
+      if (!decisionStore.decisions[idx].my_settings) decisionStore.decisions[idx].my_settings = {};
+      decisionStore.decisions[idx].my_settings.is_favorite = data.is_favorite;
     }
   } catch (e) {
     console.error("Toggle favorite error", e);
@@ -338,10 +296,10 @@ const openNotifModal = (decision) => {
 const handleNotifUpdated = async (level) => {
   try {
     await axios.put(`/api/v1/decisions/${notifModal.decision.id}/notifications`, { notification_level: level });
-    const idx = store.decisions.findIndex(d => d.id === notifModal.decision.id);
+    const idx = decisionStore.decisions.findIndex(d => d.id === notifModal.decision.id);
     if (idx !== -1) {
-      if (!store.decisions[idx].my_settings) store.decisions[idx].my_settings = {};
-      store.decisions[idx].my_settings.notification_level = level;
+      if (!decisionStore.decisions[idx].my_settings) decisionStore.decisions[idx].my_settings = {};
+      decisionStore.decisions[idx].my_settings.notification_level = level;
     }
     notifModal.show = false;
   } catch (e) {

@@ -7,8 +7,9 @@ use App\Http\Requests\Circle\CreateCircleRequest;
 use App\Http\Requests\Circle\UpdateCircleRequest;
 use App\Models\Circle;
 use App\Services\CircleService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Http\Resources\V1\CircleResource;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class CircleController extends Controller
 {
@@ -16,10 +17,13 @@ class CircleController extends Controller
     {
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         // Retourne les cercles dont l'utilisateur est membre
         $user = $request->user();
+
+        $perPage = $request->integer('per_page', 20);
+        $perPage = min(max($perPage, 5), 100);
 
         $circles = Circle::whereHas('members', function ($q) use ($user) {
             $q->where('user_id', $user->id);
@@ -28,9 +32,9 @@ class CircleController extends Controller
             $q->limit(10); // Limite pour l'affichage de la pile d'avatars
         }])
         ->withCount('members')
-        ->get();
+        ->paginate($perPage);
 
-        return response()->json(['circles' => $circles]);
+        return CircleResource::collection($circles);
     }
 
     public function store(CreateCircleRequest $request): JsonResponse
@@ -43,15 +47,13 @@ class CircleController extends Controller
         ], 201);
     }
 
-    public function show(Request $request, Circle $circle): JsonResponse
+    public function show(Request $request, Circle $circle): CircleResource
     {
         if ($request->user()->cannot('view', $circle)) {
             abort(403, "Vous n'avez pas accès à ce cercle.");
         }
 
-        return response()->json([
-            'circle' => $circle->load('members.user')
-        ]);
+        return new CircleResource($circle->load('members.user'));
     }
 
     public function update(UpdateCircleRequest $request, Circle $circle): JsonResponse

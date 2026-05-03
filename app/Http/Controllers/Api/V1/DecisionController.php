@@ -14,8 +14,10 @@ use App\Models\Consent;
 use App\Models\Decision;
 use App\Models\Feedback;
 use App\Services\DecisionService;
+use App\Http\Resources\V1\DecisionResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 use App\Traits\HasUserActionStatus;
 
@@ -29,41 +31,52 @@ class DecisionController extends Controller
     ) {
     }
 
-    public function mine(): JsonResponse
+    public function mine(Request $request): AnonymousResourceCollection
     {
         $userId = auth()->id();
-        $decisions = Decision::where(function ($query) use ($userId) {
+        $perPage = $request->integer('per_page', 20);
+        $perPage = min(max($perPage, 5), 100);
+
+        $query = Decision::where(function ($query) use ($userId) {
             $query->whereHas('circle.members', function ($q) use ($userId) {
                 $q->where('user_id', $userId);
             })->orWhereHas('participants', function ($q) use ($userId) {
                 $q->where('user_id', $userId);
             });
         })
-            ->with(['circle', 'categories', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user'])
-            ->latest()
-            ->get();
+        ->with(['circle', 'categories', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user']);
 
-        $this->attachParticipationStats($decisions);
-        $this->attachUserActionStatus($decisions, auth()->id());
-        $this->attachUserSettings($decisions, auth()->id());
+        $this->applyFilters($query, $request);
 
-        return response()->json(['decisions' => $decisions]);
+        $decisions = $query->paginate($perPage);
+
+        $this->attachParticipationStats($decisions->getCollection());
+        $this->attachUserActionStatus($decisions->getCollection(), auth()->id());
+        $this->attachUserSettings($decisions->getCollection(), auth()->id());
+
+        return DecisionResource::collection($decisions);
     }
 
-    public function index(string $circleId): JsonResponse
+    public function index(Request $request, string $circleId): AnonymousResourceCollection
     {
         $circle = Circle::findOrFail($circleId);
         $this->authorize('view', $circle);
 
-        $decisions = Decision::where('circle_id', $circle->id)
-            ->with(['circle', 'categories', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user'])
-            ->get();
+        $perPage = $request->integer('per_page', 20);
+        $perPage = min(max($perPage, 5), 100);
 
-        $this->attachParticipationStats($decisions);
-        $this->attachUserActionStatus($decisions, auth()->id());
-        $this->attachUserSettings($decisions, auth()->id());
+        $query = Decision::where('circle_id', $circle->id)
+            ->with(['circle', 'categories', 'currentVersion.attachments', 'author.user', 'decisionModel', 'participants.user']);
 
-        return response()->json(['decisions' => $decisions]);
+        $this->applyFilters($query, $request);
+
+        $decisions = $query->paginate($perPage);
+
+        $this->attachParticipationStats($decisions->getCollection());
+        $this->attachUserActionStatus($decisions->getCollection(), auth()->id());
+        $this->attachUserSettings($decisions->getCollection(), auth()->id());
+
+        return DecisionResource::collection($decisions);
     }
 
     public function store(CreateDecisionRequest $request, string $circleId): JsonResponse
@@ -78,7 +91,7 @@ class DecisionController extends Controller
         ], 201);
     }
 
-    public function show(string $id): JsonResponse
+    public function show(string $id): DecisionResource
     {
         $decision = Decision::findOrFail($id);
         $this->authorize('view', $decision);
@@ -134,8 +147,9 @@ class DecisionController extends Controller
             ->where('decision_id', $decision->id)
             ->first();
 
-        return response()->json([
-            'decision'               => $decision,
+        // Note: We return the resource but we can still append the extra data for the specific view
+        // In a real API, we might want to include these in the resource itself or as "meta"
+        return (new DecisionResource($decision))->additional([
             'participation_stats'    => $participationStats,
             'has_participated'       => $hasFeedbackInPhase || $hasConsentInPhase,
             'phase_participation_map' => $phaseParticipationMap,
@@ -389,5 +403,82 @@ class DecisionController extends Controller
         return response()->json([
             'message' => count($pendingUsers) . " mail(s) de relance envoyés avec succès.",
         ]);
+    }
+
+    /**
+     * Apply query filters for private decisions.
+     */
+    private function applyFilters($query, Request $request): void
+    {
+        // Search
+        if ($request->filled('search')) {
+            $searchTerm = '%' . $request->search . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', $searchTerm)
+                    ->orWhereHas('participants.user', function ($q2) use ($searchTerm) {
+                        $q2->where('name', 'like', $searchTerm);
+                    });
+            });
+        }
+
+        // State (special handling)
+        if ($request->filled('state') && $request->state !== 'all') {
+            $s = $request->state;
+            if ($s === 'active') {
+                $query->whereIn('status', ['clarification', 'reaction', 'objection']);
+            } elseif ($s === 'adopted') {
+                $query->whereIn('status', ['adopted', 'adopted_override']);
+            } elseif ($s === 'abandoned') {
+                $query->whereIn('status', ['abandoned', 'deserted', 'lapsed']);
+            } else {
+                $query->where('status', $s);
+            }
+        }
+
+        // Circle
+        if ($request->filled('circle') && $request->circle !== 'all') {
+            $query->where('circle_id', $request->circle);
+        }
+
+        // Category
+        if ($request->filled('category') && $request->category !== 'all') {
+            $query->whereHas('categories', function ($q) use ($request) {
+                $q->where('categories.id', $request->category);
+            });
+        }
+
+        // Author
+        if ($request->filled('author') && $request->author !== 'all') {
+            $query->whereHas('participants', function ($q) use ($request) {
+                $q->where('role', 'author')->where('user_id', $request->author);
+            });
+        }
+
+        // My Role filter
+        if ($request->filled('my_role') && $request->my_role !== 'all') {
+            $role = $request->my_role;
+            $userId = auth()->id();
+            $query->whereHas('participants', function ($q) use ($role, $userId) {
+                $q->where('user_id', $userId)->where('role', $role);
+            });
+        }
+
+        // Favorites only
+        if ($request->boolean('favorites_only')) {
+            $query->whereHas('userSettings', function ($q) {
+                $q->where('user_id', auth()->id())->where('is_favorite', true);
+            });
+        }
+
+        // Sorting
+        $sort = $request->query('sort', 'created_desc');
+        match ($sort) {
+            'created_asc'  => $query->orderBy('created_at', 'asc'),
+            'updated_desc' => $query->orderBy('updated_at', 'desc'),
+            'updated_asc'  => $query->orderBy('updated_at', 'asc'),
+            'alpha_asc'    => $query->orderBy('title', 'asc'),
+            'alpha_desc'   => $query->orderBy('title', 'desc'),
+            default        => $query->orderBy('created_at', 'desc'),
+        };
     }
 }

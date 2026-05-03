@@ -6,17 +6,31 @@ export const useCircleStore = defineStore('circle', {
         circles: [],
         currentCircle: null,
         members: [],
+        pagination: {
+            current_page: 1,
+            last_page: 1,
+            per_page: 20,
+            total: 0
+        },
         loading: false,
         error: null,
     }),
     
     actions: {
-        async fetchCircles() {
+        async fetchCircles(params = {}) {
             this.loading = true;
             this.error = null;
             try {
-                const { data } = await axios.get('/api/v1/circles');
-                this.circles = data.circles;
+                const { data } = await axios.get('/api/v1/circles', { params });
+                this.circles = data.data;
+                if (data.meta) {
+                    this.pagination = {
+                        current_page: data.meta.current_page,
+                        last_page: data.meta.last_page,
+                        per_page: data.meta.per_page,
+                        total: data.meta.total
+                    };
+                }
             } catch (err) {
                 this.error = 'Erreur lors du chargement des cercles.';
             } finally {
@@ -29,8 +43,8 @@ export const useCircleStore = defineStore('circle', {
             this.error = null;
             try {
                 const { data } = await axios.get(`/api/v1/circles/${id}`);
-                this.currentCircle = data.circle;
-                this.members = data.circle?.members || [];
+                this.currentCircle = data.data;
+                this.members = data.data?.members || [];
             } catch (err) {
                 this.error = 'Erreur lors du chargement du cercle.';
             } finally {

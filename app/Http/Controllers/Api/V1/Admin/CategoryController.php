@@ -7,10 +7,12 @@ use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Http\Resources\V1\CategoryResource;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class CategoryController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         $query = Category::query();
 
@@ -18,9 +20,12 @@ class CategoryController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $categories = $query->orderBy('name')->get();
+        $perPage = $request->integer('per_page', 20);
+        $perPage = min(max($perPage, 5), 100);
 
-        return response()->json(['categories' => $categories]);
+        $categories = $query->orderBy('name')->paginate($perPage);
+
+        return CategoryResource::collection($categories);
     }
 
     public function store(Request $request): JsonResponse

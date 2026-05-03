@@ -8,10 +8,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Enums\UserRole;
+use App\Http\Resources\V1\UserResource;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class UserController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         $query = User::withCount(['circles', 'authoredDecisions as decisions_count']);
 
@@ -58,9 +60,12 @@ class UserController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $users = $query->orderBy('name')->get();
+        $perPage = $request->integer('per_page', 20);
+        $perPage = min(max($perPage, 5), 100);
 
-        return response()->json(['users' => $users]);
+        $users = $query->orderBy('name')->paginate($perPage);
+
+        return UserResource::collection($users);
     }
 
     public function store(Request $request): JsonResponse

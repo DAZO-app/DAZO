@@ -14,6 +14,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use App\Http\Resources\V1\CircleResource;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class CircleController extends Controller
 {
@@ -21,7 +23,7 @@ class CircleController extends Controller
     {
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         $query = Circle::with(['members.user', 'invitations']);
 
@@ -33,9 +35,12 @@ class CircleController extends Controller
             $query->where('type', $request->type);
         }
 
-        $circles = $query->orderBy('name')->get();
+        $perPage = $request->integer('per_page', 20);
+        $perPage = min(max($perPage, 5), 100);
 
-        return response()->json(['circles' => $circles]);
+        $circles = $query->orderBy('name')->paginate($perPage);
+
+        return CircleResource::collection($circles);
     }
 
     public function store(Request $request): JsonResponse
@@ -54,11 +59,9 @@ class CircleController extends Controller
         ], 201);
     }
 
-    public function show(Circle $circle): JsonResponse
+    public function show(Circle $circle): CircleResource
     {
-        return response()->json([
-            'circle' => $circle->load(['members.user', 'invitations'])
-        ]);
+        return new CircleResource($circle->load(['members.user', 'invitations']));
     }
 
     public function update(Request $request, Circle $circle): JsonResponse

@@ -181,6 +181,24 @@
         </div>
         <EmptyState v-if="users.length === 0" message="Aucun utilisateur trouvé." />
       </div>
+
+      <!-- PAGINATION -->
+      <div v-if="pagination && pagination.last_page > 1" class="pagination-bar mt-24">
+        <div class="pagination-info">
+          Affichage de <b>{{ pagination.from }}</b> à <b>{{ pagination.to }}</b> sur <b>{{ pagination.total }}</b> utilisateurs
+        </div>
+        <div class="pagination-controls">
+          <button class="btn btn-ghost btn-xs" :disabled="pagination.current_page === 1" @click="loadUsers(pagination.current_page - 1)">
+            <i class="fa-solid fa-chevron-left"></i> Précédent
+          </button>
+          <div class="page-numbers">
+            Page {{ pagination.current_page }} / {{ pagination.last_page }}
+          </div>
+          <button class="btn btn-ghost btn-xs" :disabled="pagination.current_page === pagination.last_page" @click="loadUsers(pagination.current_page + 1)">
+            Suivant <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
       <!-- User Circles Detail Modal -->
       <div v-if="userForCircles" class="modal-overlay" @click.self="userForCircles = null">
         <div class="modal-card" style="max-width:400px">
@@ -233,6 +251,14 @@ const filters = ref({
   date_to: ''
 });
 
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  from: 0,
+  to: 0
+});
+
 const editingUser = ref(null);
 const showCreateModal = ref(false);
 const userToDelete = ref(null);
@@ -241,11 +267,14 @@ const userForm = ref({ name: '', email: '', role: 'user', is_active: true, passw
 
 const currentUser = computed(() => authStore.user);
 
-const loadUsers = async () => {
+const loadUsers = async (page = 1) => {
   loading.value = true;
   try {
-    const { data } = await axios.get('/api/v1/admin/users', { params: filters.value });
-    users.value = data.users || [];
+    const { data } = await axios.get('/api/v1/admin/users', { 
+      params: { ...filters.value, page } 
+    });
+    users.value = data.data || [];
+    pagination.value = data.meta || { current_page: 1, last_page: 1, total: users.value.length, from: 1, to: users.value.length };
   } catch (e) { /* */ } finally { loading.value = false; }
 };
 

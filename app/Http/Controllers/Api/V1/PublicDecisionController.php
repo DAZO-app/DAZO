@@ -9,9 +9,11 @@ use App\Models\Category;
 use App\Models\User;
 use App\Services\ConfigService;
 use App\Services\XmlResponseService;
+use App\Http\Resources\V1\DecisionResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PublicDecisionController extends Controller
 {
@@ -20,22 +22,24 @@ class PublicDecisionController extends Controller
         private XmlResponseService $xmlService
     ) {}
 
-    public function indexFront(Request $request): JsonResponse
+    public function indexFront(Request $request): AnonymousResourceCollection
     {
         if (filter_var($this->configService->get('enable_public_front'), FILTER_VALIDATE_BOOLEAN) !== true) {
             abort(404);
         }
 
+        $perPage = $request->integer('per_page', 20);
+        $perPage = min(max($perPage, 5), 100);
+
         $query = $this->buildBaseQuery();
         $this->applyFilters($query, $request);
         
-        $decisions = $query->paginate(20);
+        $decisions = $query->paginate($perPage);
 
-        // We can just return the paginator for JSON
-        return response()->json($decisions);
+        return DecisionResource::collection($decisions);
     }
 
-    public function showFront($id): JsonResponse
+    public function showFront($id): DecisionResource
     {
         if (filter_var($this->configService->get('enable_public_front'), FILTER_VALIDATE_BOOLEAN) !== true) {
             abort(404);
@@ -60,7 +64,7 @@ class PublicDecisionController extends Controller
             $fb->author_role = (is_object($role) && isset($role->value)) ? $role->value : $role;
         });
 
-        return response()->json(['decision' => $decision]);
+        return new DecisionResource($decision);
     }
 
     /**
@@ -231,29 +235,32 @@ class PublicDecisionController extends Controller
         };
     }
 
-    public function index(Request $request): Response|JsonResponse
+    public function index(Request $request): Response|AnonymousResourceCollection
     {
         $query = $this->buildBaseQuery();
         $this->applyFilters($query, $request);
 
-        $decisions = $query->paginate(20);
+        $perPage = $request->integer('per_page', 20);
+        $perPage = min(max($perPage, 5), 100);
+
+        $decisions = $query->paginate($perPage);
 
         if ($request->wantsJson()) {
-            return response()->json($decisions);
+            return DecisionResource::collection($decisions);
         }
 
         $xml = $this->xmlService->formatDecisionsList($decisions);
         return response($xml, 200)->header('Content-Type', 'application/xml');
     }
 
-    public function show($id): Response|JsonResponse
+    public function show($id): Response|DecisionResource
     {
         $decision = $this->buildBaseQuery()
                          ->with(['currentVersion', 'categories', 'circle'])
                          ->findOrFail($id);
 
         if (request()->wantsJson()) {
-            return response()->json(['decision' => $decision]);
+            return new DecisionResource($decision);
         }
 
         $xml = $this->xmlService->formatDecisionDetail($decision);

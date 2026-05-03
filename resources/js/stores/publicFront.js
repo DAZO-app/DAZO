@@ -51,7 +51,9 @@ export const usePublicFrontStore = defineStore('publicFront', () => {
       Object.keys(params).forEach(k => { if (!params[k] && params[k] !== 0) delete params[k]; });
       const { data } = await axios.get('/api/v1/front/decisions', { params });
       decisions.value = data.data;
-      pagination.value = { current_page: data.current_page, last_page: data.last_page };
+      if (data.meta) {
+        pagination.value = { current_page: data.meta.current_page, last_page: data.meta.last_page };
+      }
     } catch (e) {
       console.error('publicFront: fetch error', e);
     } finally {

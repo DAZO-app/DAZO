@@ -10,6 +10,12 @@ export const useDecisionStore = defineStore('decision', {
         phaseParticipationMap: null,
         hasParticipated: false,
         mySettings: null,
+        pagination: {
+            current_page: 1,
+            last_page: 1,
+            per_page: 20,
+            total: 0
+        },
         loading: false,
         error: null,
     }),
@@ -61,12 +67,20 @@ export const useDecisionStore = defineStore('decision', {
     },
 
     actions: {
-        async fetchDecisions() {
+        async fetchDecisions(params = {}) {
             this.loading = true;
             this.error = null;
             try {
-                const { data } = await axios.get('/api/v1/decisions');
-                this.decisions = data.decisions;
+                const { data } = await axios.get('/api/v1/decisions', { params });
+                this.decisions = data.data;
+                if (data.meta) {
+                    this.pagination = {
+                        current_page: data.meta.current_page,
+                        last_page: data.meta.last_page,
+                        per_page: data.meta.per_page,
+                        total: data.meta.total
+                    };
+                }
             } catch (err) {
                 this.error = 'Erreur lors du chargement des décisions.';
             } finally {
@@ -79,7 +93,12 @@ export const useDecisionStore = defineStore('decision', {
             this.error = null;
             try {
                 const { data } = await axios.get(`/api/v1/decisions/${id}`);
-                this.currentDecision   = data.decision;
+                // Laravel Resource wraps single object in 'data'
+                const decision = data.data;
+                this.currentDecision   = decision;
+                
+                // Additional data is merged by Resource::additional() or just present if we use JsonResponse
+                // In our case we used DecisionResource::additional
                 this.myConsent         = data.my_consent || null;
                 this.participationStats = data.participation_stats || null;
                 this.phaseParticipationMap = data.phase_participation_map || null;

@@ -50,4 +50,15 @@ class Feedback extends Model
     {
         return $this->hasMany(FeedbackMessage::class, 'feedback_id');
     }
+
+    public function latestMessage(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(FeedbackMessage::class, 'feedback_id')->where('id', function ($query) {
+            $query->select('id')
+                ->from('feedback_messages')
+                ->whereColumn('feedback_id', 'feedbacks.id')
+                ->latest()
+                ->limit(1);
+        });
+    }
 }

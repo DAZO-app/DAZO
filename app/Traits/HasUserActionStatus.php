@@ -20,7 +20,7 @@ trait HasUserActionStatus
         // Eager-load des relations nécessaires pour le calcul (évite N+1)
         $decisions->loadMissing([
             'participants',
-            'currentVersion.feedbacks.messages',
+            'currentVersion.feedbacks.latestMessage',
             'currentVersion.consents',
         ]);
 
@@ -50,17 +50,17 @@ trait HasUserActionStatus
             : $decision->participants()->get();
 
         $myParticipant = $participants->firstWhere('user_id', $userId);
-        $myRole = $myParticipant?->role->value ?? DecisionParticipantRole::PARTICIPANT->value;
+        $myRole = $myParticipant?->role->value ?? \App\Enums\DecisionParticipantRole::PARTICIPANT->value;
 
-        if ($myRole === DecisionParticipantRole::EXCLUDED->value) {
+        if ($myRole === \App\Enums\DecisionParticipantRole::EXCLUDED->value) {
             return $status;
         }
 
         // Cas A : PORTEUR ou ANIMATEUR → agir si un thread attend une réponse
-        if (in_array($myRole, [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value])) {
+        if (in_array($myRole, [\App\Enums\DecisionParticipantRole::AUTHOR->value, \App\Enums\DecisionParticipantRole::ANIMATOR->value])) {
             $feedbacks = $v->relationLoaded('feedbacks')
                 ? $v->feedbacks
-                : $v->feedbacks()->with('messages')->get();
+                : $v->feedbacks()->get();
 
             $needsReply = $feedbacks
                 ->whereNotIn('status', [
@@ -69,9 +69,7 @@ trait HasUserActionStatus
                     FeedbackStatus::TREATED->value,
                 ])
                 ->contains(function ($fb) use ($userId) {
-                    // Utiliser messages déjà chargés si disponibles
-                    $messages = $fb->relationLoaded('messages') ? $fb->messages : collect();
-                    $lastMsg = $messages->sortByDesc('created_at')->first();
+                    $lastMsg = $fb->latestMessage;
                     return $lastMsg && $lastMsg->author_id !== $userId;
                 });
 

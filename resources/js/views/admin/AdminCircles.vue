@@ -285,6 +285,24 @@
         </div>
         <EmptyState v-if="circles.length === 0" message="Aucun cercle trouvé." />
       </div>
+
+      <!-- PAGINATION -->
+      <div v-if="pagination && pagination.last_page > 1" class="pagination-bar mt-24">
+        <div class="pagination-info">
+          Affichage de <b>{{ pagination.from }}</b> à <b>{{ pagination.to }}</b> sur <b>{{ pagination.total }}</b> cercles
+        </div>
+        <div class="pagination-controls">
+          <button class="btn btn-ghost btn-xs" :disabled="pagination.current_page === 1" @click="loadCircles(pagination.current_page - 1)">
+            <i class="fa-solid fa-chevron-left"></i> Précédent
+          </button>
+          <div class="page-numbers">
+            Page {{ pagination.current_page }} / {{ pagination.last_page }}
+          </div>
+          <button class="btn btn-ghost btn-xs" :disabled="pagination.current_page === pagination.last_page" @click="loadCircles(pagination.current_page + 1)">
+            Suivant <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
     </div>
   </main>
 </template>
@@ -318,17 +336,29 @@ const filters = ref({
   type: ''
 });
 
-const loadCircles = async () => {
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  from: 0,
+  to: 0
+});
+
+const loadCircles = async (page = 1) => {
   loading.value = true;
   try {
     // Utilisation de l'API Admin pour voir TOUS les cercles
-    const { data } = await axios.get('/api/v1/admin/circles', { params: filters.value });
-    circles.value = data.circles || [];
+    const { data } = await axios.get('/api/v1/admin/circles', { 
+      params: { ...filters.value, page } 
+    });
+    circles.value = data.data || [];
+    pagination.value = data.meta || { current_page: 1, last_page: 1, total: circles.value.length, from: 1, to: circles.value.length };
   } catch (e) { 
-    // Fallback if admin API fails (e.g. not created yet during transitions)
+    // Fallback if admin API fails
     try {
-      const { data } = await axios.get('/api/v1/circles', { params: filters.value });
-      circles.value = data.circles || [];
+      const { data } = await axios.get('/api/v1/circles', { params: { ...filters.value, page } });
+      circles.value = data.data || [];
+      pagination.value = data.meta || { current_page: 1, last_page: 1, total: circles.value.length, from: 1, to: circles.value.length };
     } catch (err) { /* */ }
   } finally { loading.value = false; }
 };

@@ -97,6 +97,24 @@
         </div>
         <EmptyState v-if="categories.length === 0" message="Aucune catégorie correspondante." />
       </div>
+
+      <!-- PAGINATION -->
+      <div v-if="pagination && pagination.last_page > 1" class="pagination-bar mt-24">
+        <div class="pagination-info">
+          Affichage de <b>{{ pagination.from }}</b> à <b>{{ pagination.to }}</b> sur <b>{{ pagination.total }}</b> catégories
+        </div>
+        <div class="pagination-controls">
+          <button class="btn btn-ghost btn-xs" :disabled="pagination.current_page === 1" @click="loadCategories(pagination.current_page - 1)">
+            <i class="fa-solid fa-chevron-left"></i> Précédent
+          </button>
+          <div class="page-numbers">
+            Page {{ pagination.current_page }} / {{ pagination.last_page }}
+          </div>
+          <button class="btn btn-ghost btn-xs" :disabled="pagination.current_page === pagination.last_page" @click="loadCategories(pagination.current_page + 1)">
+            Suivant <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
     </div>
   </main>
 </template>
@@ -115,11 +133,22 @@ const filters = ref({
   search: ''
 });
 
-const loadCategories = async () => {
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  from: 0,
+  to: 0
+});
+
+const loadCategories = async (page = 1) => {
   loading.value = true;
   try {
-    const { data } = await axios.get('/api/v1/admin/categories', { params: filters.value });
-    categories.value = data.categories || [];
+    const { data } = await axios.get('/api/v1/admin/categories', { 
+      params: { ...filters.value, page } 
+    });
+    categories.value = data.data || [];
+    pagination.value = data.meta || { current_page: 1, last_page: 1, total: categories.value.length, from: 1, to: categories.value.length };
   } catch (e) {
   } finally { loading.value = false; }
 };

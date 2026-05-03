@@ -10,23 +10,28 @@ Ce document decoupe les recommandations d'audit en chantiers independants. L'obj
 - Base de test : `phpunit.xml` utilise PostgreSQL sur `127.0.0.1`, base `dazo_test`, utilisateur `dazo_user`, mot de passe `secret`.
 - Corrections deja faites : `PendingItemsController` ne retourne plus les decisions deja traitees, gere correctement la phase `reaction`, et charge `categories` au lieu de `category`.
 
-## Lot 0 - Stabilisation des tests
+## Lot ✅ 0 - Stabilisation des tests (Réalisé)
 
 Objectif : garder une base de regression fiable avant toute optimisation.
+
+Statut : en place. A maintenir a chaque lot.
 
 Actions :
 - Conserver `tests/bootstrap.php` pour creer le stockage temporaire de test.
 - Executer `composer test` avant chaque changement backend.
 - Ajouter un test de regression pour chaque bug corrige.
 - Eviter les tests dependants du dossier local `storage`.
+- Conserver les caches PHPUnit/Laravel de test dans `/tmp` pour eviter les caches Docker presents dans `bootstrap/cache`.
 
 Tests attendus :
 - Suite PHPUnit complete verte.
 - Tests de permissions fichiers/uploads avec `Storage::fake()`.
 
-## Lot 1 - Indexation base de donnees
+## ✅ Lot 1 - Indexation base de donnees (Réalisé)
 
 Objectif : reduire le cout des requetes frequentes avant augmentation de charge.
+
+Statut : realise via `2026_05_03_000000_add_performance_indexes.php`.
 
 Actions proposees :
 - Ajouter un index `decisions(status)`.
@@ -38,26 +43,24 @@ Actions proposees :
 - Ajouter un index compose `feedbacks(decision_version_id, type, status)`.
 - Ajouter un index compose `feedback_messages(feedback_id, created_at)`.
 - Ajouter un index compose `notifications(user_id, read_at, created_at)`.
+- Verifier, apres analyse des plans SQL, si un index simple `decisions(visibility)` reste utile en plus de l'index compose `decisions(visibility, status, created_at)`.
+- Verifier l'indexation de toutes les cles etrangeres (FK) non couvertes par les index composes.
 
 Tests attendus :
 - Migrations up/down.
 - Verification manuelle des plans SQL sur les endpoints `pending-counts`, dashboard, liste publique.
 
-## Lot 2 - Pagination et limites API
+## ✅ Lot 2 - Pagination et limites API (Réalisé)
 
 Objectif : eviter les reponses volumineuses et les chargements memoire inutiles.
 
-Actions proposees :
-- Paginer `GET /api/v1/decisions`.
-- Paginer `GET /api/v1/circles/{circle}/decisions`.
-- Paginer les listes admin `users`, `circles`, `categories` si elles grossissent.
-- Limiter le dashboard a des blocs recents ou pagines.
-- Ajouter des parametres `per_page` bornes, par exemple 10 a 100.
-
-Tests attendus :
-- Structure paginator Laravel.
-- Respect du `per_page` maximum.
-- Compatibilite frontend sur listes existantes.
+Actions réalisées :
+- [x] Création des **Eloquent API Resources** pour tous les modèles (`Decision`, `User`, `Circle`, `Category`, `Notification`, etc.).
+- [x] Standardisation de toutes les réponses JSON des contrôleurs (Admin et Front).
+- [x] Implémentation de la **pagination côté serveur** systématique avec paramètre `per_page` dynamique et borné.
+- [x] Refactorisation des stores Pinia pour supporter la structure `data` / `meta` de Laravel.
+- [x] Mise à jour des vues Frontend (`DecisionList`, `AdminUsers`, `AdminCircles`, `AdminCategories`) pour utiliser le filtrage et la pagination serveur.
+- [x] Suppression de la logique de filtrage/tri/pagination côté client devenue redondante.
 
 ## Lot 3 - Service de participation
 
@@ -72,6 +75,7 @@ Actions proposees :
   - enregistrement des abstentions automatiques,
   - construction de la carte de participation par phase.
 - Faire consommer ce service par les controleurs et traits existants.
+- Faire consommer ce service par la `DecisionPolicy` pour centraliser les regles d'acces basees sur la participation.
 
 Tests attendus :
 - Tests unitaires du service.
@@ -87,6 +91,7 @@ Actions proposees :
 - Y deplacer les transitions autorisees, droits de transition, deadlines et evenements.
 - Supprimer le doublon d'evenement `ADOPTED` dans `DecisionService`.
 - Remplacer les tableaux internes par une configuration explicite et testee.
+- Faire consommer ce service par la `DecisionPolicy` pour les regles de transition d'etat.
 
 Tests attendus :
 - Transition autorisee et interdite par statut.
@@ -94,15 +99,16 @@ Tests attendus :
 - Deadlines reaction/objection.
 - Evenements dispatches.
 
-## Lot 5 - Optimisation des pending counts/items
+## ✅ Lot 5 - Optimisation des pending counts/items (Réalisé)
 
 Objectif : rendre les compteurs rapides sous forte charge.
 
-Actions proposees :
-- Remplacer les chargements `get()->filter()` par des `exists`, `count`, sous-requetes ou agrégations SQL.
-- Eviter de charger tous les messages d'un feedback pour trouver le dernier.
-- Ajouter une relation ou une sous-requete pour le dernier message.
-- Mutualiser la logique avec `DecisionParticipationService`.
+Actions réalisées :
+- [x] Ajout de la relation `latestMessage` via sous-requête (compatible PostgreSQL/UUID) pour un accès direct au dernier message.
+- [x] Refactorisation de `PendingCountsController` : remplacement des `get()->filter()` par des requêtes SQL pures (`whereDoesntHave`, `whereHas`).
+- [x] Refactorisation de `PendingItemsController` : suppression des boucles N+1 et de la logique de filtrage en mémoire.
+- [x] Optimisation du trait `HasUserActionStatus` pour utiliser le chargement immédiat du dernier message uniquement.
+- [x] Gain de performance significatif (réduction drastique de la consommation mémoire et du nombre de requêtes SQL).
 
 Tests attendus :
 - Meme resultat que les tests actuels.
@@ -172,6 +178,7 @@ Actions proposees :
   - publication,
   - pages legales.
 - Remplacer les `alert()` par un systeme de notifications UI.
+- Utiliser le pattern **Provide/Inject** de Vue 3 pour partager l'etat de la decision et les permissions entre le composant racine et les sous-composants sans prop-drilling.
 
 Tests attendus :
 - Build Vite.
@@ -187,6 +194,7 @@ Actions proposees :
 - Filtrer davantage les payloads sensibles.
 - Ajouter une retention configurable plus courte que 1 an si necessaire.
 - Ajouter des index sur `app_logs(created_at)` et `app_logs(user_id, created_at)`.
+- Creer un `AuditLogService` pour standardiser l'enregistrement des actions metiers sensibles avec des payloads structures.
 
 Tests attendus :
 - Les requetes mutatives creent un log.
