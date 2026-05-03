@@ -71,11 +71,15 @@ case $choice in
         echo -e "${GREEN}✅ Terminé.${NC}"
         ;;
     q|Q)
-        exit 0
+        exec ./dazo-tool.sh
         ;;
     *)
         echo -e "${RED}Choix invalide.${NC}"
         sleep 1
-        $0 # Restart script
+        exec $0 # Restart script
         ;;
 esac
+
+echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
+read
+exec ./dazo-tool.sh

@@ -70,3 +70,7 @@ echo -e "${GREEN}=====================================${NC}"
 echo -e "${GREEN}✨ DAZO INSTALLATION COMPLETE! ✨${NC}"
 echo -e "${GREEN}=====================================${NC}"
 docker compose ps
+
+echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
+read
+exec ./dazo-tool.sh

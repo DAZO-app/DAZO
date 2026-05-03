@@ -24,3 +24,7 @@ docker compose exec app php artisan route:cache
 docker compose exec app php artisan view:cache
 
 echo -e "${GREEN}✅ Cache warmed up for production${NC}"
+
+echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
+read
+exec ./dazo-tool.sh

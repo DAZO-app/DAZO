@@ -44,3 +44,7 @@ echo -e "${YELLOW}💡 Tip: If you still don't see changes, try:${NC}"
 echo -e "   ./dazo-refresh.sh --restart"
 echo -e "   ./dazo-refresh.sh --build"
 echo -e "   Puis faites un Ctrl+F5 dans votre navigateur."
+
+echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
+read
+exec ./dazo-tool.sh

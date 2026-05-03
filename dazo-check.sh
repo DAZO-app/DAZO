@@ -58,3 +58,7 @@ echo ""
 
 echo "-------------------------------------"
 echo -e "${GREEN}✅ Check complete${NC}"
+
+echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
+read
+exec ./dazo-tool.sh

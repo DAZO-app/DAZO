@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict XPbF7YCrkywnhTVXxQrX7v86O0gb98MNzmbVyzbrEtQfUZFZ3zOpEiYkfQVN6Al
+\restrict sWpa6tjwN30n7yproBqw1bfbr1bibZFe1CmVnc3HpuFqP82QlpF5DfBqZPBw0e7
 
 -- Dumped from database version 15.17 (Debian 15.17-1.pgdg13+1)
 -- Dumped by pg_dump version 15.17 (Debian 15.17-1.pgdg13+1)
@@ -842,6 +842,38 @@ COPY public.app_logs (id, user_id, action, entity_type, entity_id, payload, ip_a
 019ded31-836c-73df-9dd4-0c0824133025	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/auth/logout	\N	\N	[]	172.19.0.1	2026-05-03 09:35:38	2026-05-03 09:35:38
 019ded33-32e7-726e-a1cb-5d6dad70ba53	\N	POST api/v1/auth/login	\N	\N	{"email":"admin@dazo.test","recaptcha_token":null}	172.19.0.1	2026-05-03 09:37:28	2026-05-03 09:37:28
 019ded35-57db-7253-85be-629f5be9e348	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/auth/logout	\N	\N	[]	172.19.0.1	2026-05-03 09:39:49	2026-05-03 09:39:49
+019ded36-01bb-7180-89e2-9a3bb096b96a	\N	POST api/v1/auth/login	\N	\N	{"email":"admin@dazo.test","recaptcha_token":null}	172.19.0.1	2026-05-03 09:40:32	2026-05-03 09:40:32
+019ded36-1500-72ad-af6f-859544762811	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/auth/logout	\N	\N	[]	172.19.0.1	2026-05-03 09:40:37	2026-05-03 09:40:37
+019ded44-dcca-72b7-8e44-6119878150e2	\N	POST api/v1/auth/login	\N	\N	{"email":"hugo@dazo.test","recaptcha_token":null}	172.19.0.1	2026-05-03 09:56:46	2026-05-03 09:56:46
+019deda8-3f5a-737f-9364-1f5fefc9ae7f	\N	POST api/v1/auth/login	\N	\N	{"email":"admin@dazo.test","recaptcha_token":null}	172.19.0.1	2026-05-03 11:45:19	2026-05-03 11:45:19
+019dedab-314f-72cd-8efe-d01c1816076b	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/attachments	\N	\N	{"replace_id":"019de42b-1ce4-71cb-ab6f-2cf371e41e51","file":{}}	172.19.0.1	2026-05-03 11:48:32	2026-05-03 11:48:32
+019dedab-f70c-7312-b52b-1e15a736759d	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/auth/logout	\N	\N	[]	172.19.0.1	2026-05-03 11:49:23	2026-05-03 11:49:23
+019dedac-062f-7053-8957-ac610e51d789	\N	POST api/v1/auth/login	\N	\N	{"email":"admin@dazo.test","recaptcha_token":null}	172.19.0.1	2026-05-03 11:49:27	2026-05-03 11:49:27
+019dedad-e02a-7376-85b3-de389967ad7b	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/attachments	\N	\N	{"replace_id":"019de42b-1ce7-717e-9377-093d6e6a7a64","file":{}}	172.19.0.1	2026-05-03 11:51:28	2026-05-03 11:51:28
+019dedc0-bc7b-71fc-afcd-0811225176ec	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-1688-7290-b257-cd7e06dcb2d4	\N	\N	[]	172.19.0.1	2026-05-03 12:12:04	2026-05-03 12:12:04
+019dedc0-e317-7138-9a20-9356e03839b5	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-15b1-72fa-9387-b143e6dbf3ea	\N	\N	[]	172.19.0.1	2026-05-03 12:12:14	2026-05-03 12:12:14
+019dedc4-69b9-7284-964f-93bbb3568315	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-1761-70c7-a2de-4906fe0a7166	\N	\N	[]	172.19.0.1	2026-05-03 12:16:05	2026-05-03 12:16:05
+019dedc4-e2d4-73c2-bf20-f002c6dc0305	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-15b1-72fa-9387-b143e6dbf3ea	\N	\N	[]	172.19.0.1	2026-05-03 12:16:36	2026-05-03 12:16:36
+019dedcf-7119-71a9-bca5-f0ce3d4342e0	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-14cf-7203-ba64-cc6c7ba1cf94	\N	\N	[]	172.19.0.1	2026-05-03 12:28:08	2026-05-03 12:28:08
+019dedcf-ccdf-72b4-9a93-7019340145ae	019de42b-14cf-7203-ba64-cc6c7ba1cf94	PUT api/v1/admin/users/019de42b-15b1-72fa-9387-b143e6dbf3ea	\N	\N	{"name":"Bob Martin","email":"user@dazo.test","role":"admin","is_active":true}	172.19.0.1	2026-05-03 12:28:31	2026-05-03 12:28:31
+019dede7-60cd-723c-928b-24caf87d551f	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-1761-70c7-a2de-4906fe0a7166	\N	\N	[]	172.19.0.1	2026-05-03 12:54:17	2026-05-03 12:54:17
+019dede7-828a-705a-8125-90095ee0cfce	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-15b1-72fa-9387-b143e6dbf3ea	\N	\N	[]	172.19.0.1	2026-05-03 12:54:25	2026-05-03 12:54:25
+019dee4a-7b25-719e-ba79-dd5dfda891c3	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-14cf-7203-ba64-cc6c7ba1cf94	\N	\N	[]	172.19.0.1	2026-05-03 14:42:31	2026-05-03 14:42:31
+019dee4a-9c9b-73ea-a693-ea8f28809aa3	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-15b1-72fa-9387-b143e6dbf3ea	\N	\N	[]	172.19.0.1	2026-05-03 14:42:40	2026-05-03 14:42:40
+019dee4a-ae5f-727f-8109-21d91bef942b	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-14cf-7203-ba64-cc6c7ba1cf94	\N	\N	[]	172.19.0.1	2026-05-03 14:42:44	2026-05-03 14:42:44
+019dee4a-c517-72b3-a770-60e1627eb3cb	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-1761-70c7-a2de-4906fe0a7166	\N	\N	[]	172.19.0.1	2026-05-03 14:42:50	2026-05-03 14:42:50
+019dee4b-4d4d-7339-aed9-f0149dd4563b	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-14cf-7203-ba64-cc6c7ba1cf94	\N	\N	[]	172.19.0.1	2026-05-03 14:43:25	2026-05-03 14:43:25
+019dee4b-55e2-7354-8a6c-7d9788527217	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-1688-7290-b257-cd7e06dcb2d4	\N	\N	[]	172.19.0.1	2026-05-03 14:43:27	2026-05-03 14:43:27
+019dee4c-a483-716c-a6a4-f40686e9dcbc	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-14cf-7203-ba64-cc6c7ba1cf94	\N	\N	[]	172.19.0.1	2026-05-03 14:44:53	2026-05-03 14:44:53
+019dee4f-6057-7023-86ca-1fc17192f8e6	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-1761-70c7-a2de-4906fe0a7166	\N	\N	[]	172.19.0.1	2026-05-03 14:47:52	2026-05-03 14:47:52
+019dee53-17f0-73e0-addf-43a3434b2b6c	019de42b-14cf-7203-ba64-cc6c7ba1cf94	POST api/v1/admin/impersonate/019de42b-190e-70c3-9d21-2b6d2b36612c	\N	\N	[]	172.19.0.1	2026-05-03 14:51:56	2026-05-03 14:51:56
+019dee79-9c5e-70bb-b5c4-674a43e6060c	019de42b-190e-70c3-9d21-2b6d2b36612c	POST api/v1/decisions/019de42b-1bd4-71c6-930f-b0a84cfaf0b4/extend	\N	\N	[]	172.19.0.1	2026-05-03 15:34:00	2026-05-03 15:34:00
+019dee79-f357-72ed-93e1-e99925180267	019de42b-190e-70c3-9d21-2b6d2b36612c	POST api/v1/decisions/019de42b-1bd4-71c6-930f-b0a84cfaf0b4/remind	\N	\N	{"type":"extend"}	172.19.0.1	2026-05-03 15:34:22	2026-05-03 15:34:22
+019dee7c-5b9a-7323-9ed4-9cbeff6e5a79	019de42b-190e-70c3-9d21-2b6d2b36612c	POST api/v1/decisions/019de42b-1bd4-71c6-930f-b0a84cfaf0b4/transition	\N	\N	{"to":"revision"}	172.19.0.1	2026-05-03 15:37:00	2026-05-03 15:37:00
+019dee7d-66bb-736f-9b8b-ea2ddc285d8c	019de42b-190e-70c3-9d21-2b6d2b36612c	POST api/v1/decisions/019de42b-1bd4-71c6-930f-b0a84cfaf0b4/versions	\N	\N	{"content":null,"attachment_ids":[],"status":"clarification","notify":true}	172.19.0.1	2026-05-03 15:38:08	2026-05-03 15:38:08
+019dee7d-b74f-7178-9a6d-7211163ac05d	019de42b-190e-70c3-9d21-2b6d2b36612c	POST api/v1/decisions/019de42b-1bd4-71c6-930f-b0a84cfaf0b4/versions	\N	\N	{"content":"<p>sdqfqsdfqsdfqsf<\\/p>","attachment_ids":[],"status":"clarification","notify":true}	172.19.0.1	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7f-2040-70c5-8e5f-83223ab726c0	019de42b-190e-70c3-9d21-2b6d2b36612c	POST api/v1/decisions/019de42b-1bd4-71c6-930f-b0a84cfaf0b4/transition	\N	\N	{"to":"revision"}	172.19.0.1	2026-05-03 15:40:01	2026-05-03 15:40:01
+019dee7f-51c6-7216-bd57-affa920f46a4	019de42b-190e-70c3-9d21-2b6d2b36612c	POST api/v1/decisions/019de42b-1bd4-71c6-930f-b0a84cfaf0b4/versions	\N	\N	{"content":"<p>qsfqsdf qfd q<\\/p>","attachment_ids":[],"status":"clarification","notify":true}	172.19.0.1	2026-05-03 15:40:14	2026-05-03 15:40:14
 \.
 
 
@@ -858,13 +890,13 @@ COPY public.attachments (id, decision_version_id, uploader_id, filename, s3_path
 019de42b-1c7d-70c5-bee3-de26aa2ac629	019de42b-1c76-73d4-9a8e-35c6ab840593	019de42b-1761-70c7-a2de-4906fe0a7166	maquette-v2.png	seed-attachments/8edcad22-fdb2-4cb0-9f77-9fb712b09b12/maquette-v2.png	image/png	1200000	2026-04-02 17:08:03	2026-05-01 15:32:03
 019de42b-1cbc-73ce-8645-063fe580fc4d	019de42b-1cb5-72a3-8c0c-9a3e29de43f8	019de42b-1ab2-7286-824f-90df7187f28e	budget-previsionnel.xlsx	seed-attachments/11f8a5f3-8a82-4322-8fad-751f038f9397/budget-previsionnel.xlsx	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	89000	2026-04-11 15:44:03	2026-05-01 15:32:03
 019de42b-1cbe-715c-82ba-b3f5eb617dc3	019de42b-1cb5-72a3-8c0c-9a3e29de43f8	019de42b-1ab2-7286-824f-90df7187f28e	maquette-v2.png	seed-attachments/32dedecd-fe75-40a3-b42a-0ba711c5a188/maquette-v2.png	image/png	1200000	2026-04-11 17:29:03	2026-05-01 15:32:03
-019de42b-1ce4-71cb-ab6f-2cf371e41e51	019de42b-1cdd-72f9-a1ec-fe038fc63086	019de42b-15b1-72fa-9387-b143e6dbf3ea	budget-previsionnel.xlsx	seed-attachments/88da9d96-7d2c-4fd8-b327-44c9e3ef7ce7/budget-previsionnel.xlsx	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	89000	2026-04-30 11:31:03	2026-05-01 15:32:03
-019de42b-1ce7-717e-9377-093d6e6a7a64	019de42b-1cdd-72f9-a1ec-fe038fc63086	019de42b-15b1-72fa-9387-b143e6dbf3ea	maquette-v2.png	seed-attachments/0162c252-f81d-426f-91d0-92d95cc6d619/maquette-v2.png	image/png	1200000	2026-04-30 10:39:03	2026-05-01 15:32:03
 019de42b-1d13-715f-9857-0b1065031369	019de42b-1d0c-707d-8cf2-ce0f0b302bf5	019de42b-1688-7290-b257-cd7e06dcb2d4	budget-previsionnel.xlsx	seed-attachments/e2413aa6-a321-4154-84dc-f9af5ce23e06/budget-previsionnel.xlsx	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	89000	2026-04-21 01:18:03	2026-05-01 15:32:03
 019de42b-1d16-7209-a657-1ebe8f9068c3	019de42b-1d0c-707d-8cf2-ce0f0b302bf5	019de42b-1688-7290-b257-cd7e06dcb2d4	maquette-v2.png	seed-attachments/f07daec9-a23e-448e-b16c-1ddbee183c27/maquette-v2.png	image/png	1200000	2026-04-21 00:13:03	2026-05-01 15:32:03
 019de42b-1d18-7037-b4b0-60a3b262f535	019de42b-1d0c-707d-8cf2-ce0f0b302bf5	019de42b-1688-7290-b257-cd7e06dcb2d4	compte-rendu-reunion.pdf	seed-attachments/f62c6e0d-7191-4ef8-899c-2d2bd5b35a9b/compte-rendu-reunion.pdf	application/pdf	156000	2026-04-20 23:55:03	2026-05-01 15:32:03
 019de42b-1d6e-7040-a77a-7c3fd282c23b	019de42b-1d6c-728c-91dd-c7e1e533d722	019de42b-1ab2-7286-824f-90df7187f28e	budget-previsionnel.xlsx	seed-attachments/2afa0890-e7e2-43fe-a0d0-b36159aff2b1/budget-previsionnel.xlsx	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	89000	2026-04-21 13:28:04	2026-05-01 15:32:04
 019de42b-1d8c-7058-81c2-fe17c538373f	019de42b-1d81-7095-ae07-b5bbe039d137	019de42b-14cf-7203-ba64-cc6c7ba1cf94	DAZO-04-24-2026_01_54_PM (1).png	attachments/QBHOGUBPKtg5BZjvHx9HcYRAn4xZEmcLNCQ2PDxS.png	image/png	836950	2026-04-23 12:37:04	2026-05-02 11:08:04
+019de42b-1ce4-71cb-ab6f-2cf371e41e51	019de42b-1cdd-72f9-a1ec-fe038fc63086	019de42b-15b1-72fa-9387-b143e6dbf3ea	80200_Budget_Annexe_Lotissement_Chateau_Rousset_BP_2026_Maquette_Budgetaire_M57.pdf	attachments/nWDNvjUGdQ4wc0HxpJMGaOYRkeljGUoEDdIKuHx0.pdf	application/pdf	665883	2026-04-30 11:31:03	2026-05-03 11:48:32
+019de42b-1ce7-717e-9377-093d6e6a7a64	019de42b-1cdd-72f9-a1ec-fe038fc63086	019de42b-15b1-72fa-9387-b143e6dbf3ea	Logo-Gennes-Val-de-Loire_CMJN.jpg	attachments/XX1hj90B08WtmWZsTGzgoAHfndhF7Yc1dsNWFWYJ.jpg	image/jpeg	81543	2026-04-30 10:39:03	2026-05-03 11:51:28
 \.
 
 
@@ -975,6 +1007,12 @@ COPY public.consents (id, decision_version_id, user_id, signal, created_at, upda
 019de812-9ecc-71b4-bb8d-e383bbe68c3e	019de42b-1cdd-72f9-a1ec-fe038fc63086	019de42b-1761-70c7-a2de-4906fe0a7166	abstention	2026-05-02 09:43:47	2026-05-02 09:43:47	clarification
 019de812-9ed0-7033-af4f-1f53f06ac5c3	019de42b-1cdd-72f9-a1ec-fe038fc63086	019de42b-1839-721b-990c-b44db2a24f10	abstention	2026-05-02 09:43:47	2026-05-02 09:43:47	clarification
 019de812-9ed4-7108-89f6-fc4076f709b4	019de42b-1cdd-72f9-a1ec-fe038fc63086	019de42b-190e-70c3-9d21-2b6d2b36612c	abstention	2026-05-02 09:43:47	2026-05-02 09:43:47	clarification
+019dee7c-5b8f-735d-968f-65e8f46f9ced	019de42b-1be2-71f4-8133-7283b4861586	019de42b-15b1-72fa-9387-b143e6dbf3ea	abstention	2026-05-03 15:37:00	2026-05-03 15:37:00	reaction
+019dee7c-5b93-7260-9fc8-5363d3dcf0ca	019de42b-1be2-71f4-8133-7283b4861586	019de42b-1839-721b-990c-b44db2a24f10	abstention	2026-05-03 15:37:00	2026-05-03 15:37:00	reaction
+019dee7f-201e-72c1-9a75-9c197fe0226c	019dee7d-b480-729d-a37a-36f4ec473474	019de42b-1688-7290-b257-cd7e06dcb2d4	abstention	2026-05-03 15:40:01	2026-05-03 15:40:01	clarification
+019dee7f-2021-7341-b8f2-c498ae4656df	019dee7d-b480-729d-a37a-36f4ec473474	019de42b-15b1-72fa-9387-b143e6dbf3ea	abstention	2026-05-03 15:40:01	2026-05-03 15:40:01	clarification
+019dee7f-2024-706b-8ef4-5a598347c9c2	019dee7d-b480-729d-a37a-36f4ec473474	019de42b-1761-70c7-a2de-4906fe0a7166	abstention	2026-05-03 15:40:01	2026-05-03 15:40:01	clarification
+019dee7f-2026-7347-9923-c51e61a993d4	019dee7d-b480-729d-a37a-36f4ec473474	019de42b-1839-721b-990c-b44db2a24f10	abstention	2026-05-03 15:40:01	2026-05-03 15:40:01	clarification
 \.
 
 
@@ -1177,7 +1215,6 @@ COPY public.decision_versions (id, decision_id, author_id, previous_version_id, 
 019de42b-1b93-7109-a713-dbcf7b2688a7	019de42b-1b84-725d-9e03-1e14ca1630f4	019de42b-1688-7290-b257-cd7e06dcb2d4	\N	1	t	# Proposition\n\n## Contexte\nMySQL montre ses limites sur les requêtes JSON et le volume de données.\n\n## Détails\nMigrer l'ensemble de la stack vers PostgreSQL 16 avec réplication.\n\n## Plan\n1. Audit des requêtes existantes\n2. Migration schéma\n3. Tests de charge\n4. Bascule progressive	\N	2026-04-26 07:32:03	2026-04-26 07:32:03
 019de42b-1bb0-70a4-9435-08c99df74023	019de42b-1ba3-7152-9b76-d7baadc5cebe	019de42b-1761-70c7-a2de-4906fe0a7166	\N	1	t	# Proposition\n\n## Contexte\nChaque été, les collaborateurs demandent des aménagements horaires.\n\n## Proposition\nDu 1er juin au 31 août : arrivée libre entre 7h et 10h, départ après 6h de travail effectif.	\N	2026-04-27 01:32:03	2026-04-27 01:32:03
 019de42b-1bc8-7297-9b75-bbff38d9b9e6	019de42b-1bb9-734d-a3aa-efcf55a9663b	019de42b-1839-721b-990c-b44db2a24f10	\N	1	t	# Proposition\n\n## Contexte\nNous utilisons actuellement 3 outils de communication (email, Teams, WhatsApp).\n\n## Proposition\nCentraliser sur Slack avec les intégrations GitHub, Jira et Google Calendar.\n\n## Budget\n12€/utilisateur/mois soit ~1 440€/an pour l'équipe.	\N	2026-04-20 21:32:03	2026-04-20 21:32:03
-019de42b-1be2-71f4-8133-7283b4861586	019de42b-1bd4-71c6-930f-b0a84cfaf0b4	019de42b-190e-70c3-9d21-2b6d2b36612c	\N	1	t	# Proposition\n\n## Contexte\nUne faille critique (CVSS 9.8) a été identifiée dans notre framework.\n\n## Action requise\nDéployer le patch v3.2.1 en production ce soir.\n\n## Risque si inaction\nExposition des données utilisateurs.	\N	2026-04-28 05:32:03	2026-04-28 05:32:03
 019de42b-1bf9-73da-82c5-a1a0bb833f6a	019de42b-1bee-7325-a8ed-067285f10b54	019de42b-1ab2-7286-824f-90df7187f28e	\N	1	t	# Proposition\n\n## Contexte\nLa pause de 12h à 13h30 est jugée trop rigide par certains.\n\n## Proposition\nLaisser chacun organiser sa pause librement (min 30 min obligatoire).	\N	2026-04-21 11:32:03	2026-04-21 11:32:03
 019de42b-1c18-737d-97db-14ebe8957f05	019de42b-1c0c-72b3-aa14-8cea6be187b7	019de42b-14cf-7203-ba64-cc6c7ba1cf94	\N	1	t	# Proposition\n\n## Contexte\nNos objectifs annuels manquent de réactivité face aux changements du marché.\n\n## Proposition\nAdopter le framework OKR avec des cycles de 3 mois et des revues mensuelles.	\N	2026-04-26 03:32:03	2026-04-26 03:32:03
 019de42b-1c34-70ef-a26e-532d562bcc48	019de42b-1c25-712a-bc03-854d08a9ad94	019de42b-15b1-72fa-9387-b143e6dbf3ea	\N	1	f	# Proposition\n\n## Détails\nPlafond de 50€/mois pour les frais professionnels sans justificatif.	\N	2026-04-26 23:32:03	2026-04-26 23:32:03
@@ -1197,8 +1234,11 @@ COPY public.decision_versions (id, decision_id, author_id, previous_version_id, 
 019de42b-1d59-71ca-a142-cc9089a3cd75	019de42b-1d4f-719e-91d2-12c47feb2033	019de42b-190e-70c3-9d21-2b6d2b36612c	\N	1	t	# Consultation\n\n## Question\nRenouveler l'abonnement corporate à FitClub (3 600€/an) ?\n\n## Contexte\nSeulement 4 personnes utilisent l'abonnement régulièrement.	\N	2026-02-15 15:32:04	2026-02-15 15:32:04
 019de42b-1d6c-728c-91dd-c7e1e533d722	019de42b-1d5b-73a6-a0b4-cfe18bd52827	019de42b-1ab2-7286-824f-90df7187f28e	\N	1	t	# Proposition\n\n## Contexte\nAvec la croissance, nous avons besoin d'un cadre éthique formel.\n\n## Proposition\nCréer un comité de 3 personnes renouvelé annuellement par élection sans candidat.	\N	2026-04-21 11:32:04	2026-04-21 11:32:04
 019de42b-1d81-7095-ae07-b5bbe039d137	019de42b-1d70-72ca-892d-ef83b7d3658e	019de42b-14cf-7203-ba64-cc6c7ba1cf94	\N	1	t	# Consultation\n\n## Question\nSponsoriser le DevFest Nantes 2026 (stand Gold à 5 000€) ?\n\n## Arguments pour\n- Visibilité auprès de 2 000 développeurs\n- Recrutement potentiel\n- Networking	\N	2026-04-23 12:32:04	2026-04-23 12:32:04
+019de42b-1be2-71f4-8133-7283b4861586	019de42b-1bd4-71c6-930f-b0a84cfaf0b4	019de42b-190e-70c3-9d21-2b6d2b36612c	\N	1	f	# Proposition\n\n## Contexte\nUne faille critique (CVSS 9.8) a été identifiée dans notre framework.\n\n## Action requise\nDéployer le patch v3.2.1 en production ce soir.\n\n## Risque si inaction\nExposition des données utilisateurs.	\N	2026-04-28 05:32:03	2026-05-03 15:38:28
 019de42b-1c3f-7354-a997-f8e82222bc77	019de42b-1c25-712a-bc03-854d08a9ad94	019de42b-15b1-72fa-9387-b143e6dbf3ea	019de42b-1c34-70ef-a26e-532d562bcc48	2	f	# Proposition (v2)\n\n## Contexte\nLa v1 a été objectée car le plafond de 50€ était jugé trop bas.\n\n## Nouvelle proposition\nPlafond de 100€/mois sans justificatif, au-delà sur note de frais classique.	Relèvement du plafond suite à l'objection de David	2026-04-27 23:32:03	2026-05-02 08:25:23
 019de7ca-d573-7027-a704-ec0aa178752e	019de42b-1c25-712a-bc03-854d08a9ad94	019de42b-14cf-7203-ba64-cc6c7ba1cf94	019de42b-1c3f-7354-a997-f8e82222bc77	3	t	# Proposition (v3 – brouillon)\n\nPlafond de 120€/mois. Justificatif au-delà de 80€.	\N	2026-05-02 08:25:23	2026-05-02 08:25:23
+019dee7d-b480-729d-a37a-36f4ec473474	019de42b-1bd4-71c6-930f-b0a84cfaf0b4	019de42b-190e-70c3-9d21-2b6d2b36612c	019de42b-1be2-71f4-8133-7283b4861586	2	f	<p>sdqfqsdfqsdfqsf</p>	\N	2026-05-03 15:38:28	2026-05-03 15:40:14
+019dee7f-4f61-71c4-abd3-6b555353be6e	019de42b-1bd4-71c6-930f-b0a84cfaf0b4	019de42b-190e-70c3-9d21-2b6d2b36612c	019dee7d-b480-729d-a37a-36f4ec473474	3	t	<p>qsfqsdf qfd q</p>	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
 \.
 
 
@@ -1211,7 +1251,6 @@ COPY public.decisions (id, circle_id, status, title, visibility, priority, emerg
 019de42b-1b6f-70d4-aeae-944039975ef4	019de42b-1b1c-7112-b34e-ea76d02e771e	draft	Nouveau logo de l'organisation	public	0	f	\N	019de42b-1b0a-7383-b68a-11627b689095	2026-04-29 15:32:03	2026-05-01 15:32:03	\N	\N	\N	f	\N	0
 019de42b-1b84-725d-9e03-1e14ca1630f4	019de42b-1b14-717d-8de3-a2df0be3c3a4	clarification	Migration vers PostgreSQL	public	1	f	\N	019de42b-1b07-7240-8b59-6e43e5016a29	2026-04-26 07:32:03	2026-05-01 15:32:03	\N	\N	\N	f	\N	0
 019de42b-1bb9-734d-a3aa-efcf55a9663b	019de42b-1b14-717d-8de3-a2df0be3c3a4	reaction	Adopter Slack comme outil principal	public	0	f	\N	019de42b-1b07-7240-8b59-6e43e5016a29	2026-04-20 21:32:03	2026-05-01 15:32:03	\N	\N	2026-05-04 15:32:03	f	\N	0
-019de42b-1bd4-71c6-930f-b0a84cfaf0b4	019de42b-1b14-717d-8de3-a2df0be3c3a4	reaction	Patch de sécurité critique CVE-2026-1234	public	2	t	\N	019de42b-1b07-7240-8b59-6e43e5016a29	2026-04-28 05:32:03	2026-05-01 15:32:03	\N	\N	2026-05-02 15:32:03	f	\N	0
 019de42b-1c0c-72b3-aa14-8cea6be187b7	019de42b-1b11-705c-a4a1-ffac5b03ab22	objection	Passer au format OKR trimestriel	public	1	f	\N	019de42b-1b07-7240-8b59-6e43e5016a29	2026-04-26 03:32:03	2026-05-01 15:32:03	\N	\N	2026-05-03 15:32:03	f	\N	0
 019de42b-1c42-70b4-917e-c62aa3f5649e	019de42b-1b14-717d-8de3-a2df0be3c3a4	adopted	Convention de nommage des branches Git	public	0	f	\N	019de42b-1b07-7240-8b59-6e43e5016a29	2026-04-16 15:32:03	2026-05-01 15:32:03	\N	\N	\N	f	\N	0
 019de42b-1c7f-7029-b504-cdd9f0624d4c	019de42b-1b11-705c-a4a1-ffac5b03ab22	adopted_override	Fermeture exceptionnelle du 24 décembre	public	0	f	\N	019de42b-1b07-7240-8b59-6e43e5016a29	2026-03-02 15:32:03	2026-05-01 15:32:03	\N	\N	\N	f	\N	0
@@ -1229,6 +1268,7 @@ COPY public.decisions (id, circle_id, status, title, visibility, priority, emerg
 019de42b-1c25-712a-bc03-854d08a9ad94	019de42b-1b19-7381-b0eb-0237e1a655b9	revision	Politique de remboursement des frais	public	0	f	\N	019de42b-1b07-7240-8b59-6e43e5016a29	2026-04-26 23:32:03	2026-05-02 08:26:26	\N	\N	\N	f	\N	0
 019de42b-1cce-73d1-a0fe-cf31bff682dd	019de42b-1b14-717d-8de3-a2df0be3c3a4	revision	Choix du prestataire audit RGPD	private	1	f	\N	019de42b-1b0a-7383-b68a-11627b689095	2026-04-30 09:32:03	2026-05-02 09:43:47	\N	\N	\N	f	\N	0
 019de42b-1c60-7174-b9f7-8c1cf171c88f	019de42b-1b19-7381-b0eb-0237e1a655b9	adopted	Budget formation annuel par collaborateur	public	1	f	\N	019de42b-1b07-7240-8b59-6e43e5016a29	2026-04-01 15:32:03	2026-05-02 12:21:12	\N	\N	\N	f	\N	2
+019de42b-1bd4-71c6-930f-b0a84cfaf0b4	019de42b-1b14-717d-8de3-a2df0be3c3a4	clarification	Patch de sécurité critique CVE-2026-1234	public	2	t	\N	019de42b-1b07-7240-8b59-6e43e5016a29	2026-04-28 05:32:03	2026-05-03 15:40:14	\N	\N	\N	f	\N	0
 \.
 
 
@@ -1498,6 +1538,9 @@ COPY public.notification_preferences (id, user_id, category, email_enabled, web_
 019de42b-1add-70fe-9a53-0766e62f7aa0	019de42b-190e-70c3-9d21-2b6d2b36612c	feedback	f	f	2026-05-01 15:32:03	2026-05-01 15:32:03
 019de42b-1ae0-73b8-a3eb-13b38fd7a352	019de42b-190e-70c3-9d21-2b6d2b36612c	mention	t	t	2026-05-01 15:32:03	2026-05-01 15:32:03
 019de42b-1ae2-70d6-b287-72ea53b15863	019de42b-190e-70c3-9d21-2b6d2b36612c	deadline	t	t	2026-05-01 15:32:03	2026-05-01 15:32:03
+019dee7d-b563-72b1-b0b3-5af0e24c7dbf	019de42b-1ab2-7286-824f-90df7187f28e	phase_change	t	t	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b5eb-71f7-85cb-7500f4c443f0	019de42b-15b1-72fa-9387-b143e6dbf3ea	phase_change	t	t	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b621-7270-82d6-488920be961b	019de42b-1839-721b-990c-b44db2a24f10	phase_change	t	t	2026-05-03 15:38:29	2026-05-03 15:38:29
 \.
 
 
@@ -1506,6 +1549,30 @@ COPY public.notification_preferences (id, user_id, category, email_enabled, web_
 --
 
 COPY public.notifications (id, user_id, category, event_type, payload, read_at, created_at, updated_at) FROM stdin;
+019dee7d-b494-70d2-a747-09500d8bcac0	019de42b-190e-70c3-9d21-2b6d2b36612c	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:28	2026-05-03 15:38:28
+019dee7d-b565-721f-bf02-649377099b85	019de42b-1ab2-7286-824f-90df7187f28e	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b5b8-7316-9d21-91ff6c3634ae	019de42b-1688-7290-b257-cd7e06dcb2d4	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b5ea-7329-9a9a-4a3ca44ed61e	019de42b-1761-70c7-a2de-4906fe0a7166	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b5ec-71fc-b4e9-ab498c5023ad	019de42b-15b1-72fa-9387-b143e6dbf3ea	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b622-719d-b7cd-e2723d9f60a3	019de42b-1839-721b-990c-b44db2a24f10	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b653-7165-ae7b-f6c63490cd86	019de42b-190e-70c3-9d21-2b6d2b36612c	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b684-727a-8ae4-8849e219168d	019de42b-1ab2-7286-824f-90df7187f28e	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b6b7-73cf-9734-24be344789b6	019de42b-1688-7290-b257-cd7e06dcb2d4	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b6e8-7304-8b05-a08277732c18	019de42b-1761-70c7-a2de-4906fe0a7166	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b6ea-7053-8434-e887f8923d97	019de42b-15b1-72fa-9387-b143e6dbf3ea	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7d-b718-737c-b822-92c49f698764	019de42b-1839-721b-990c-b44db2a24f10	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:38:29	2026-05-03 15:38:29
+019dee7f-4f6e-7244-ac52-16499eb0d522	019de42b-190e-70c3-9d21-2b6d2b36612c	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-4fc0-722f-9752-2b745c8301c2	019de42b-1ab2-7286-824f-90df7187f28e	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-4ff7-735b-8fce-f774dfb39849	019de42b-1688-7290-b257-cd7e06dcb2d4	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-502b-73d0-8fc1-daf65821c319	019de42b-1761-70c7-a2de-4906fe0a7166	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-502d-7330-8e9a-0b944478be4f	019de42b-15b1-72fa-9387-b143e6dbf3ea	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-505f-706e-b86e-6d38bec9df0d	019de42b-1839-721b-990c-b44db2a24f10	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-509d-703f-8f12-58d01ebdef6d	019de42b-190e-70c3-9d21-2b6d2b36612c	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-50cf-7231-9996-a471da9d08e5	019de42b-1ab2-7286-824f-90df7187f28e	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-5106-7252-b4df-0b412db2bd34	019de42b-1688-7290-b257-cd7e06dcb2d4	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-5143-7054-865a-6e3c0bd9b589	019de42b-1761-70c7-a2de-4906fe0a7166	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-514b-73c3-b058-75ff75d12f8c	019de42b-15b1-72fa-9387-b143e6dbf3ea	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
+019dee7f-5187-72b0-aa7e-ea8cecf3f1f9	019de42b-1839-721b-990c-b44db2a24f10	phase_change	phase_change	{"decision_id":"019de42b-1bd4-71c6-930f-b0a84cfaf0b4","title":"Patch de s\\u00e9curit\\u00e9 critique CVE-2026-1234","status":"clarification"}	\N	2026-05-03 15:40:14	2026-05-03 15:40:14
 \.
 
 
@@ -1522,8 +1589,26 @@ COPY public.password_reset_tokens (email, token, created_at) FROM stdin;
 --
 
 COPY public.personal_access_tokens (id, tokenable_type, tokenable_id, name, token, abilities, last_used_at, expires_at, created_at, updated_at) FROM stdin;
+26	App\\Models\\User	019de42b-1761-70c7-a2de-4906fe0a7166	impersonation_token	a4978a1a8a335b273ccd274b8507a6878da1ca4033c0214e674fa8db59fe5b94	["*"]	2026-05-03 12:54:21	\N	2026-05-03 12:54:17	2026-05-03 12:54:21
 7	App\\Models\\User	019de42b-14cf-7203-ba64-cc6c7ba1cf94	auth_token	7df4181fc1ac5104595d7905bb3d7213e1b3a41ddb9f8e6ecef3644379124894	["*"]	2026-05-02 09:50:53	\N	2026-05-01 16:48:45	2026-05-02 09:50:53
+21	App\\Models\\User	019de42b-1688-7290-b257-cd7e06dcb2d4	impersonation_token	a489d8638273663474ea2f656aceea2df8a81ecf44f1cec2a57dc0f52de376fe	["*"]	2026-05-03 12:12:05	\N	2026-05-03 12:12:04	2026-05-03 12:12:05
+29	App\\Models\\User	019de42b-15b1-72fa-9387-b143e6dbf3ea	impersonation_token	6c05c92c4f291d064b12a5db5f4eae57fd8c2a1ef8045234f2516c19f8c6b91a	["*"]	2026-05-03 14:42:40	\N	2026-05-03 14:42:40	2026-05-03 14:42:40
 12	App\\Models\\User	019de42b-14cf-7203-ba64-cc6c7ba1cf94	auth_token	f7e29d1fd718626efff490d01503694a76c4a4f925470ac50b24c5e99228fe56	["*"]	2026-05-02 12:21:40	\N	2026-05-02 12:21:30	2026-05-02 12:21:40
+30	App\\Models\\User	019de42b-14cf-7203-ba64-cc6c7ba1cf94	impersonation_token	5da2db537347e4f6406877c7d4762ec4bc103e2be73cbaf3ae97b5a49515be79	["*"]	2026-05-03 14:42:48	\N	2026-05-03 14:42:44	2026-05-03 14:42:48
+35	App\\Models\\User	019de42b-1761-70c7-a2de-4906fe0a7166	impersonation_token	c4ed4e92d451f118871a47ce3bc72a69f7f51bde5804cf80b695c7051cb83dc2	["*"]	2026-05-03 14:51:14	\N	2026-05-03 14:47:52	2026-05-03 14:51:14
+24	App\\Models\\User	019de42b-15b1-72fa-9387-b143e6dbf3ea	impersonation_token	0d0d502e3c880c88e649130256bc12bfa32e600c2b8b98e1720a1f339424d08e	["*"]	2026-05-03 12:27:35	\N	2026-05-03 12:16:36	2026-05-03 12:27:35
+20	App\\Models\\User	019de42b-14cf-7203-ba64-cc6c7ba1cf94	auth_token	fc45f6dde87ecbdf23b3c96c7291a8123c4be234f36c87b3d7f08c18c1d5521b	["*"]	2026-05-03 15:38:13	\N	2026-05-03 11:49:27	2026-05-03 15:38:13
+22	App\\Models\\User	019de42b-15b1-72fa-9387-b143e6dbf3ea	impersonation_token	01ef226d47bc8b36ef8142a41d80c52507e995acd3a9ebea5903dd072cc8a600	["*"]	2026-05-03 12:15:48	\N	2026-05-03 12:12:14	2026-05-03 12:15:48
+34	App\\Models\\User	019de42b-14cf-7203-ba64-cc6c7ba1cf94	impersonation_token	96541700427f0a0e74b1f208853046718d9e2ee8a04679561fbc0c50033ae253	["*"]	2026-05-03 14:47:46	\N	2026-05-03 14:44:53	2026-05-03 14:47:46
+23	App\\Models\\User	019de42b-1761-70c7-a2de-4906fe0a7166	impersonation_token	fa6c22efe2ad58de46a4097b6f47faf7e506ae48e83793ea31f7f62e887c8dcf	["*"]	2026-05-03 12:16:06	\N	2026-05-03 12:16:05	2026-05-03 12:16:06
+31	App\\Models\\User	019de42b-1761-70c7-a2de-4906fe0a7166	impersonation_token	82b546db15d1a1b40c14a52e3f28513834367f84053ed1c9f8e11df5119ffa7f	["*"]	2026-05-03 14:43:22	\N	2026-05-03 14:42:50	2026-05-03 14:43:22
+32	App\\Models\\User	019de42b-14cf-7203-ba64-cc6c7ba1cf94	impersonation_token	f9d37bb79161fce8c6f9dc547993e6f9496cb8f41530e64ca43577ddad44a7be	["*"]	2026-05-03 14:43:26	\N	2026-05-03 14:43:25	2026-05-03 14:43:26
+18	App\\Models\\User	019de42b-1ab2-7286-824f-90df7187f28e	auth_token	669fb84f524618342902807aee3913579806f1a35406813ba62de5862401332b	["*"]	2026-05-03 16:07:36	\N	2026-05-03 09:56:46	2026-05-03 16:07:36
+36	App\\Models\\User	019de42b-190e-70c3-9d21-2b6d2b36612c	impersonation_token	4c86b6e7d6f3a67f8b820602ccbd8e25e5e4bd166f3010405694f224a69bc2bc	["*"]	2026-05-03 16:08:13	\N	2026-05-03 14:51:56	2026-05-03 16:08:13
+27	App\\Models\\User	019de42b-15b1-72fa-9387-b143e6dbf3ea	impersonation_token	de069873895d87e0574a0774cafc5d4f9dbde5d08b447d2f8ae0ada214615b7a	["*"]	2026-05-03 14:39:44	\N	2026-05-03 12:54:25	2026-05-03 14:39:44
+25	App\\Models\\User	019de42b-14cf-7203-ba64-cc6c7ba1cf94	impersonation_token	53be015c326f197e82ef5aecb1370c160ac4759c708717c5a4f7b3f160ec0f1b	["*"]	2026-05-03 12:54:14	\N	2026-05-03 12:28:08	2026-05-03 12:54:14
+33	App\\Models\\User	019de42b-1688-7290-b257-cd7e06dcb2d4	impersonation_token	a75b0552f5dbb194d3b9b40d9267ffb6784694ad3a374a6371a52995cbde781e	["*"]	2026-05-03 14:43:28	\N	2026-05-03 14:43:27	2026-05-03 14:43:28
+28	App\\Models\\User	019de42b-14cf-7203-ba64-cc6c7ba1cf94	impersonation_token	2e7bf8b4ec2da21fcfe70c29e06015d127df8f11b6fc10ff6371f25ff4db52e7	["*"]	2026-05-03 14:42:32	\N	2026-05-03 14:42:31	2026-05-03 14:42:32
 \.
 
 
@@ -1558,12 +1643,12 @@ COPY public.thread_messages (id, decision_id, author_id, tour, content, is_moder
 COPY public.users (id, name, email, email_verified_at, password, avatar_url, role, is_global_animator, is_active, remember_token, created_at, updated_at, deleted_at, custom_views) FROM stdin;
 019de42b-14cf-7203-ba64-cc6c7ba1cf94	Alice Durand	admin@dazo.test	2026-05-01 15:32:01	$2y$12$iHMibe9w5hoDuhz608lOveyKl68DYeIqDzOW2cA7hwDrUx0sdQLoy	\N	superadmin	t	t	\N	2026-05-01 15:32:01	2026-05-01 15:32:01	\N	[{"name":"Mes urgences","filters":{"status":["objection","reaction"],"priority":1}},{"name":"Archiv\\u00e9es","filters":{"status":["adopted","abandoned"]}}]
 019de42b-1688-7290-b257-cd7e06dcb2d4	Claire Lefèvre	claire@dazo.test	2026-05-01 15:32:02	$2y$12$yWUqBiSiX52zmosA00N4qOiu.spjFyHrTyaDhlQ71/XFhY2QSR3xe	\N	user	t	t	\N	2026-05-01 15:32:02	2026-05-01 15:32:02	\N	[{"name":"En attente de moi","filters":{"needs_my_action":true}}]
-019de42b-1761-70c7-a2de-4906fe0a7166	David Nguyen	david@dazo.test	2026-05-01 15:32:02	$2y$12$1CCNdLPQkl80m7fj1KLNdexmIYu5Fl1cFO3YB7eW61uwOtIIdy4HK	\N	user	f	t	\N	2026-05-01 15:32:02	2026-05-01 15:32:02	\N	\N
 019de42b-1839-721b-990c-b44db2a24f10	Emma Petit	emma@dazo.test	2026-05-01 15:32:02	$2y$12$P8IF.LeYUaRAS4U3K2/XteELCbvZ1lufv3TsKJLlt0est3NzmRJIC	\N	user	f	t	\N	2026-05-01 15:32:02	2026-05-01 15:32:02	\N	\N
 019de42b-190e-70c3-9d21-2b6d2b36612c	Franck Moreau	franck@dazo.test	2026-05-01 15:32:02	$2y$12$lslGBExDSRDBxp9Gc1YLDez6mIStur2zomsXzXsIJb2M7w1y6fye2	\N	user	f	t	\N	2026-05-01 15:32:02	2026-05-01 15:32:02	\N	[{"name":"Strat\\u00e9gie en cours","filters":{"category":"Strat\\u00e9gie","status":["clarification","reaction","objection"]}}]
 019de42b-19e1-7098-9b5c-395edc9a3d85	Gaëlle Rousseau	gaelle@dazo.test	2026-05-01 15:32:03	$2y$12$uCxQQ2uPxSS8Sf/IaQntqeMpZkAmwOmi1Ejo0xVyWgvp1XaHFqsAK	\N	user	f	f	\N	2026-05-01 15:32:03	2026-05-01 15:32:03	\N	\N
-019de42b-1ab2-7286-824f-90df7187f28e	Hugo Bernard	hugo@dazo.test	2026-05-01 15:32:03	$2y$12$wypIO6VbQihYqgDgDhphQuNEQVPdTIpBUIWPe6O6DdomivUckT0UG	\N	admin	f	t	\N	2026-05-01 15:32:03	2026-05-01 15:32:03	\N	\N
-019de42b-15b1-72fa-9387-b143e6dbf3ea	Bob Martin	user@dazo.test	2026-05-01 15:32:02	$2y$12$XkqJyKZdHHYFcBV3SayVE.cI0zLiI6aEoL2NBv/gac5FVbprPyhLS	\N	user	f	t	\N	2026-05-01 15:32:02	2026-05-02 09:50:53	\N	[{"id":"my-proposals","label":"Mes propositions","icon":"fa-solid fa-bullhorn","filters":{"role":"author"}},{"id":"pending-actions","label":"R\\u00e9actions attendues","icon":"fa-solid fa-clock","filters":{"action":"pending"}}]
+019de42b-1ab2-7286-824f-90df7187f28e	Hugo Bernard	hugo@dazo.test	2026-05-01 15:32:03	$2y$12$wypIO6VbQihYqgDgDhphQuNEQVPdTIpBUIWPe6O6DdomivUckT0UG	\N	admin	f	t	\N	2026-05-01 15:32:03	2026-05-03 09:56:46	\N	[{"id":"my-proposals","label":"Mes propositions","icon":"fa-solid fa-bullhorn","filters":{"role":"author"}},{"id":"pending-actions","label":"R\\u00e9actions attendues","icon":"fa-solid fa-clock","filters":{"action":"pending"}}]
+019de42b-1761-70c7-a2de-4906fe0a7166	David Nguyen	david@dazo.test	2026-05-01 15:32:02	$2y$12$1CCNdLPQkl80m7fj1KLNdexmIYu5Fl1cFO3YB7eW61uwOtIIdy4HK	\N	user	f	t	\N	2026-05-01 15:32:02	2026-05-03 12:16:06	\N	[{"id":"my-proposals","label":"Mes propositions","icon":"fa-solid fa-bullhorn","filters":{"role":"author"}},{"id":"pending-actions","label":"R\\u00e9actions attendues","icon":"fa-solid fa-clock","filters":{"action":"pending"}}]
+019de42b-15b1-72fa-9387-b143e6dbf3ea	Bob Martin	user@dazo.test	2026-05-01 15:32:02	$2y$12$XkqJyKZdHHYFcBV3SayVE.cI0zLiI6aEoL2NBv/gac5FVbprPyhLS	\N	admin	f	t	\N	2026-05-01 15:32:02	2026-05-03 12:28:31	\N	[{"id":"my-proposals","label":"Mes propositions","icon":"fa-solid fa-bullhorn","filters":{"role":"author"}},{"id":"pending-actions","label":"R\\u00e9actions attendues","icon":"fa-solid fa-clock","filters":{"action":"pending"}}]
 \.
 
 
@@ -1615,7 +1700,7 @@ SELECT pg_catalog.setval('public.migrations_id_seq', 42, true);
 -- Name: personal_access_tokens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: dazo_user
 --
 
-SELECT pg_catalog.setval('public.personal_access_tokens_id_seq', 16, true);
+SELECT pg_catalog.setval('public.personal_access_tokens_id_seq', 36, true);
 
 
 --
@@ -2629,5 +2714,5 @@ ALTER TABLE ONLY public.wiki_pages
 -- PostgreSQL database dump complete
 --
 
-\unrestrict XPbF7YCrkywnhTVXxQrX7v86O0gb98MNzmbVyzbrEtQfUZFZ3zOpEiYkfQVN6Al
+\unrestrict sWpa6tjwN30n7yproBqw1bfbr1bibZFe1CmVnc3HpuFqP82QlpF5DfBqZPBw0e7
 

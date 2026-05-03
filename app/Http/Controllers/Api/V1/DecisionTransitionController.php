@@ -86,4 +86,47 @@ class DecisionTransitionController extends Controller
             'decision' => $decision->fresh()
         ]);
     }
+
+    /**
+     * Rollback to a previous phase (meeting mode undo).
+     * Accepts the previous status from the frontend action history.
+     */
+    public function rollbackPhase(Request $request, string $decision_id): JsonResponse
+    {
+        $request->validate([
+            'previous_status' => 'required|string',
+        ]);
+
+        $decision = Decision::findOrFail($decision_id);
+        
+        $user = $request->user();
+        $isAuthorOrAnimator = $decision->participants()
+            ->where('user_id', $user->id)
+            ->whereIn('role', [
+                \App\Enums\DecisionParticipantRole::AUTHOR->value,
+                \App\Enums\DecisionParticipantRole::ANIMATOR->value,
+            ])->exists();
+
+        if (!$isAuthorOrAnimator && $user->role->value !== \App\Enums\UserRole::ADMIN->value && $user->role->value !== \App\Enums\UserRole::SUPERADMIN->value) {
+            abort(403, "Seul le porteur ou l'animateur peut annuler une transition de phase.");
+        }
+
+        $previousStatus = $request->previous_status;
+        
+        // Validate the status is a known one
+        $validStatuses = ['clarification', 'reaction', 'objection', 'revision', 'draft', 'suspended'];
+        if (!in_array($previousStatus, $validStatuses)) {
+            return response()->json(['message' => 'Statut cible invalide pour le rollback.'], 422);
+        }
+
+        $decision->status = $previousStatus;
+        $decision->current_deadline = $this->decisionService->recalculateDeadline($previousStatus);
+        $decision->reminder_sent = false;
+        $decision->save();
+
+        return response()->json([
+            'message' => "Phase restaurée : {$previousStatus}",
+            'decision' => $decision->fresh()
+        ]);
+    }
 }

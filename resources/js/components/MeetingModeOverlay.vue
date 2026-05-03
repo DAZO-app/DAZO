@@ -31,7 +31,7 @@
           Version {{ currentVersion.version_number }}
         </div>
 
-        <!-- Bouton Undo -->
+        <!-- Bouton Undo (raccourci header) -->
         <button 
           v-if="isAnimator && actionHistory.length > 0"
           class="btn-undo" 
@@ -398,6 +398,7 @@
         :reply-to-feedback="replyTarget"
         :reply-trigger="replyTrigger"
         :is-docked="isPanelDocked"
+        :can-undo="actionHistory.length > 0"
         @dock="handleDock"
         @undock="isPanelDocked = false"
         @direct-edit="startDirectEdit"
@@ -409,6 +410,7 @@
         @drag-start="isDraggingPanel = true"
         @drag-end="isDraggingPanel = false"
         @publish-revision="publishDirectEdit"
+        @undo-last-action="undoLastAction"
       />
     </Teleport>
 
@@ -811,17 +813,27 @@ const undoLastAction = async () => {
   if (actionHistory.value.length === 0) return;
   const lastAction = actionHistory.value[actionHistory.value.length - 1];
   
+  // Confirmation already handled by SecretaryPanel confirmAction, 
+  // but still confirm for keyboard shortcut (Ctrl+Z)
   if (!confirm(`Êtes-vous sûr de vouloir annuler la dernière action effectuée en live ?`)) {
     return;
   }
 
   try {
-    let url = '';
-    if (lastAction.type === 'consent') url = `/api/v1/consents/${lastAction.id}`;
-    if (lastAction.type === 'feedback') url = `/api/v1/feedback/${lastAction.id}`;
-    if (lastAction.type === 'message') url = `/api/v1/feedback/messages/${lastAction.id}`;
+    if (lastAction.type === 'phase-transition') {
+      // Rollback phase via dedicated endpoint
+      await axios.post(`/api/v1/decisions/${props.decision.id}/rollback-phase`, {
+        previous_status: lastAction.previousStatus
+      });
+    } else {
+      // Standard undo (consent, feedback, message)
+      let url = '';
+      if (lastAction.type === 'consent') url = `/api/v1/consents/${lastAction.id}`;
+      if (lastAction.type === 'feedback') url = `/api/v1/feedback/${lastAction.id}`;
+      if (lastAction.type === 'message') url = `/api/v1/feedback/messages/${lastAction.id}`;
 
-    await axios.delete(url);
+      if (url) await axios.delete(url);
+    }
     
     // Succès
     actionHistory.value.pop();

@@ -12,6 +12,7 @@ Ces scripts sont conçus pour simplifier la gestion, le déploiement et la maint
 | `dazo-gitpull.sh` | Récupération simple du code GitHub | Vérifier les changements sans les appliquer |
 | `dazo-check.sh` | Vérification de l'état du système | En cas de doute sur la santé des containers |
 | `dazo-cleancache.sh` | Nettoyage et reconstruction des caches | Après un changement de config ou de routes |
+| `dazo-cleanDBbackup.sh`| **Gestion et nettoyage des backups SQL** | **Libérer de l'espace disque périodiquement** |
 | `dazo-dev.sh` | Lancement de l'environnement de dev local | Lancer le travail local (Vite HMR + Containers) |
 | `dazo-refresh.sh` | Rafraîchissement complet local | Purger caches, permissions et build (HMR bloqué) |
 | `dazo-rollback.sh` | Retour à la version précédente (Git) | En cas d'erreur critique après mise à jour |
@@ -23,6 +24,8 @@ Ces scripts sont conçus pour simplifier la gestion, le déploiement et la maint
 
 ### 0. Le Centre de Contrôle (`dazo-tool.sh`)
 C'est le point d'entrée unique recommandé. Au lieu de retenir tous les noms de scripts, lancez simplement celui-ci pour accéder à un menu interactif.
+
+**Nouveauté :** Désormais, tous les sous-scripts (`dazo-*.sh`) proposent de revenir automatiquement à ce menu une fois leur tâche accomplie. Cela permet d'enchaîner plusieurs opérations (ex: Update -> Clean Cache -> Check) sans relancer l'outil.
 
 **Commande :**
 ```bash
@@ -120,6 +123,19 @@ Un outil complet pour corriger les soucis de cache, de permissions ou de compila
 ```
 
 ---
+
+### 9. Nettoyage des Sauvegardes (`dazo-cleanDBbackup.sh`)
+Ce script permet de gérer l'espace disque occupé par les sauvegardes automatiques générées lors de chaque mise à jour.
+
+**Options de nettoyage :**
+- **Tout supprimer** : Vide intégralement le dossier `./backups/`.
+- **Garder les 5 derniers** : Conserve uniquement les fichiers les plus récents (sécurité recommandée).
+- **Dernières 24h / 7j / 30j** : Conserve les fichiers basés sur leur date de création.
+
+**Commande :**
+```bash
+./dazo-cleanDBbackup.sh
+```
 
 ## ⚙️ Configuration
 Tous les scripts sont situés à la racine du projet. Assurez-vous qu'ils possèdent les droits d'exécution :

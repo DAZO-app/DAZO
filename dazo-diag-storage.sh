@@ -58,3 +58,7 @@ fi
 
 echo "--------------------------------------"
 echo -e "${GREEN}Diagnostic complete.${NC}"
+
+echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
+read
+exec ./dazo-tool.sh

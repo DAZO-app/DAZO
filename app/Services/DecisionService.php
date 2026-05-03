@@ -206,6 +206,14 @@ class DecisionService
         return $days ? now()->addDays($days) : null;
     }
 
+    /**
+     * Public wrapper for calculateDeadline (used by rollback).
+     */
+    public function recalculateDeadline(string $status): ?\Illuminate\Support\Carbon
+    {
+        return $this->calculateDeadline($status);
+    }
+
     public function extendDeadline(Decision $decision): Decision
     {
         // Add basic reaction delay according to user instructions.

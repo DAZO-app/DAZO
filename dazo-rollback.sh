@@ -33,3 +33,7 @@ echo -e "${GREEN}✅ ROLLBACK COMPLETE!${NC}"
 echo -e "${YELLOW}Note: If database migrations were destructive, you may need to restore a DB backup manually.${NC}"
 echo -e "${GREEN}=====================================${NC}"
 docker compose ps
+
+echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
+read
+exec ./dazo-tool.sh

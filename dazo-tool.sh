@@ -57,5 +57,5 @@ case $choice in
     10) ./dazo-dev.sh ;;
     11) ./dazo-gitpull.sh ;;
     q|Q) exit 0 ;;
-    *) echo -e "${RED}Choix invalide.${NC}" ; sleep 1 ; ./dazo-tool.sh ;;
+    *) echo -e "${RED}Choix invalide.${NC}" ; sleep 1 ; exec ./dazo-tool.sh ;;
 esac

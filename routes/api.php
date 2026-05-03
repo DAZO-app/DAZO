@@ -126,6 +126,8 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:20,1');
         Route::post('/decisions/{decision_id}/extend', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'extend'])
             ->middleware('throttle:20,1');
+        Route::post('/decisions/{decision_id}/rollback-phase', [\App\Http\Controllers\Api\V1\DecisionTransitionController::class, 'rollbackPhase'])
+            ->middleware('throttle:20,1');
 
         // Feedback & Joins
         Route::get('/decisions/{id}/feedback', [\App\Http\Controllers\Api\V1\FeedbackController::class, 'index']);

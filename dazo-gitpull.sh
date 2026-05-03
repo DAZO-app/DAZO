@@ -15,3 +15,7 @@ git log HEAD..origin/main --oneline
 echo -e "${YELLOW}🚀 Pulling main branch...${NC}"
 git pull origin main
 echo -e "${GREEN}✅ Pull complete${NC}"
+
+echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
+read
+exec ./dazo-tool.sh

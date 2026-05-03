@@ -101,7 +101,8 @@
         </div>
         
         <div class="flex flex-col gap-8">
-           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="handleQuickAction('suspend')" v-if="(decision.status?.value || decision.status) !== 'suspended'">
+           <!-- 1. Mettre en pause / Reprendre -->
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="confirmAction('suspend')" v-if="(decision.status?.value || decision.status) !== 'suspended'">
               <i class="fa-solid fa-pause mr-12 text-amber-500 w-16"></i>
               <div class="flex flex-col items-start">
                 <span class="font-bold">Mettre en pause</span>
@@ -109,7 +110,7 @@
               </div>
            </button>
            
-           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="handleQuickAction('resume')" v-if="(decision.status?.value || decision.status) === 'suspended'">
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="confirmAction('resume')" v-if="(decision.status?.value || decision.status) === 'suspended'">
               <i class="fa-solid fa-play mr-12 text-emerald-500 w-16"></i>
               <div class="flex flex-col items-start">
                 <span class="font-bold">Reprendre</span>
@@ -117,27 +118,39 @@
               </div>
            </button>
 
-            <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="$emit('direct-edit')">
+           <!-- 2. Réviser en direct -->
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="confirmAction('revision-direct')" v-if="!['revision', 'adopted', 'abandoned', 'suspended'].includes(decision.status?.value || decision.status)">
               <i class="fa-solid fa-pen-to-square mr-12 text-emerald-500 w-16"></i>
               <div class="flex flex-col items-start">
-                <span class="font-bold">Éditer en direct</span>
-                <span class="text-[10px] text-gray-500">Modifier le texte et passer en objection</span>
-              </div>
-            </button>
-
-            <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="handleQuickAction('revision')" v-if="!['revision', 'adopted', 'abandoned'].includes(decision.status?.value || decision.status)">
-              <i class="fa-solid fa-file-signature mr-12 text-indigo-500 w-16"></i>
-              <div class="flex flex-col items-start">
-                <span class="font-bold">Créer une révision</span>
-                <span class="text-[10px] text-gray-500">Proposer une nouvelle version du texte</span>
+                <span class="font-bold">Réviser en direct</span>
+                <span class="text-[10px] text-gray-500">Créer et éditer la révision en direct</span>
               </div>
            </button>
 
-           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12 border-red-100 hover:bg-red-50" @click="handleQuickAction('abandon')">
+           <!-- 3. Réviser ultérieurement -->
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12" @click="confirmAction('revision-later')" v-if="!['revision', 'adopted', 'abandoned', 'suspended'].includes(decision.status?.value || decision.status)">
+              <i class="fa-solid fa-file-signature mr-12 text-indigo-500 w-16"></i>
+              <div class="flex flex-col items-start">
+                <span class="font-bold">Réviser ultérieurement</span>
+                <span class="text-[10px] text-gray-500">Rédiger la révision ultérieurement</span>
+              </div>
+           </button>
+
+           <!-- 4. Abandonner -->
+           <button class="btn btn-sm btn-outline-gray justify-start h-auto py-12 border-red-100 hover:bg-red-50" @click="confirmAction('abandon')">
               <i class="fa-solid fa-trash-can mr-12 text-red-500 w-16"></i>
               <div class="flex flex-col items-start">
                 <span class="font-bold text-red-600">Abandonner définitivement</span>
                 <span class="text-[10px] text-gray-500">Clore ce dossier sans suite</span>
+              </div>
+           </button>
+
+           <!-- 5. Annuler dernière action -->
+           <button v-if="canUndo" class="btn btn-sm btn-outline-gray justify-start h-auto py-12 border-amber-100 hover:bg-amber-50" @click="confirmAction('undo')">
+              <i class="fa-solid fa-rotate-left mr-12 text-amber-500 w-16"></i>
+              <div class="flex flex-col items-start">
+                <span class="font-bold text-amber-700">Annuler</span>
+                <span class="text-[10px] text-gray-500">Annuler la dernière action</span>
               </div>
            </button>
         </div>
@@ -298,10 +311,11 @@ const props = defineProps({
   consents: { type: Array, default: () => [] },
   allVersions: { type: Array, default: () => [] },
   isDocked: { type: Boolean, default: false },
-  replyTrigger: { type: Number, default: 0 }
+  replyTrigger: { type: Number, default: 0 },
+  canUndo: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['refresh-data', 'phase-change', 'cancel-reply', 'action-logged', 'version-change', 'dock', 'undock', 'drag-start', 'drag-end', 'direct-edit', 'publish-revision']);
+const emit = defineEmits(['refresh-data', 'phase-change', 'cancel-reply', 'action-logged', 'version-change', 'dock', 'undock', 'drag-start', 'drag-end', 'direct-edit', 'publish-revision', 'undo-last-action']);
 
 const authStore = useAuthStore();
 
@@ -717,13 +731,14 @@ const nextPhase = async () => {
 
   loading.value = true;
   try {
+    const prevStatus = props.decision.status?.value || props.decision.status;
     await axios.post(`/api/v1/decisions/${props.decision.id}/transition`, { 
       to: action,
       notify: false,
       is_meeting: true
     });
     emit('refresh-data');
-    emit('action-logged', `Phase passée à : ${action}`);
+    emit('action-logged', { type: 'phase-transition', previousStatus: prevStatus, actionLabel: `next-phase-${action}` });
   } catch (err) {
     console.error('Transition Error:', err);
     transitionError.value = err.response?.data?.message || "Erreur lors du changement de phase.";
@@ -731,9 +746,29 @@ const nextPhase = async () => {
     loading.value = false;
   }
 };
-const handleQuickAction = async (type) => {
-  if (type === 'abandon' && !confirm('Êtes-vous sûr de vouloir abandonner définitivement cette décision ?')) return;
+const confirmMessages = {
+  'suspend': 'Voulez-vous mettre cette décision en pause ?',
+  'resume': 'Voulez-vous reprendre le processus ?',
+  'revision-direct': 'Créer une révision et ouvrir l\'éditeur en direct ?',
+  'revision-later': 'Passer en mode révision (brouillon) ? La révision pourra être rédigée ultérieurement.',
+  'abandon': 'Êtes-vous sûr de vouloir abandonner définitivement cette décision ?',
+  'undo': 'Êtes-vous sûr de vouloir annuler la dernière action effectuée ?'
+};
+
+const confirmAction = (type) => {
+  const msg = confirmMessages[type] || 'Confirmer cette action ?';
+  if (!confirm(msg)) return;
   
+  if (type === 'undo') {
+    showQuickActions.value = false;
+    emit('undo-last-action');
+    return;
+  }
+  
+  handleQuickAction(type);
+};
+
+const handleQuickAction = async (type) => {
   showQuickActions.value = false;
   loading.value = true;
   transitionError.value = null;
@@ -746,15 +781,25 @@ const handleQuickAction = async (type) => {
       data = { to: 'suspended' };
     } else if (type === 'resume') {
       data = { to: props.decision.status_before_suspension || 'clarification' };
-    } else if (type === 'revision') {
+    } else if (type === 'revision-direct' || type === 'revision-later') {
       data = { to: 'revision' };
     } else if (type === 'abandon') {
       endpoint = `/api/v1/decisions/${props.decision.id}/abandon`;
     }
 
     await axios.post(endpoint, data);
+    
+    // Log action with previous status for potential rollback
+    const prevStatus = props.decision.status?.value || props.decision.status;
+    emit('action-logged', { type: 'phase-transition', previousStatus: prevStatus, actionLabel: type });
     emit('refresh-data');
-    emit('action-logged', `Action rapide : ${type}`);
+    
+    // If revision-direct, open the editor after a short delay for data refresh
+    if (type === 'revision-direct') {
+      setTimeout(() => {
+        emit('direct-edit');
+      }, 500);
+    }
   } catch (err) {
     console.error('Quick Action Error:', err);
     transitionError.value = err.response?.data?.message || "Erreur lors de l'action.";

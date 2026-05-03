@@ -17,4 +17,8 @@ echo -e "${YELLOW}📦 Starting Vite Development Server (HMR)...${NC}"
 echo -e "${YELLOW}💡 Note: Leave this terminal open. Press Ctrl+C to stop.${NC}"
 
 # Run npm run dev inside the app container
-docker compose exec app npm run dev
+docker compose exec app npm run dev || true
+
+echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
+read
+exec ./dazo-tool.sh

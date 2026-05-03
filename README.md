@@ -48,6 +48,7 @@ Le projet utilise Docker pour garantir une parité parfaite entre le développem
 Une suite de scripts est disponible à la racine pour faciliter la gestion :
 - `./dazo-check.sh` : Vérifie la santé de tous les services (BDD, Redis, Containers).
 - `./dazo-cleancache.sh` : Vide tous les caches Laravel proprement.
+- `./dazo-cleanDBbackup.sh` : Gère le nettoyage des anciennes sauvegardes SQL.
 - `./dazo-refresh.sh` : (Local) Rafraîchit les droits et les caches après une modif.
 
 Pour plus de détails, consultez la [Documentation des Scripts](docs/SCRIPTS.md). pour découvrir toutes les commandes disponibles (`update`, `cleancache`, `rollback`).
