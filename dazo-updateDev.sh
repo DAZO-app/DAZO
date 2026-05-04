@@ -17,7 +17,7 @@ sed -i "s|BETA \[.*\]|BETA [$TIMESTAMP]|g" resources/js/layouts/AppLayout.vue
 
 # 2. Nettoyage radical
 echo -e "${YELLOW}🧹 Purging public/build...${NC}"
-rm -rf public/build
+docker compose exec app rm -rf public/build
 
 # 3. Build Docker
 echo -e "${YELLOW}📦 Building assets via Docker...${NC}"

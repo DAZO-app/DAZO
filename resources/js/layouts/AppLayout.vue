@@ -71,7 +71,7 @@
         <router-link to="/" class="sidebar-logo">
           <img :src="configStore.defaultLogoUrl" alt="DAZO" class="sidebar-logo-img" />
           <div style="font-size: 8px; color: rgba(255,255,255,0.3); text-align: center; margin-top: 4px; font-family: monospace;">
-            BETA [04/05/2026 05:10:24]
+            BETA [04/05/2026 13:31:57]
           </div>
         </router-link>
 
@@ -109,11 +109,11 @@
               <span><i class="fa-solid fa-globe text-emerald-400"></i></span> Voir le site public
             </a>
 
-            <router-link to="/wiki" class="sidebar-item" active-class="active">
-              <span><i class="fa-solid fa-book-open"></i></span> Aide
-            </router-link>
             <router-link to="/settings" class="sidebar-item" active-class="active">
               <span><i class="fa-solid fa-sliders"></i></span> Paramètres
+            </router-link>
+            <router-link to="/wiki" class="sidebar-item" active-class="active">
+              <span><i class="fa-solid fa-book-open"></i></span> Aide
             </router-link>
           </div>
         </transition>
@@ -128,9 +128,12 @@
             <div v-show="sectionsOpen.views" class="sidebar-collapsible">
               <router-link v-for="view in normalizedCustomViews" :key="view.id" 
                            :to="{ name: 'DecisionList', query: { ...view.filters, view_label: view.label } }" 
-                           class="sidebar-subitem" 
+                           class="sidebar-item" 
                            :class="{ active: $route.query.view_label === view.label }">
-                <span class="sub-dot" :class="'dot-' + view.color"></span> 
+                <span>
+                  <img v-if="view.favicon" :src="view.favicon" style="width: 16px; height: 16px; object-fit: contain; vertical-align: middle; border-radius: 3px;" alt="">
+                  <i v-else :class="view.icon || 'fa-solid fa-layer-group'"></i>
+                </span>
                 {{ view.label }}
               </router-link>
             </div>
@@ -250,7 +253,7 @@ const route = useRoute();
 const mobileMenuOpen = ref(false);
 const sectionsOpen = ref({
   navigation: true,
-  views: true,
+  views: false,
   admin: false,
   system: false
 });
@@ -274,7 +277,9 @@ const userInitials = computed(() => {
 });
 
 const normalizedCustomViews = computed(() => {
-  return (user.value?.custom_views || []).map((view, index) => {
+  return (user.value?.custom_views || [])
+    .filter(view => view.enabled === true)
+    .map((view, index) => {
     const label = view.label || view.name || `Vue ${index + 1}`;
     const viewId = String(view.id || label || index).toLowerCase();
     const filters = view.filters && typeof view.filters === 'object' ? view.filters : {};
@@ -291,6 +296,8 @@ const normalizedCustomViews = computed(() => {
       label,
       filters,
       color,
+      icon: view.icon || null,
+      favicon: view.favicon || null,
     };
   });
 });

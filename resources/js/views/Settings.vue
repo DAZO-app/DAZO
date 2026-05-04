@@ -155,7 +155,7 @@
 
           <!-- SECTION MES VUES -->
           <div v-if="activeSection === 'views'" class="premium-card animate-fade-in">
-            <div class="pc-header pc-header-teal">
+            <div class="pc-header pc-header-blue">
               <div class="pc-header-icon"><i class="fa-solid fa-layer-group"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Mes Vues</div>
@@ -164,96 +164,178 @@
             </div>
             <div class="pc-body p-24">
               <div v-if="viewsSuccessMsg" class="alert alert-success mb-24">{{ viewsSuccessMsg }}</div>
-              
-              <div class="mb-32">
-                <h4 class="config-label mb-8">Vues actives</h4>
-                <p class="help-text mb-16">Sélectionnez les filtres que vous souhaitez voir apparaître dans votre menu "Mes Vues".</p>
-                
-                <div class="views-grid">
-                  <div v-for="opt in viewOptions" :key="opt.id" class="view-opt-card" :class="{ active: isViewActive(opt.id) }" @click="toggleView(opt)">
-                    <div class="view-opt-check">
-                      <i :class="isViewActive(opt.id) ? 'fa-solid fa-check-circle' : 'fa-regular fa-circle'"></i>
+
+              <!-- TUILES ACTIVES / INACTIVES (draggable) -->
+              <div class="mb-32" v-if="userViews.length">
+                <h4 class="config-label mb-12">Vues personnalisées
+                  <span class="config-label-hint">Glissez pour réordonner · les vues désactivées passent en bas</span>
+                </h4>
+
+                <draggable
+                  v-model="userViews"
+                  item-key="id"
+                  class="cv-tiles-list"
+                  animation="220"
+                  ghost-class="cv-tile-ghost"
+                  drag-class="cv-tile-dragging"
+                  handle=".cv-tile-drag-zone"
+                  @end="autoSaveViews"
+                >
+                  <template #item="{ element: v }">
+                    <div
+                      :id="'cv-tile-' + v.id"
+                      class="cv-tile cv-tile-card"
+                      :class="{ 'cv-tile--disabled': !v.enabled, 'cv-tile--activated': activeViewId === v.id }"
+                    >
+                      <!-- Edit button -->
+                      <button class="cv-btn-edit cv-btn-edit-abs" @click.stop="editCustomView(v)" title="Éditer">
+                        <i class="fa-solid fa-pencil"></i>
+                      </button>
+
+                      <!-- Zone draggable (hors actions) -->
+                      <div class="cv-tile-drag-zone" title="Déplacer">
+                        <div class="cv-tile-icon">
+                          <img v-if="v.favicon" :src="v.favicon" class="cv-favicon" alt="">
+                          <i v-else :class="v.icon || 'fa-solid fa-layer-group'"></i>
+                        </div>
+
+                        <div class="cv-tile-label">{{ v.label }}</div>
+                        <div class="cv-tile-desc" v-if="v.description">{{ v.description }}</div>
+                        <div class="cv-tile-filters">
+                          <span v-for="(val, key) in (v.filters || {})" :key="key" class="cv-filter-tag">
+                            {{ cvFilterLabel(key, val) }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Footer with toggle -->
+                      <div class="cv-tile-footer" style="justify-content: flex-end;">
+                        <label class="switch-sm cv-tile-switch" title="Activer / Désactiver" @click.stop>
+                          <input type="checkbox" v-model="v.enabled" @change="handleViewToggle(v)">
+                          <span class="slider round"></span>
+                        </label>
+                      </div>
                     </div>
-                    <div class="view-opt-icon"><i :class="opt.icon"></i></div>
-                    <div class="view-opt-label">{{ opt.label }}</div>
-                  </div>
-                </div>
+                  </template>
+                </draggable>
               </div>
 
-              <div class="mb-32 mt-32">
-                <h4 class="config-label mb-8">Ajouter des vues personnalisées</h4>
-                <p class="help-text mb-24">Créez vos propres filtres pour accéder rapidement aux décisions qui vous importent.</p>
-                
-                <div class="custom-view-creator premium-card p-24 mb-32" style="background: var(--gray-50);">
-                  <div class="grid-2 gap-24">
-                    <div class="form-group">
-                      <label class="form-label">Nom de la vue</label>
-                      <input type="text" v-model="customViewForm.label" class="form-control" placeholder="Ex: Projets Urgent">
+              <!-- BLOC CREATION / EDITION -->
+              <div class="mb-24">
+                <div class="cv-creator-card">
+
+                  <div class="cv-creator-header">
+                    <span v-if="!editingViewId"><i class="fa-solid fa-plus-circle mr-8"></i>Ajouter une vue personnalisée</span>
+                    <span v-else><i class="fa-solid fa-pen-to-square mr-8"></i>Modifier la vue</span>
+                  </div>
+
+                  <div class="cv-creator-body">
+
+                    <!-- Ligne 1 : Nom de la vue -->
+                    <div class="cv-form-row mb-16">
+                      <div class="cv-form-group" style="flex: 1;">
+                        <label class="form-label">Nom de la vue</label>
+                        <input type="text" v-model="customViewForm.label" class="form-control cv-input-sexy" placeholder="Ex: Projets urgents">
+                      </div>
                     </div>
-                    <div class="form-group">
-                      <label class="form-label">Icône</label>
-                      <div class="icon-selector">
-                        <button v-for="ico in availableIcons" :key="ico" 
-                          @click="customViewForm.icon = ico"
-                          class="btn-icon-opt" :class="{ active: customViewForm.icon === ico }">
-                          <i :class="ico"></i>
+
+                    <!-- Ligne 2 : Icône -->
+                    <div class="cv-form-row mb-16">
+                      <div class="cv-form-group" style="flex: 0 0 auto;">
+                        <label class="form-label">Icône</label>
+                        <div class="cv-icon-row">
+                          <div class="icon-selector">
+                            <button v-for="ico in availableIcons" :key="ico"
+                              @click="customViewForm.icon = ico"
+                              class="btn-icon-opt" :class="{ active: customViewForm.icon === ico }">
+                              <i :class="ico"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Ligne 2 : Filtres -->
+                    <div class="cv-form-row mt-16">
+                      <div class="cv-form-group">
+                        <label class="form-label">État</label>
+                        <select v-model="customViewForm.filters.state" class="form-control cv-input-sexy">
+                          <option value="">Tous</option>
+                          <option value="draft">Brouillon</option>
+                          <option value="active">En cours</option>
+                          <option value="clarification">Clarification</option>
+                          <option value="reaction">Réaction</option>
+                          <option value="objection">Objection</option>
+                          <option value="revision">Révision</option>
+                          <option value="adopted">Adoptée</option>
+                          <option value="abandoned">Abandonnée</option>
+                        </select>
+                      </div>
+                      <div class="cv-form-group">
+                        <label class="form-label">Mon rôle</label>
+                        <select v-model="customViewForm.filters.role" class="form-control cv-input-sexy">
+                          <option value="">Tous rôles</option>
+                          <option value="author">Porteur</option>
+                          <option value="animator">Animateur</option>
+                          <option value="participant">Participant</option>
+                          <option value="observer">Observateur</option>
+                        </select>
+                      </div>
+                      <div class="cv-form-group">
+                        <label class="form-label">Cercle</label>
+                        <select v-model="customViewForm.filters.circle" class="form-control cv-input-sexy">
+                          <option value="">Tous</option>
+                          <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
+                        </select>
+                      </div>
+                      <div class="cv-form-group">
+                        <label class="form-label">Catégorie</label>
+                        <select v-model="customViewForm.filters.category" class="form-control cv-input-sexy">
+                          <option value="">Toutes</option>
+                          <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                        </select>
+                      </div>
+                      <div class="cv-form-group">
+                        <label class="form-label">Tri</label>
+                        <select v-model="customViewForm.filters.sort" class="form-control cv-input-sexy">
+                          <option value="">Défaut</option>
+                          <option value="created_desc">Récents d'abord</option>
+                          <option value="created_asc">Anciens d'abord</option>
+                          <option value="updated_desc">Maj récente</option>
+                          <option value="alpha_asc">A → Z</option>
+                          <option value="alpha_desc">Z → A</option>
+                        </select>
+                      </div>
+                      <div class="cv-form-group" style="flex: 2;">
+                        <label class="form-label">Recherche texte</label>
+                        <input type="text" v-model="customViewForm.filters.search" class="form-control cv-input-sexy" placeholder="Mot-clé, auteur...">
+                      </div>
+                    </div>
+
+                    <!-- Actions création -->
+                    <div class="cv-creator-actions mt-20">
+                      <div v-if="!editingViewId">
+                        <button @click="addCustomView" class="btn btn-blue">
+                          <i class="fa-solid fa-eye mr-6"></i> Activer cette vue
+                        </button>
+                      </div>
+                      <div v-else class="cv-edit-actions">
+                        <button @click="deleteCustomView" class="btn btn-ghost btn-danger-ghost">
+                          <i class="fa-solid fa-trash mr-6"></i> Supprimer
+                        </button>
+                        <button @click="cancelEditView" class="btn btn-ghost">
+                          <i class="fa-solid fa-times mr-6"></i> Fermer
+                        </button>
+                        <button @click="updateCustomView" class="btn btn-primary">
+                          <i class="fa-solid fa-check mr-6"></i> Mettre à jour
                         </button>
                       </div>
                     </div>
                   </div>
-                  
-                  <div class="grid-2 gap-24 mt-16">
-                    <div class="form-group">
-                      <label class="form-label">Type de filtre</label>
-                      <select v-model="customViewForm.filterType" class="form-control">
-                        <option value="status">Par Statut</option>
-                        <option value="circle">Par Cercle</option>
-                        <option value="category">Par Catégorie</option>
-                        <option value="search">Recherche texte</option>
-                        <option value="author_id">Par Porteur</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Valeur du filtre</label>
-                      <select v-if="customViewForm.filterType === 'status'" v-model="customViewForm.filterValue" class="form-control">
-                        <option value="draft">Brouillon</option>
-                        <option value="clarification">Clarification</option>
-                        <option value="reaction">Réactions</option>
-                        <option value="objection">Objections</option>
-                        <option value="adopted">Adopté</option>
-                        <option value="revision">En révision</option>
-                      </select>
-                      <select v-else-if="customViewForm.filterType === 'circle'" v-model="customViewForm.filterValue" class="form-control">
-                        <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
-                      </select>
-                      <select v-else-if="customViewForm.filterType === 'category'" v-model="customViewForm.filterValue" class="form-control">
-                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                      </select>
-                      <input v-else type="text" v-model="customViewForm.filterValue" class="form-control" placeholder="Valeur...">
-                    </div>
-                  </div>
-                  
-                  <div class="mt-24 text-right">
-                    <button @click="addCustomView" class="btn btn-teal">
-                      <i class="fa-solid fa-plus mr-8"></i> Ajouter cette vue
-                    </button>
-                  </div>
-                </div>
-
-                <div v-if="userViews.filter(v => v.id && String(v.id).startsWith('custom-')).length" class="mt-24">
-                  <h5 class="text-sm font-bold uppercase tracking-wider text-muted mb-16">Vos vues créées</h5>
-                  <div class="views-grid">
-                    <div v-for="v in userViews.filter(v => v.id && String(v.id).startsWith('custom-'))" :key="v.id" class="view-opt-card active">
-                      <div class="view-opt-icon"><i :class="v.icon"></i></div>
-                      <div class="view-opt-label">{{ v.label }}</div>
-                      <button @click="removeCustomView(v.id)" class="btn-remove-view" title="Supprimer">
-                        <i class="fa-solid fa-times"></i>
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
 
+              <!-- Bouton sauvegarde global -->
               <div class="pt-16 border-top">
                 <button @click="saveViews" class="btn btn-primary btn-lg" :disabled="loading">
                   <i class="fa-solid fa-save mr-8"></i>
@@ -261,6 +343,23 @@
                 </button>
               </div>
 
+            </div>
+          </div>
+
+          <!-- POPUP CONFIRM DELETE -->
+          <div v-if="confirmDeleteViewId" class="modal-overlay" @click.self="confirmDeleteViewId = null">
+            <div class="modal-box">
+              <div class="modal-header">
+                <i class="fa-solid fa-triangle-exclamation text-amber mr-8"></i>
+                Supprimer cette vue ?
+              </div>
+              <div class="modal-body">
+                La vue <strong>"{{ viewToDeleteLabel }}"</strong> sera définitivement supprimée.
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-ghost" @click="confirmDeleteViewId = null">Annuler</button>
+                <button class="btn btn-danger" @click="confirmDeleteView">Supprimer</button>
+              </div>
             </div>
           </div>
 
@@ -527,13 +626,29 @@ notifCategories.forEach(c => {
 const notifLoading = ref(false);
 const notifSuccessMsg = ref('');
 
-const customViewForm = ref({ label: '', icon: 'fa-solid fa-filter', filterType: 'status', filterValue: '' });
+// -- Custom Views state --
+const defaultCustomViewForm = () => ({
+  label: '',
+  icon: 'fa-solid fa-filter',
+  filters: { state: '', role: '', circle: '', category: '', sort: '', search: '' }
+});
+const customViewForm = ref(defaultCustomViewForm());
+const editingViewId = ref(null);
+const activeViewId = ref(null);
+const confirmDeleteViewId = ref(null);
+
+const viewToDeleteLabel = computed(() => {
+  const v = userViews.value.find(x => x.id === confirmDeleteViewId.value);
+  return v ? v.label : '';
+});
+
 const circles = ref([]);
 const categories = ref([]);
 const availableIcons = [
   'fa-solid fa-filter', 'fa-solid fa-star', 'fa-solid fa-tag', 'fa-solid fa-circle-nodes',
   'fa-solid fa-folder', 'fa-solid fa-bolt', 'fa-solid fa-clock', 'fa-solid fa-check-double',
-  'fa-solid fa-user', 'fa-solid fa-comments', 'fa-solid fa-heart'
+  'fa-solid fa-user', 'fa-solid fa-comments', 'fa-solid fa-heart',
+  'fa-solid fa-fire', 'fa-solid fa-flag', 'fa-solid fa-chart-bar', 'fa-solid fa-pen'
 ];
 
 const fetchMetaData = async () => {
@@ -542,8 +657,8 @@ const fetchMetaData = async () => {
       axios.get('/api/v1/circles'),
       axios.get('/api/v1/categories')
     ]);
-    circles.value = cRes.data.circles || [];
-    categories.value = catRes.data.categories || [];
+    circles.value = cRes.data.data || cRes.data.circles || [];
+    categories.value = catRes.data.data || catRes.data.categories || [];
   } catch (e) {
     console.error("Settings fetch meta error", e);
   }
@@ -552,19 +667,128 @@ const fetchMetaData = async () => {
 const addCustomView = () => {
   if (!customViewForm.value.label) return alert('Veuillez donner un nom à votre vue.');
   
+  // Filter out empty filters
+  const filters = {};
+  Object.entries(customViewForm.value.filters).forEach(([k, v]) => { if (v) filters[k] = v; });
+
   const newView = {
     id: 'custom-' + Date.now(),
     label: customViewForm.value.label,
     icon: customViewForm.value.icon,
-    filters: { [customViewForm.value.filterType]: customViewForm.value.filterValue }
+    enabled: false,  // starts disabled, user sees it in the list
+    width: 'full',
+    filters
   };
   
   userViews.value.push(newView);
-  customViewForm.value = { label: '', icon: 'fa-solid fa-filter', filterType: 'status', filterValue: '' };
+  customViewForm.value = defaultCustomViewForm();
+  autoSaveViews();
+};
+
+const editCustomView = (v) => {
+  editingViewId.value = v.id;
+  const filters = v.filters || {};
+  customViewForm.value = {
+    label: v.label || '',
+    icon: v.icon || 'fa-solid fa-filter',
+    filters: {
+      state: filters.state || '',
+      role: filters.role || '',
+      circle: filters.circle || '',
+      category: filters.category || '',
+      sort: filters.sort || '',
+      search: filters.search || ''
+    }
+  };
+};
+
+const cancelEditView = () => {
+  editingViewId.value = null;
+  customViewForm.value = defaultCustomViewForm();
+};
+
+const updateCustomView = () => {
+  const idx = userViews.value.findIndex(x => x.id === editingViewId.value);
+  if (idx === -1) return;
+  const filters = {};
+  Object.entries(customViewForm.value.filters).forEach(([k, v]) => { if (v) filters[k] = v; });
+  userViews.value[idx] = {
+    ...userViews.value[idx],
+    label: customViewForm.value.label,
+    icon: customViewForm.value.icon,
+    filters
+  };
+  editingViewId.value = null;
+  customViewForm.value = defaultCustomViewForm();
+  autoSaveViews();
+};
+
+const deleteCustomView = () => {
+  if (!editingViewId.value) return;
+  confirmDeleteViewId.value = editingViewId.value;
+};
+
+const confirmDeleteView = () => {
+  userViews.value = userViews.value.filter(v => v.id !== confirmDeleteViewId.value);
+  if (editingViewId.value === confirmDeleteViewId.value) {
+    editingViewId.value = null;
+    customViewForm.value = defaultCustomViewForm();
+  }
+  confirmDeleteViewId.value = null;
+  autoSaveViews();
 };
 
 const removeCustomView = (id) => {
   userViews.value = userViews.value.filter(v => v.id !== id);
+};
+
+const cvFilterLabel = (key, val) => {
+  const map = { state: 'État', role: 'Rôle', circle: 'Cercle', category: 'Catégorie', sort: 'Tri', search: 'Texte', status: 'Statut' };
+  
+  let label = val;
+  if (key === 'category') {
+    const cat = categories.value.find(c => String(c.id) === String(val));
+    if (cat) label = cat.name;
+  } else if (key === 'circle') {
+    const circ = circles.value.find(c => String(c.id) === String(val));
+    if (circ) label = circ.name;
+  }
+  
+  return `${map[key] || key}: ${label}`;
+};
+
+const handleViewToggle = (v) => {
+  if (!v.enabled) {
+    // Move to end of list
+    const idx = userViews.value.indexOf(v);
+    userViews.value.splice(idx, 1);
+    userViews.value.push(v);
+  } else {
+    // Move to end of ENABLED section (before first disabled)
+    const idx = userViews.value.indexOf(v);
+    userViews.value.splice(idx, 1);
+    const firstDisabled = userViews.value.findIndex(x => !x.enabled);
+    if (firstDisabled === -1) userViews.value.push(v);
+    else userViews.value.splice(firstDisabled, 0, v);
+
+    // WOW effect + scroll
+    activeViewId.value = v.id;
+    setTimeout(() => {
+      const el = document.getElementById('cv-tile-' + v.id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => { activeViewId.value = null; }, 2200);
+    }, 80);
+  }
+  autoSaveViews();
+};
+
+const autoSaveViews = async () => {
+  try {
+    await axios.put('/api/v1/auth/me', { custom_views: userViews.value });
+    await authStore.fetchUser();
+  } catch (e) {
+    console.error('AutoSave views error', e);
+  }
 };
 
 const fetchNotifPrefs = async () => {
@@ -782,11 +1006,31 @@ const handleAvatarUpload = async (e) => {
     }
 };
 
+const initializeViews = (savedViews) => {
+  const views = JSON.parse(JSON.stringify(savedViews || []));
+  
+  viewOptions.forEach(opt => {
+    if (!views.find(v => v.id === opt.id)) {
+      views.push({
+        id: opt.id,
+        label: opt.label,
+        icon: opt.icon,
+        enabled: true,
+        width: 'full',
+        filters: opt.filters,
+        isDefault: true
+      });
+    }
+  });
+  
+  return views;
+};
+
 onMounted(() => {
     if (authStore.user) {
         profileForm.value.name = authStore.user.name;
         profileForm.value.email = authStore.user.email;
-        userViews.value = JSON.parse(JSON.stringify(authStore.user.custom_views || []));
+        userViews.value = initializeViews(authStore.user.custom_views);
         userWidgets.value = initializeWidgets(authStore.user.dashboard_widgets);
     }
     fetchNotifPrefs();
@@ -798,7 +1042,7 @@ watch(() => authStore.user, (u) => {
     if (u) {
         profileForm.value.name = u.name;
         profileForm.value.email = u.email;
-        userViews.value = JSON.parse(JSON.stringify(u.custom_views || []));
+        userViews.value = initializeViews(u.custom_views);
         userWidgets.value = initializeWidgets(u.dashboard_widgets);
     }
 });
@@ -1047,6 +1291,159 @@ const unlinkSocial = async (provider) => {
 .btn-remove-view { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 50%; background: var(--red-500); color: white; border: 2px solid white; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s; z-index: 10; }
 .btn-remove-view:hover { background: var(--red-600); transform: scale(1.1); }
 .view-opt-label { font-size: 13px; font-weight: 700; color: var(--gray-700); }
+
+/* ============================================================
+   CUSTOM VIEWS - Tiles (draggable)
+   ============================================================ */
+.config-label-hint {
+  font-size: 11px; font-weight: 400; color: var(--gray-400);
+  text-transform: none; letter-spacing: 0; margin-left: 8px;
+}
+
+.cv-tiles-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.cv-tile-card {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.cv-tile {
+  position: relative;
+  display: flex;
+  background: white; border: 1px solid var(--gray-200);
+  border-radius: 14px; overflow: hidden;
+  transition: all 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.cv-tile:hover { border-color: var(--blue-300); box-shadow: 0 4px 16px rgba(59,130,246,0.08); }
+
+.cv-tile--disabled { opacity: 0.55; background: var(--gray-50); }
+
+/* WOW reactivation glow */
+.cv-tile--activated { animation: cv-wow 1.8s ease-out; border-color: var(--teal-400) !important; z-index: 10; }
+@keyframes cv-wow {
+  0%   { box-shadow: 0 0 0 0 rgba(20,184,166,0.7); transform: scale(1.025); background: var(--teal-50); }
+  40%  { box-shadow: 0 0 32px 16px rgba(20,184,166,0.15); }
+  100% { box-shadow: 0 1px 4px rgba(0,0,0,0.04); transform: scale(1); background: white; }
+}
+
+/* Drag states */
+.cv-tile-ghost  { opacity: 0.35; border: 2px dashed var(--blue-400); background: var(--blue-50); }
+.cv-tile-dragging { box-shadow: 0 12px 40px rgba(0,0,0,0.18); transform: scale(1.02); z-index: 100; }
+
+/* Drag zone (entire tile except buttons) */
+.cv-tile-drag-zone {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1;
+  padding: 24px 16px 16px; cursor: grab; min-width: 0; text-align: center;
+}
+.cv-tile-drag-zone:active { cursor: grabbing; }
+
+.cv-tile-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--blue-50); color: var(--blue-600);
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.cv-favicon { width: 28px; height: 28px; object-fit: contain; border-radius: 4px; }
+
+/* Content */
+.cv-tile-label { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+.cv-tile-desc  { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+.cv-tile-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 4px; }
+.cv-filter-tag {
+  font-size: 10px; font-weight: 600; padding: 2px 7px;
+  background: var(--blue-50); color: var(--blue-700);
+  border-radius: 6px; border: 1px solid var(--blue-100);
+}
+
+/* Footer */
+.cv-tile-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-top: 1px solid var(--gray-100);
+  background: var(--gray-50);
+}
+.cv-size-select { width: 80px; }
+.cv-tile-switch { margin-right: 0; }
+
+/* Edit button */
+.cv-btn-edit-abs {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid var(--gray-200); background: white; cursor: pointer;
+  color: var(--gray-500); font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s;
+}
+.cv-btn-edit-abs:hover { border-color: var(--blue-400); color: var(--blue-600); background: var(--blue-50); }
+
+/* ============================================================
+   CUSTOM VIEWS - Creator / Editor card
+   ============================================================ */
+.cv-creator-card {
+  border: 2px dashed var(--gray-300); border-radius: 16px;
+  overflow: hidden; background: var(--gray-50);
+}
+.cv-creator-header {
+  padding: 12px 20px; background: var(--gray-100);
+  font-size: 13px; font-weight: 700; color: var(--gray-700);
+  border-bottom: 1px solid var(--gray-200);
+}
+.cv-creator-body { padding: 20px; }
+
+.cv-form-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.cv-form-group { display: flex; flex-direction: column; gap: 5px; min-width: 120px; flex: 1; }
+
+.cv-icon-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+/* Sexy Inputs */
+.cv-input-sexy {
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: white;
+  transition: all 0.2s;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+}
+.cv-input-sexy:hover {
+  border-color: var(--gray-400);
+}
+.cv-input-sexy:focus {
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  outline: none;
+}
+
+.cv-creator-actions { display: flex; justify-content: flex-end; }
+.cv-edit-actions { display: flex; gap: 10px; align-items: center; }
+
+/* Danger ghost btn */
+.btn-danger-ghost { color: var(--red-600) !important; border-color: var(--red-200) !important; }
+.btn-danger-ghost:hover { background: var(--red-50) !important; border-color: var(--red-400) !important; }
+
+/* ============================================================
+   MODAL CONFIRM
+   ============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; backdrop-filter: blur(3px);
+}
+.modal-box {
+  background: white; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: 400px; max-width: 92vw; overflow: hidden;
+}
+.modal-header {
+  padding: 20px 24px; font-size: 16px; font-weight: 700; color: var(--gray-800);
+  border-bottom: 1px solid var(--gray-100);
+}
+.modal-body  { padding: 20px 24px; font-size: 14px; color: var(--gray-600); line-height: 1.6; }
+.modal-footer {
+  padding: 16px 24px; border-top: 1px solid var(--gray-100);
+  display: flex; justify-content: flex-end; gap: 10px;
+}
 
 /* Notifications Table */
 .notif-table-container { background: var(--gray-50); border-radius: 12px; overflow: hidden; border: 1px solid var(--gray-200); }

@@ -61,8 +61,15 @@
     <!-- Pied de page public -->
     <footer class="public-footer">
       <div class="public-container-wide footer-inner">
-        <p class="footer-text">&copy; {{ new Date().getFullYear() }} {{ configStore.appName }}. Tous droits réservés.</p>
-        <div class="footer-links">
+        <div class="footer-left">
+          <p class="footer-text">
+            <a href="https://github.com/DAZO-app/DAZO" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">
+              &copy; {{ new Date().getFullYear() }} {{ configStore.appName }}. Tous droits réservés.
+            </a>
+          </p>
+        </div>
+        
+        <div class="footer-center footer-links">
           <!-- Pages de contenu dynamiques -->
           <template v-for="pageKey in ['legal', 'privacy', 'terms']">
             <router-link v-if="configStore.config['page_' + pageKey + '_enabled'] === 'true'" 
@@ -71,6 +78,9 @@
               {{ configStore.config['page_' + pageKey + '_title'] }}
             </router-link>
           </template>
+        </div>
+
+        <div class="footer-right footer-links">
           <router-link to="/login">Espace Membre</router-link>
         </div>
       </div>
@@ -287,6 +297,10 @@ const resetAndGoHome = () => {
   flex-wrap: wrap;
   gap: 16px;
 }
+
+.footer-left { flex: 1; display: flex; justify-content: flex-start; min-width: 250px; }
+.footer-center { flex: 1; display: flex; justify-content: center; min-width: 250px; }
+.footer-right { flex: 1; display: flex; justify-content: flex-end; min-width: 150px; }
 
 .footer-text {
   font-size: 13px;

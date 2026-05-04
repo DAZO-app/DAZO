@@ -54,7 +54,7 @@
             <label>Cercle</label>
             <select v-model="filters.circle" class="select-sm">
               <option value="all">Tous cercles</option>
-              <option v-for="c in uniqueCircles" :key="c.id" :value="c.id">{{ c.name }}</option>
+              <option v-for="c in allCircles" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
           </div>
 
@@ -173,7 +173,8 @@ const filters = ref({
   circle: 'all',
   category: 'all',
   author: 'all',
-  sort: 'created_desc'
+  sort: 'created_desc',
+  urgency: ''
 });
 
 const isFavoritesMode = computed(() => route.name === 'DecisionFavorites');
@@ -191,7 +192,7 @@ const pageSubtitle = computed(() => {
 });
 
 const resetFilters = () => {
-  filters.value = { search: '', state: 'all', my_role: 'all', action: 'all', circle: 'all', category: 'all', author: 'all', sort: 'created_desc' };
+  filters.value = { search: '', state: 'all', my_role: 'all', action: 'all', circle: 'all', category: 'all', author: 'all', sort: 'created_desc', urgency: '' };
   loadPage(1);
 };
 
@@ -218,19 +219,19 @@ watch(paginationFromStore, (newVal) => {
 
 const decisionsList = computed(() => decisions.value);
 
-const uniqueCircles = computed(() => {
-  const map = new Map();
-  decisions.value.forEach(d => { if (d.circle) map.set(d.circle.id, d.circle); });
-  return Array.from(map.values());
-});
+const allCircles = computed(() => circleStore.circles || []);
 
 const allCategories = ref([]);
 
 const applyQueryFilters = (query) => {
-    if (query.state) filters.value.state = query.state;
-    if (query.role) filters.value.my_role = query.role;
-    if (query.action) filters.value.action = query.action;
-    if (query.category) filters.value.category = query.category;
+    filters.value.state = query.state || 'all';
+    filters.value.my_role = query.role || 'all';
+    filters.value.action = query.action || 'all';
+    filters.value.category = query.category || 'all';
+    filters.value.circle = query.circle || 'all';
+    filters.value.search = query.search || '';
+    filters.value.sort = query.sort || 'created_desc';
+    filters.value.urgency = query.urgency || '';
 };
 
 const loadPage = async (page = 1) => {
