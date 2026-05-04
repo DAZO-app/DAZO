@@ -40,10 +40,13 @@ echo -e " 11) [Git Pull]     ./dazo-gitpull.sh        - Récupérer le code sans
 echo -e " 12) [Update Dev]   ./dazo-updateDev.sh      - Build local + Cache (sans Git Pull)"
 
 echo ""
-echo -e " q)  Quitter"
-echo ""
-echo -en "${GREEN}Action souhaitée [1-11 / q] : ${NC}"
+echo -en "${GREEN}Action souhaitée [1-12 / q] (défaut: q) : ${NC}"
 read choice
+
+# Default to 'q' if empty
+if [ -z "$choice" ]; then
+    choice="q"
+fi
 
 case $choice in
     1) ./dazo-install.sh ;;

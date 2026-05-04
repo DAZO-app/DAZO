@@ -9,12 +9,12 @@
     <!-- LIGNE 2 : Personnes (Porteur/Animateur) -->
     <div class="hero-subtitle mb-12 text-sm flex items-center">
       <span class="flex items-center">
-        <i class="fa-solid fa-bullhorn mr-8"></i>Porteur: <strong>{{ authorName }}</strong>
-        <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="$emit('refresh')" style="margin-left: 8px;" />
+        <i class="fa-solid fa-bullhorn mr-8"></i>Porteur: <strong class="ml-4">{{ authorName }}</strong>
       </span>
-      <span class="opacity-30 mx-20">|</span>
+      <span class="opacity-30 mx-4">|</span>
       <span class="flex items-center">
-        <i class="fa-solid fa-user-tie mr-8"></i>Animateur: <strong>{{ animatorName }}</strong>
+        <i class="fa-solid fa-user-tie mr-8"></i>Animateur: <strong class="mr-6">{{ animatorName }}</strong>
+        <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="$emit('refresh')" />
       </span>
     </div>
 

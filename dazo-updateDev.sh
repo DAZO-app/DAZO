@@ -1,6 +1,5 @@
 #!/bin/bash
-# DAZO Quick Development Update Script
-# Builds assets and clears caches without doing a Git Pull
+# DAZO BOURRIN Update Script
 set -e
 
 # Colors
@@ -8,26 +7,34 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}🔄 Starting DAZO Dev Update (Local Build Only)...${NC}"
+echo -e "${YELLOW}🔥 Starting DAZO BOURRIN Update...${NC}"
 
-# 1. NPM Build via Docker
-echo -e "${YELLOW}📦 Building frontend assets...${NC}"
+# 1. Mise à jour automatique de la date dans le fichier source (pour forcer le build)
+TIMESTAMP=$(date +'%d/%m/%Y %H:%M:%S')
+echo -e "${YELLOW}🏷️  Updating timestamp to $TIMESTAMP...${NC}"
+# On utilise | comme séparateur pour sed au lieu de / pour éviter les conflits avec les dates
+sed -i "s|BETA \[.*\]|BETA [$TIMESTAMP]|g" resources/js/layouts/AppLayout.vue
+
+# 2. Nettoyage radical
+echo -e "${YELLOW}🧹 Purging public/build...${NC}"
+rm -rf public/build
+
+# 3. Build Docker
+echo -e "${YELLOW}📦 Building assets via Docker...${NC}"
 docker compose exec app npm run build
 
-# 2. Reset Permissions (fixes EACCES for next builds)
-echo -e "${YELLOW}🔐 Fixing build directory permissions...${NC}"
+# 4. Permissions
+echo -e "${YELLOW}🔐 Setting permissions...${NC}"
 sudo chown -R $USER:$USER public/build
 
-# 3. Clear Laravel caches
+# 5. Laravel optimize
 echo -e "${YELLOW}🧹 Clearing Laravel caches...${NC}"
-docker compose exec app php artisan config:clear
-docker compose exec app php artisan cache:clear
-docker compose exec app php artisan view:clear
+docker compose exec app php artisan optimize:clear
 
 echo -e "${GREEN}=====================================${NC}"
-echo -e "${GREEN}✅ DEV UPDATE COMPLETED! ✨${NC}"
+echo -e "${GREEN}✅ BOURRIN UPDATE FINISHED! ✨${NC}"
 echo -e "${GREEN}=====================================${NC}"
-echo -e "${YELLOW}💡 N'oubliez pas de faire Ctrl+F5 dans votre navigateur.${NC}"
+echo -e "${YELLOW}TIMESTAMP: $TIMESTAMP${NC}"
 
 echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"
 read
