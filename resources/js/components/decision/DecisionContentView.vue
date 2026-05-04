@@ -32,6 +32,7 @@
 
     <!-- Panel des Pièces jointes (si pas en édition) -->
     <AttachmentPanel
+      v-if="!isDraft"
       :attachments="displayAttachments"
       :editable="false"
       :can-reload="canReloadAttachments && !isRevision"

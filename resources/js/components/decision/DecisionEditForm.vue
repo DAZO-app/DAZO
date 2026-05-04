@@ -25,35 +25,24 @@
             />
           </div>
 
-          <div class="form-group">
-            <label class="label">Exclure des membres de ce processus</label>
-            <div class="checkbox-panel">
-              <label
-                v-for="member in excludableMembers"
-                :key="member.user_id"
-                class="checkbox-row"
-              >
-                <input v-model="form.excluded_members" type="checkbox" :value="member.user_id">
-                <span>{{ member.user?.name }}</span>
-              </label>
-            </div>
-          </div>
-
           <div class="mb-16">
             <AttachmentPanel
               :attachments="currentVersion?.attachments || []"
               :editable="true"
               :version-id="currentVersion?.id || ''"
+              :hide-header="true"
               @changed="$emit('refresh')"
             />
           </div>
 
-          <div class="draft-actions">
+          <div class="draft-actions flex justify-between items-center mt-24">
             <button type="button" class="btn btn-danger" :disabled="deletingDraft" @click="$emit('delete-draft')">
-              {{ deletingDraft ? 'Suppression…' : 'Supprimer le brouillon' }}
+              <i class="fa-solid fa-trash-can mr-8"></i>
+              {{ deletingDraft ? 'Suppression…' : 'Supprimer' }}
             </button>
             <button type="submit" class="btn btn-primary" :disabled="savingDraft">
-              {{ savingDraft ? 'Enregistrement…' : 'Enregistrer le brouillon' }}
+              <i class="fa-solid fa-floppy-disk mr-8"></i>
+              {{ savingDraft ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
           </div>
         </form>
@@ -107,7 +96,6 @@ const props = defineProps({
   isAuthorOrAnimator: Boolean,
   form: Object,
   currentVersion: Object,
-  excludableMembers: Array,
   savingDraft: Boolean,
   deletingDraft: Boolean,
   publishing: Boolean,

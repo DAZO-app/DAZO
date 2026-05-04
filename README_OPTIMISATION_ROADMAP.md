@@ -19,6 +19,7 @@ Actions réalisées :
 - [x] **Échéances dépassées** : Remplacement automatique des boutons de validation par "Prolonger", "Réviser", et "Abandonner" dans `DecisionDetail.vue` dès que la date limite est franchie.
 - [x] **Prolongation serveur** : Ajout du point d'API `POST /api/v1/decisions/{id}/extend` ajoutant le délai légal standard à l'échéance.
 - [x] **Notifications** : Implémentation du nouvel email configurable "Relance Prolongation" (`DecisionExtendedMail`) gérable depuis le back-office `AdminConfig.vue`.
+- [ ] **Dette technique : Synchronisation des cercles** : Le sélecteur de cercle dans `DecisionDetail.vue` nécessite une approche plus robuste (actuellement forcé par `:key` et `watch` agressif) pour garantir la réactivité sans re-render brutal.
 
 ## Lot ✅ 0 - Stabilisation des tests (Réalisé)
 

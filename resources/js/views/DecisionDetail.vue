@@ -71,7 +71,6 @@
             :is-author-or-animator="isAuthorOrAnimator"
             :form="draftForm"
             :current-version="currentVersion"
-            :excludable-members="excludableMembers"
             :saving-draft="savingDraft"
             :deleting-draft="deletingDraft"
             :publishing="publishing"
@@ -222,7 +221,8 @@
             <div class="card-body">
               <div class="form-group">
                 <label class="label">Cercle *</label>
-                <select v-model="draftForm.circle_id" class="select" required>
+                <select :key="circles.length + '-' + draftForm.circle_id" v-model.number="draftForm.circle_id" class="select" required>
+                  <option value="" disabled>Choisir un cercle...</option>
                   <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
               </div>
@@ -258,6 +258,21 @@
                     {{ member.user?.name }} ({{ member.role }})
                   </option>
                 </select>
+              </div>
+
+              <div class="form-group mt-16">
+                <label class="label">Membres à exclure</label>
+                <div class="checkbox-panel max-h-200 overflow-y-auto border p-8 rounded bg-gray-50">
+                  <label
+                    v-for="member in excludableMembers"
+                    :key="member.user_id"
+                    class="checkbox-row"
+                  >
+                    <input v-model="draftForm.excluded_members" type="checkbox" :value="member.user_id">
+                    <span class="text-xs">{{ member.user?.name }}</span>
+                  </label>
+                  <div v-if="!excludableMembers.length" class="text-xs text-muted">Aucun membre à exclure</div>
+                </div>
               </div>
             </div>
           </div>
@@ -412,7 +427,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import AnimatorSelector from '../components/AnimatorSelector.vue';
@@ -565,6 +580,7 @@ const draftForm = ref({
   category_ids: [],
   model_id: '',
   revision_attachment_ids: [],
+  excluded_members: [],
 });
 
 const toggleCategory = (id) => {
@@ -1014,6 +1030,17 @@ watch(decision, () => {
   updateDraftForm();
 }, { immediate: true });
 
+// Sync draftForm circle_id when circles metadata is loaded
+watch(circles, async (newList) => {
+  if (newList.length > 0 && decision.value && isDraft.value) {
+    // Brute force sync
+    if (decision.value.circle_id) {
+       await nextTick();
+       draftForm.value.circle_id = Number(decision.value.circle_id);
+    }
+  }
+}, { deep: true, immediate: true });
+
 watch(() => route.params.id, async (id) => {
   if (id) {
     resetToCurrentVersion();
@@ -1409,8 +1436,15 @@ onMounted(async () => {
       axios.get('/api/v1/circles'),
       axios.get('/api/v1/categories'),
     ]);
-    circles.value = circleRes.data.circles || [];
-    categories.value = catRes.data.categories || [];
+    circles.value = circleRes.data.data || circleRes.data.circles || (Array.isArray(circleRes.data) ? circleRes.data : []);
+    categories.value = catRes.data.data || catRes.data.categories || (Array.isArray(catRes.data) ? catRes.data : []);
+    
+    // Ensure draftForm is synced after metadata load
+    if (decision.value && isDraft.value) {
+      if (decision.value.circle_id) {
+         draftForm.value.circle_id = decision.value.circle_id;
+      }
+    }
   } catch (e) { /* silent */ }
 });
 
