@@ -233,10 +233,10 @@
                   </div>
                 </div>
 
-                <div v-if="userViews.filter(v => v.id.startsWith('custom-')).length" class="mt-24">
+                <div v-if="userViews.filter(v => v.id && String(v.id).startsWith('custom-')).length" class="mt-24">
                   <h5 class="text-sm font-bold uppercase tracking-wider text-muted mb-16">Vos vues créées</h5>
                   <div class="views-grid">
-                    <div v-for="v in userViews.filter(v => v.id.startsWith('custom-'))" :key="v.id" class="view-opt-card active">
+                    <div v-for="v in userViews.filter(v => v.id && String(v.id).startsWith('custom-'))" :key="v.id" class="view-opt-card active">
                       <div class="view-opt-icon"><i :class="v.icon"></i></div>
                       <div class="view-opt-label">{{ v.label }}</div>
                       <button @click="removeCustomView(v.id)" class="btn-remove-view" title="Supprimer">
