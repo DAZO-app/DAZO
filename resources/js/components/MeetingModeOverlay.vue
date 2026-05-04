@@ -148,39 +148,40 @@
             
             <div class="sidebar-content" v-show="!isDocSidebarCollapsed">
               <!-- Prose en affichage fluide (Mode Flat) -->
-              <div class="meeting-prose-container flex-1">
-                <div v-if="isDirectEditing">
-                  <div class="mb-24 text-[13px] text-amber-700 bg-amber-50 p-12 rounded border border-amber-200 flex items-start gap-12">
-                    <i class="fa-solid fa-circle-info mt-4"></i>
-                    <div>
-                      <strong class="block mb-4">Édition en direct</strong>
-                      Les pièces jointes de la version précédente sont conservées. Vous ne pouvez modifier que le contenu principal dans ce mode.
+                <h3 class="meeting-section-title">Proposition</h3>
+                <div class="meeting-prose-wrapper mb-24">
+                  <div v-if="isDirectEditing">
+                    <div class="mb-24 text-[13px] text-amber-700 bg-amber-50 p-12 rounded border border-amber-200 flex items-start gap-12">
+                      <i class="fa-solid fa-circle-info mt-4"></i>
+                      <div>
+                        <strong class="block mb-4">Édition en direct</strong>
+                        Les pièces jointes de la version précédente sont conservées. Vous ne pouvez modifier que le contenu principal dans ce mode.
+                      </div>
                     </div>
+                    <RichTextEditor 
+                      v-model="directEditDraft.content"
+                      placeholder="Rédigez la nouvelle version de la proposition ici..."
+                    />
                   </div>
-                  <RichTextEditor 
-                    v-model="directEditDraft.content"
-                    placeholder="Rédigez la nouvelle version de la proposition ici..."
-                  />
+                  <div v-else class="meeting-prose prose-sm" v-html="displayContent"></div>
                 </div>
-                <div v-else class="meeting-prose prose-sm" v-html="displayContent"></div>
-              </div>
 
-              <!-- Pièces jointes (Lecture seule) -->
-              <div v-if="attachments && attachments.length > 0" class="meeting-attachments-panel mt-24 pt-24 border-t border-gray-200">
-                <h3 class="text-xs font-bold mb-12 text-gray-400 uppercase tracking-wider">Pièces jointes</h3>
-                <div class="flex flex-col gap-8">
-                  <button 
-                    v-for="(att, idx) in attachments" 
-                    :key="att.id"
-                    class="attachment-row"
-                    @click.stop.prevent="openFloatingAttachment(att)"
-                  >
-                    <i class="fa-solid fa-paperclip mr-12 text-indigo-400"></i>
-                    <span class="font-medium truncate">{{ att.filename }}</span>
-                    <i class="fa-solid fa-chevron-right ml-auto text-[10px] opacity-30"></i>
-                  </button>
+                <!-- Pièces jointes (Lecture seule) -->
+                <div v-if="attachments && attachments.length > 0" class="meeting-attachments-panel mt-24 pt-24 border-t border-gray-200">
+                  <h3 class="meeting-section-title">Pièces jointes</h3>
+                  <div class="flex flex-col gap-8">
+                    <button 
+                      v-for="(att, idx) in attachments" 
+                      :key="att.id"
+                      class="attachment-row"
+                      @click.stop.prevent="openFloatingAttachment(att)"
+                    >
+                      <i class="fa-solid fa-paperclip mr-12 text-indigo-400"></i>
+                      <span class="font-medium truncate">{{ att.filename }}</span>
+                      <i class="fa-solid fa-chevron-right ml-auto text-[10px] opacity-30"></i>
+                    </button>
+                  </div>
                 </div>
-              </div>
             </div>
           </div>
 
@@ -189,6 +190,9 @@
             <div class="meeting-feedbacks">
               <div class="tabs-container mb-24">
                 <div class="tabs">
+                  <button class="tab" :class="{active: activeTab === 'all'}" @click="activeTab = 'all'">
+                    <i class="fa-solid fa-layer-group mr-8 opacity-70"></i> Tout afficher
+                  </button>
                   <button class="tab" :class="{active: activeTab === 'clarifications'}" @click="activeTab = 'clarifications'">
                     <i class="fa-solid fa-question-circle mr-8 opacity-70"></i> Clarifications
                   </button>
@@ -206,138 +210,153 @@
                 <p>Chargement des échanges...</p>
               </div>
               
-              <div v-else class="feedbacks-list">
-                <!-- Liste des personnes ayant validé -->
-                <div v-if="consentedParticipants.length > 0" class="mf-consents-summary mb-24">
-                  <div class="flex items-center gap-8 mb-12">
-                    <i class="fa-solid fa-check-circle text-emerald-500"></i>
-                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      {{ getPositiveSignalLabel() }} ({{ consentedParticipants.length }})
-                    </span>
-                  </div>
-                  <div class="flex flex-wrap gap-8">
-                    <div v-for="c in consentedParticipants" :key="c.id" class="badge badge-sm bg-emerald-50 text-emerald-700 border-emerald-200" :title="c.user?.name">
-                      {{ c.user?.name }}
-                    </div>
-                  </div>
-                </div>
-
-                <div v-if="filteredFeedbacks.length === 0 && consentedParticipants.length === 0" class="text-gray-500 italic text-center py-24">
-                  Aucun échange dans cette catégorie.
-                </div>
-
-                <!-- Boucle sur les feedbacks -->
-                <template v-if="activeTab !== 'reactions'">
-                  <div v-for="fb in filteredFeedbacks" :key="fb.id" class="mf-card" :class="{'fb-closed': isClosed(fb)}">
-                    <div class="mf-header" @click.stop="toggleCollapse(fb.id)" style="cursor: pointer;">
-                      <div class="flex flex-col">
-                        <div class="flex items-center gap-8">
-                          <span :class="typeBadge(fb.type)" class="badge badge-xs uppercase px-6 font-bold text-[9px]">
-                            {{ translateType(fb.type) }}
-                          </span>
-                          <span class="font-bold text-gray-800">{{ fb.author?.name }}</span>
-                        </div>
-                        <!-- Liste des soutiens directement dans le titre -->
-                        <div v-if="fb.joins && fb.joins.length > 0" class="text-[10px] text-gray-500 italic font-normal ml-4">
-                          Soutenu par ({{ fb.joins.length }}) : {{ fb.joins.map(j => j.user?.name).join(', ') }}
-                        </div>
+              <div v-else class="feedbacks-list-wrapper">
+                <div class="feedbacks-list">
+                  <!-- Cas 'Tout afficher' -->
+                  <div v-if="activeTab === 'all'">
+                    <!-- Clarifications -->
+                    <div class="all-tab-section">
+                      <div class="all-tab-section-header">
+                        <i class="fa-solid fa-question-circle mr-8"></i> Clarifications
                       </div>
-                      
-                      <div class="ml-auto flex items-center gap-12">
-                        <!-- Bouton Soutenir / Rejoindre -->
-                        <button 
-                          v-if="isAnimator && !isClosed(fb) && ['objection', 'suggestion'].includes(fb.type?.value || fb.type)"
-                          class="btn btn-xs btn-outline-indigo"
-                          @click.stop="showJoinPickerFor = (showJoinPickerFor === fb.id ? null : fb.id)"
-                          :title="'Ajouter un soutien à cette ' + (fb.type?.value || fb.type)"
-                        >
-                          <i class="fa-solid fa-users mr-4"></i> Rejoindre
-                        </button>
-
-                        <!-- Bouton Répondre pour le secrétaire (Masqué si la phase est passée) -->
-                        <button 
-                          v-if="isAnimator && !isClosed(fb) && canReply(fb)" 
-                          class="btn btn-xs btn-secondary"
-                          @click.stop="prepareReply(fb)"
-                        >
-                          <i class="fa-solid fa-reply mr-4"></i> Répondre
-                        </button>
-
-                        <!-- Bouton Toggle -->
-                        <button 
-                          class="btn btn-xs btn-ghost" 
-                          @click.stop="toggleCollapse(fb.id)"
-                          :title="isCollapsed(fb.id) ? 'Déplier' : 'Replier'"
-                        >
-                          <i class="fa-solid" :class="isCollapsed(fb.id) ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Sélecteur pour Rejoindre -->
-                    <div v-if="showJoinPickerFor === fb.id" class="px-16 pb-12">
-                      <div class="bg-indigo-50 p-12 rounded-md border border-indigo-100 shadow-sm">
-                         <div class="flex justify-between items-center mb-12">
-                           <p class="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Qui rejoint cette {{ translateType(fb.type) }} ?</p>
-                           <button @click.stop="showJoinPickerFor = null" class="text-indigo-400 hover:text-indigo-600 p-4" title="Fermer">
-                              <i class="fa-solid fa-xmark"></i>
-                           </button>
+                      <div v-if="clarificationsList.length === 0 && clarificationsConsents.length === 0" class="text-gray-400 italic text-sm py-12">Aucune clarification.</div>
+                      <div v-else>
+                         <!-- Consents Clarif -->
+                         <div v-if="clarificationsConsents.length > 0" class="mf-consents-summary mb-16">
+                            <div class="flex items-center gap-8 mb-8">
+                              <i class="fa-solid fa-check-circle text-emerald-500 text-xs"></i>
+                              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">C'est clair ({{ clarificationsConsents.length }})</span>
+                            </div>
+                            <div class="flex flex-wrap gap-4">
+                              <div v-for="c in clarificationsConsents" :key="c.id" class="badge badge-xs bg-emerald-50 text-emerald-700 border-emerald-100">{{ c.user?.name }}</div>
+                            </div>
                          </div>
-                         <div class="flex flex-wrap gap-8">
-                            <button 
-                              v-for="p in getJoinableParticipants(fb)" 
-                              :key="p.user_id"
-                              class="btn btn-xs bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-500 hover:text-white px-12 py-6 rounded shadow-sm"
-                              @click.stop="joinFeedback(fb, p.user_id)"
-                            >
-                              {{ p.user?.name }}
-                            </button>
-                            <span v-if="getJoinableParticipants(fb).length === 0" class="text-xs text-gray-400 italic">Aucun participant éligible.</span>
+                         <!-- Feedbacks Clarif -->
+                         <div v-for="fb in clarificationsList" :key="fb.id" class="mf-card mb-12">
+                            <FeedbackCardItem :fb="fb" :is-animator="isAnimator" @toggle-collapse="toggleCollapse" @prepare-reply="prepareReply" :is-collapsed="isCollapsed(fb.id)" :all-messages="allMessages(fb)" :participants="participants" @join="joinFeedback" />
                          </div>
                       </div>
                     </div>
-                    
-                    <div v-if="!isCollapsed(fb.id)" class="mf-body">
-                      <!-- Liste des messages (thread) -->
-                      <div v-for="msg in allMessages(fb)" :key="msg.id" class="mf-msg" :class="getRoleStyle(msg.author_id)">
-                        <div class="mf-msg-author">
-                          {{ msg.author?.name }} 
-                          <span v-if="getRoleBadge(msg.author_id)" class="role-badge">{{ getRoleBadge(msg.author_id) }}</span>
-                          <span class="text-xs text-gray-400 font-normal ml-8">{{ new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
-                        </div>
-                        <div class="mf-msg-content">{{ msg.content }}</div>
+
+                    <!-- Réactions -->
+                    <div class="all-tab-section">
+                      <div class="all-tab-section-header">
+                        <i class="fa-solid fa-face-smile mr-8"></i> Réactions
+                      </div>
+                      <div v-if="reactionsList.length === 0 && reactionsConsents.length === 0" class="text-gray-400 italic text-sm py-12">Aucune réaction.</div>
+                      <div v-else>
+                         <!-- Consents Reaction -->
+                         <div v-if="reactionsConsents.length > 0" class="mf-consents-summary mb-16">
+                            <div class="flex items-center gap-8 mb-8">
+                              <i class="fa-solid fa-check-circle text-emerald-500 text-xs"></i>
+                              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">RAS ({{ reactionsConsents.length }})</span>
+                            </div>
+                            <div class="flex flex-wrap gap-4">
+                              <div v-for="c in reactionsConsents" :key="c.id" class="badge badge-xs bg-emerald-50 text-emerald-700 border-emerald-100">{{ c.user?.name }}</div>
+                            </div>
+                         </div>
+                         <!-- Feedbacks Reaction -->
+                         <div v-for="fb in reactionsList" :key="fb.id" class="mf-card mb-12">
+                           <div class="mf-header" @click.stop="toggleCollapse(fb.id)" style="cursor: pointer;">
+                             <div class="flex items-center gap-8">
+                               <span class="font-bold text-gray-800">{{ fb.author?.name }}</span>
+                             </div>
+                             <div class="ml-auto">
+                               <button class="btn btn-xs btn-ghost" @click.stop="toggleCollapse(fb.id)">
+                                 <i class="fa-solid" :class="isCollapsed(fb.id) ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                               </button>
+                             </div>
+                           </div>
+                           <div v-if="!isCollapsed(fb.id)" class="mf-body">
+                             <div class="text-gray-700 whitespace-pre-wrap">{{ fb.content }}</div>
+                           </div>
+                         </div>
+                      </div>
+                    </div>
+
+                    <!-- Objections -->
+                    <div class="all-tab-section">
+                      <div class="all-tab-section-header">
+                        <i class="fa-solid fa-shield-halved mr-8"></i> Objections & Suggestions
+                      </div>
+                      <div v-if="objectionsList.length === 0 && objectionsConsents.length === 0" class="text-gray-400 italic text-sm py-12">Aucune objection ou suggestion.</div>
+                      <div v-else>
+                         <!-- Consents Objection -->
+                         <div v-if="objectionsConsents.length > 0" class="mf-consents-summary mb-16">
+                            <div class="flex items-center gap-8 mb-8">
+                              <i class="fa-solid fa-check-circle text-emerald-500 text-xs"></i>
+                              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sans objection ({{ objectionsConsents.length }})</span>
+                            </div>
+                            <div class="flex flex-wrap gap-4">
+                              <div v-for="c in objectionsConsents" :key="c.id" class="badge badge-xs bg-emerald-50 text-emerald-700 border-emerald-100">{{ c.user?.name }}</div>
+                            </div>
+                         </div>
+                         <!-- Feedbacks Objection -->
+                         <div v-for="fb in objectionsList" :key="fb.id" class="mf-card mb-12">
+                            <FeedbackCardItem :fb="fb" :is-animator="isAnimator" @toggle-collapse="toggleCollapse" @prepare-reply="prepareReply" :is-collapsed="isCollapsed(fb.id)" :all-messages="allMessages(fb)" :participants="participants" @join="joinFeedback" />
+                         </div>
                       </div>
                     </div>
                   </div>
-                </template>
 
-                <!-- Bloc spécifique pour les Réactions -->
-                <template v-else>
-                  <div v-for="fb in filteredFeedbacks" :key="fb.id" class="mf-card" :class="{'fb-closed': isClosed(fb)}">
-                    <div class="mf-header" @click.stop="toggleCollapse(fb.id)" style="cursor: pointer;">
-                      <div class="flex items-center gap-8">
-                        <span :class="typeBadge(fb.type)" class="badge badge-xs uppercase px-6 font-bold text-[9px]">
-                          {{ translateType(fb.type) }}
+                  <div v-else>
+                    <!-- Liste des personnes ayant validé -->
+                    <div v-if="consentedParticipants.length > 0" class="mf-consents-summary mb-24">
+                      <div class="flex items-center gap-8 mb-12">
+                        <i class="fa-solid fa-check-circle text-emerald-500"></i>
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          {{ getPositiveSignalLabel() }} ({{ consentedParticipants.length }})
                         </span>
-                        <span class="font-bold text-gray-800">{{ fb.author?.name }}</span>
                       </div>
-                      
-                      <div class="ml-auto flex items-center gap-12">
-                        <button 
-                          class="btn btn-xs btn-ghost" 
-                          @click.stop="toggleCollapse(fb.id)"
-                          :title="isCollapsed(fb.id) ? 'Déplier' : 'Replier'"
-                        >
-                          <i class="fa-solid" :class="isCollapsed(fb.id) ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
-                        </button>
+                      <div class="flex flex-wrap gap-8">
+                        <div v-for="c in consentedParticipants" :key="c.id" class="badge badge-sm bg-emerald-50 text-emerald-700 border-emerald-200" :title="c.user?.name">
+                          {{ c.user?.name }}
+                        </div>
                       </div>
                     </div>
-                    
-                    <div v-if="!isCollapsed(fb.id)" class="mf-body">
-                      <div class="text-gray-700 whitespace-pre-wrap">{{ fb.content }}</div>
+
+                    <div v-if="filteredFeedbacks.length === 0 && consentedParticipants.length === 0" class="text-gray-500 italic text-center py-24">
+                      Aucun échange dans cette catégorie.
                     </div>
+
+                    <!-- Boucle sur les feedbacks -->
+                    <template v-if="activeTab !== 'reactions'">
+                      <div v-for="fb in filteredFeedbacks" :key="fb.id" class="mf-card" :class="{'fb-closed': isClosed(fb)}">
+                        <FeedbackCardItem :fb="fb" :is-animator="isAnimator" @toggle-collapse="toggleCollapse" @prepare-reply="prepareReply" :is-collapsed="isCollapsed(fb.id)" :all-messages="allMessages(fb)" :participants="participants" @join="joinFeedback" />
+                      </div>
+                    </template>
+
+                    <!-- Bloc spécifique pour les Réactions -->
+                    <template v-else>
+                      <div v-for="fb in filteredFeedbacks" :key="fb.id" class="mf-card" :class="{'fb-closed': isClosed(fb)}">
+                        <div class="mf-header" @click.stop="toggleCollapse(fb.id)" style="cursor: pointer;">
+                          <div class="flex items-center gap-8">
+                            <span :class="typeBadge(fb.type)" class="badge badge-xs uppercase px-6 font-bold text-[9px]">
+                              {{ translateType(fb.type) }}
+                            </span>
+                            <span class="font-bold text-gray-800">{{ fb.author?.name }}</span>
+                          </div>
+                          
+                          <div class="ml-auto flex items-center gap-12">
+                            <button 
+                              class="btn btn-xs btn-ghost" 
+                              @click.stop="toggleCollapse(fb.id)"
+                              :title="isCollapsed(fb.id) ? 'Déplier' : 'Replier'"
+                            >
+                              <i class="fa-solid" :class="isCollapsed(fb.id) ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div v-if="!isCollapsed(fb.id)" class="mf-body">
+                          <div class="text-gray-700 whitespace-pre-wrap">{{ fb.content }}</div>
+                        </div>
+                      </div>
+                    </template>
                   </div>
-                </template>
+                </div>
+                <!-- Bordure fixe en bas -->
+                <div class="feedbacks-bottom-border"></div>
               </div>
             </div>
           </div>
@@ -922,12 +941,102 @@ const hasAttachments = computed(() => {
 const filteredFeedbacks = computed(() => {
   return feedbacks.value.filter(fb => {
     const t = fb.type?.value || fb.type;
+    if (activeTab.value === 'all') return true;
     if (activeTab.value === 'clarifications') return t === 'clarification';
     if (activeTab.value === 'reactions') return t === 'reaction';
     if (activeTab.value === 'objections') return t === 'objection' || t === 'suggestion';
     return false;
   });
 });
+
+const clarificationsList = computed(() => feedbacks.value.filter(fb => (fb.type?.value || fb.type) === 'clarification'));
+const reactionsList = computed(() => feedbacks.value.filter(fb => (fb.type?.value || fb.type) === 'reaction'));
+const objectionsList = computed(() => feedbacks.value.filter(fb => ['objection', 'suggestion'].includes(fb.type?.value || fb.type)));
+
+const clarificationsConsents = computed(() => (consents.value || []).filter(c => (c.phase?.value || c.phase) === 'clarification' && (c.signal?.value || c.signal) === 'no_questions'));
+const reactionsConsents = computed(() => (consents.value || []).filter(c => (c.phase?.value || c.phase) === 'reaction' && (c.signal?.value || c.signal) === 'no_reaction'));
+const objectionsConsents = computed(() => (consents.value || []).filter(c => (c.phase?.value || c.phase) === 'objection' && ['no_objection', 'abstention'].includes(c.signal?.value || c.signal)));
+
+const FeedbackCardItem = {
+  props: ['fb', 'isAnimator', 'isCollapsed', 'allMessages', 'participants'],
+  template: `
+    <div class="mf-header" @click.stop="$emit('toggle-collapse', fb.id)" style="cursor: pointer;">
+      <div class="flex flex-col">
+        <div class="flex items-center gap-8">
+          <span :class="typeBadge(fb.type)" class="badge badge-xs uppercase px-6 font-bold text-[9px]">
+            {{ translateType(fb.type) }}
+          </span>
+          <span class="font-bold text-gray-800">{{ fb.author?.name }}</span>
+        </div>
+        <div v-if="fb.joins && fb.joins.length > 0" class="text-[10px] text-gray-500 italic font-normal ml-4">
+          Soutenu par ({{ fb.joins.length }}) : {{ fb.joins.map(j => j.user?.name).join(', ') }}
+        </div>
+      </div>
+      <div class="ml-auto flex items-center gap-12">
+        <button v-if="isAnimator && !isClosed(fb) && ['objection', 'suggestion'].includes(fb.type?.value || fb.type)" class="btn btn-xs btn-outline-indigo" @click.stop="$emit('join', fb, null)">
+          <i class="fa-solid fa-users mr-4"></i> Rejoindre
+        </button>
+        <button v-if="isAnimator && !isClosed(fb) && canReply(fb)" class="btn btn-xs btn-secondary" @click.stop="$emit('prepare-reply', fb)">
+          <i class="fa-solid fa-reply mr-4"></i> Répondre
+        </button>
+        <button class="btn btn-xs btn-ghost" @click.stop="$emit('toggle-collapse', fb.id)">
+          <i class="fa-solid" :class="isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+        </button>
+      </div>
+    </div>
+    <div v-if="!isCollapsed" class="mf-body">
+      <div v-for="msg in allMessages" :key="msg.id" class="mf-msg" :class="getRoleStyle(msg.author_id)">
+        <div class="mf-msg-author">
+          {{ msg.author?.name }} 
+          <span v-if="getRoleBadge(msg.author_id)" class="role-badge">{{ getRoleBadge(msg.author_id) }}</span>
+          <span class="text-xs text-gray-400 font-normal ml-8">{{ new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}</span>
+        </div>
+        <div class="mf-msg-content">{{ msg.content }}</div>
+      </div>
+    </div>
+  `,
+  methods: {
+    typeBadge(type) {
+      const t = type?.value || type;
+      if (t === 'clarification') return 'badge-indigo';
+      if (t === 'reaction') return 'badge-blue';
+      if (t === 'objection') return 'badge-amber';
+      if (t === 'suggestion') return 'badge-teal';
+      return 'badge-gray';
+    },
+    translateType(type) {
+      const t = type?.value || type;
+      if (t === 'objection') return 'Objection';
+      if (t === 'suggestion') return 'Suggestion';
+      if (t === 'clarification') return 'Clarification';
+      if (t === 'reaction') return 'Réaction';
+      return t;
+    },
+    isClosed(fb) {
+      const s = fb.status?.value || fb.status;
+      return ['withdrawn', 'rejected', 'acknowledged'].includes(s);
+    },
+    canReply(fb) {
+      // Logic simplified for component
+      return true; 
+    },
+    getRoleStyle(authorId) {
+      const p = this.participants.find(p => String(p.user_id) === String(authorId));
+      const role = p ? (p.role?.value || p.role) : 'participant';
+      if (role === 'author') return 'role-author';
+      if (role === 'animator') return 'role-animator';
+      return 'role-participant';
+    },
+    getRoleBadge(authorId) {
+      const p = this.participants.find(p => String(p.user_id) === String(authorId));
+      if (!p) return '';
+      const role = p.role?.value || p.role;
+      if (role === 'author') return 'Porteur';
+      if (role === 'animator') return 'Animateur';
+      return '';
+    }
+  }
+};
 
 const authorParticipant = computed(() => props.participants.find(p => p.role?.value === 'author' || p.role === 'author'));
 const animatorParticipant = computed(() => props.participants.find(p => p.role?.value === 'animator' || p.role === 'animator'));
@@ -1584,6 +1693,62 @@ onUnmounted(() => {
   min-height: 0; /* Chaîne flex: doit rétrécir pour que les enfants scrollent */
   width: 100%;
   overflow: hidden;
+}
+
+.meeting-prose-wrapper {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  border: 1px solid var(--gray-200);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+}
+
+.meeting-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meeting-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gray-100);
+}
+
+.feedbacks-list-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.feedbacks-bottom-border {
+  height: 1px;
+  background: var(--gray-200);
+  margin-top: 32px;
+  width: 100%;
+}
+
+.all-tab-section {
+  margin-bottom: 48px;
+}
+
+.all-tab-section-header {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--gray-700);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--gray-100);
+  display: flex;
+  align-items: center;
 }
 
 .meeting-prose-container {
