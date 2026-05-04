@@ -150,15 +150,18 @@
           </div>
           
           <div class="pc-body p-24">
-            <div class="user-indicators-row">
-               <div class="indicator cursor-pointer" @click="showUserCircles(u)" title="Voir les cercles">
-                  <i class="fa-solid fa-circle-nodes"></i>
-                  <span>Cercles : <strong>{{ u.circles_count || 0 }}</strong></span>
+            <div class="user-indicators-row" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+               <div class="flex gap-12 flex-wrap">
+                 <div class="indicator cursor-pointer" @click="showUserCircles(u)" title="Voir les cercles">
+                    <i class="fa-solid fa-circle-nodes"></i>
+                    <span>Cercles : <strong>{{ u.circles_count || 0 }}</strong></span>
+                 </div>
+                 <div class="indicator">
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>Décisions : <strong>{{ u.decisions_count || 0 }}</strong></span>
+                 </div>
                </div>
-               <div class="indicator">
-                  <i class="fa-solid fa-file-signature"></i>
-                  <span>Décisions : <strong>{{ u.decisions_count || 0 }}</strong></span>
-               </div>
+               <span class="badge" :class="u.is_active ? 'badge-teal' : 'badge-red'" style="font-size:10px">{{ u.is_active ? 'Actif' : 'Inactif' }}</span>
             </div>
             <div class="indicator mt-8">
                <i class="fa-solid fa-calendar-day"></i>
@@ -166,16 +169,15 @@
             </div>
 
             <div class="user-actions-footer">
-               <button class="btn btn-secondary btn-sm" @click="openEdit(u)">
-                  <i class="fa-solid fa-pen"></i> Modifier
-               </button>
                <button v-if="u.id !== currentUser?.id" class="btn btn-danger btn-sm" @click="userToDelete = u">
                   <i class="fa-solid fa-trash"></i> Supprimer
                </button>
                <button v-if="u.id !== currentUser?.id" class="btn btn-secondary btn-sm" @click.stop="impersonate(u)">
                   <i class="fa-solid fa-user-secret"></i> Simuler
                </button>
-               <span class="badge" :class="u.is_active ? 'badge-teal' : 'badge-red'" style="margin-left:auto">{{ u.is_active ? 'Actif' : 'Inactif' }}</span>
+               <button class="btn btn-secondary btn-sm" @click="openEdit(u)">
+                  <i class="fa-solid fa-pen"></i> Modifier
+               </button>
             </div>
           </div>
         </div>
@@ -387,9 +389,15 @@ const impersonate = async (userToImpersonate) => {
 
 <style scoped>
 .py-24 { padding: 24px 0; }
-.user-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
+.user-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
 @media (min-width: 768px) {
-  .user-grid { grid-template-columns: 1fr 1fr; }
+  .user-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1200px) {
+  .user-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1600px) {
+  .user-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
@@ -400,6 +408,7 @@ const impersonate = async (userToImpersonate) => {
 .indicator i { width: 14px; color: var(--blue-400); }
 
 .user-actions-footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--gray-100); padding-top: 12px; margin-top: 16px; }
+.user-actions-footer .btn { flex: 1; justify-content: center; font-size: 11px; padding: 8px 4px; }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
 .modal-card { background: white; border-radius: var(--radius-lg); width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); overflow: hidden; animation: modalIn 0.2s ease; }

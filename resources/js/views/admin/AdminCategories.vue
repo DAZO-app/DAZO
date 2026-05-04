@@ -86,11 +86,14 @@
           <div class="pc-body p-24">
             <div class="cat-desc-large">{{ cat.description || 'Aucune description fournie.' }}</div>
             <div class="cat-actions-footer">
-              <button class="btn btn-secondary btn-sm" @click="openEdit(cat)">
-                <i class="fa-solid fa-pen"></i> Modifier
-              </button>
               <button class="btn btn-danger btn-sm" @click="deleteCategory(cat)">
                 <i class="fa-solid fa-trash"></i> Supprimer
+              </button>
+              <button class="btn btn-secondary btn-sm" @click="viewDecisions(cat)">
+                <i class="fa-solid fa-list-check"></i> Décisions
+              </button>
+              <button class="btn btn-secondary btn-sm" @click="openEdit(cat)">
+                <i class="fa-solid fa-pen"></i> Modifier
               </button>
             </div>
           </div>
@@ -121,11 +124,13 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 import EmptyState from '../../components/EmptyState.vue';
 
 const categories = ref([]);
 const loading = ref(true);
+const router = useRouter();
 const showModal = ref(false);
 const form = ref({ id: null, name: '', description: '', color: '#1e40af', icon: '' });
 
@@ -202,6 +207,13 @@ const deleteCategory = async (cat) => {
   }
 };
 
+const viewDecisions = (cat) => {
+  router.push({ 
+    name: 'DecisionList', 
+    query: { category: cat.id, view_label: `Catégorie : ${cat.name}` } 
+  });
+};
+
 const darkenColor = (color) => {
   if (!color) return '#999999';
   let r = parseInt(color.substring(1, 3), 16);
@@ -216,14 +228,21 @@ const darkenColor = (color) => {
 
 <style scoped>
 .py-24 { padding: 24px 0; }
-.cat-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
+.cat-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
 @media (min-width: 768px) {
-  .cat-grid { grid-template-columns: 1fr 1fr; }
+  .cat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1200px) {
+  .cat-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1600px) {
+  .cat-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 .cat-color-pill { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 10px; box-shadow: 0 0 0 2px white, 0 0 0 3px rgba(0,0,0,0.05); }
 .cat-desc-large { font-size: 13px; color: var(--gray-600); min-height: 48px; margin-bottom: 16px; line-height: 1.5; }
 .cat-actions-footer { display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--gray-50); padding-top: 14px; }
+.cat-actions-footer .btn { flex: 1; justify-content: center; font-size: 11px; padding: 8px 4px; }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
 .modal-card { background: white; border-radius: var(--radius-lg); width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); overflow: hidden; animation: modalIn 0.2s ease; }
