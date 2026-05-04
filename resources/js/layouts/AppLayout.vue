@@ -256,7 +256,6 @@ const user = computed(() => authStore.user);
 const isAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
 const isSuperAdmin = computed(() => user.value?.role === 'superadmin');
 const isImpersonating = computed(() => authStore.isImpersonating);
-
 const isActuallyAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
 const isActuallySuperAdmin = computed(() => user.value?.role === 'superadmin');
 

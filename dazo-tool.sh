@@ -37,6 +37,7 @@ echo ""
 echo -e "${YELLOW}--- DÉVELOPPEMENT ---${NC}"
 echo -e " 10) [Dev Mode]     ./dazo-dev.sh            - Lancer l'environnement avec Vite HMR"
 echo -e " 11) [Git Pull]     ./dazo-gitpull.sh        - Récupérer le code sans l'appliquer"
+echo -e " 12) [Update Dev]   ./dazo-updateDev.sh      - Build local + Cache (sans Git Pull)"
 
 echo ""
 echo -e " q)  Quitter"
@@ -56,6 +57,7 @@ case $choice in
     9) ./dazo-cleanDBbackup.sh ;;
     10) ./dazo-dev.sh ;;
     11) ./dazo-gitpull.sh ;;
+    12) ./dazo-updateDev.sh ;;
     q|Q) exit 0 ;;
     *) echo -e "${RED}Choix invalide.${NC}" ; sleep 1 ; exec ./dazo-tool.sh ;;
 esac
