@@ -98,11 +98,14 @@
               <!-- CERCLES -->
               <div class="form-group mb-32">
                 <label class="config-label">Cercles autorisés</label>
-                <p class="help-text mb-12">Seules les décisions appartenant à ces cercles pourront être exposées publiquement.</p>
-                <div class="checkbox-list inline-list">
-                  <label v-for="circle in circles" :key="circle.id" class="checkbox-item">
+                <p class="help-text mb-16">Seules les décisions appartenant à ces cercles pourront être exposées publiquement.</p>
+                <div class="selection-chips">
+                  <label v-for="circle in circles" :key="circle.id" class="chip-item">
                     <input type="checkbox" :value="circle.id" v-model="config.public_circles">
-                    <span>{{ circle.name }}</span>
+                    <div class="chip-content">
+                      <i class="fa-solid fa-circle-nodes"></i>
+                      <span>{{ circle.name }}</span>
+                    </div>
                   </label>
                   <div v-if="circles.length === 0" class="text-muted p-16 text-xs italic">Aucun cercle trouvé.</div>
                 </div>
@@ -112,11 +115,14 @@
               <!-- CATEGORIES -->
               <div class="form-group mb-32">
                 <label class="config-label">Catégories autorisées</label>
-                <p class="help-text mb-12">Seules les décisions rattachées à ces catégories pourront être exposées.</p>
-                <div class="checkbox-list inline-list">
-                  <label v-for="cat in categories" :key="cat.id" class="checkbox-item">
+                <p class="help-text mb-16">Seules les décisions rattachées à ces catégories pourront être exposées.</p>
+                <div class="selection-chips">
+                  <label v-for="cat in categories" :key="cat.id" class="chip-item">
                     <input type="checkbox" :value="cat.id" v-model="config.public_categories">
-                    <span>{{ cat.name }}</span>
+                    <div class="chip-content">
+                      <i class="fa-solid fa-tag"></i>
+                      <span>{{ cat.name }}</span>
+                    </div>
                   </label>
                   <div v-if="categories.length === 0" class="text-muted p-16 text-xs italic">Aucune catégorie trouvée.</div>
                 </div>
@@ -126,11 +132,18 @@
               <!-- STATUTS -->
               <div class="form-group">
                 <label class="config-label">Statuts exposés</label>
-                <p class="help-text mb-12">Généralement, seules les décisions finales (adoptées, rejetées) sont rendues publiques.</p>
-                <div class="checkbox-list inline-list">
-                  <label v-for="status in availableStatuses" :key="status.value" class="checkbox-item">
+                <p class="help-text mb-16">Généralement, seules les décisions finales (adoptées, rejetées) sont rendues publiques.</p>
+                <div class="selection-chips">
+                  <label v-for="status in availableStatuses" :key="status.value" class="chip-item">
                     <input type="checkbox" :value="status.value" v-model="config.public_statuses">
-                    <span>{{ status.label }}</span>
+                    <div class="chip-badge" 
+                         :style="{ 
+                           color: status.defaultPrimary,
+                           backgroundColor: status.defaultSecondary
+                         }">
+                      <i class="fa-solid fa-circle-check"></i>
+                      <span>{{ status.label }}</span>
+                    </div>
                   </label>
                 </div>
                 <div class="config-key">variable : <code>public_statuses</code></div>
@@ -435,10 +448,15 @@
                         </div>
                       </div>
 
-                      <div class="form-group mb-32">
+                       <div class="form-group mb-32">
                         <label class="config-label">Structure HTML du Wrapper</label>
                         <textarea v-model="config.mail_template_wrapper" class="input font-mono text-sm" rows="12" placeholder="<html>... {message} ...</html>"></textarea>
-                        <p class="help-text mt-8">C'est le squelette HTML commun à tous les envois.</p>
+                        <div class="flex justify-between items-center mt-8">
+                          <p class="help-text">C'est le squelette HTML commun à tous les envois.</p>
+                          <button class="btn btn-xs btn-ghost" @click="resetTemplate('wrapper')">
+                            <i class="fa-solid fa-undo mr-4"></i> Restaurer défaut
+                          </button>
+                        </div>
                       </div>
 
                       <!-- PREVIEW SECTION -->
@@ -477,9 +495,9 @@
                       <i :class="mail.icon" class="text-indigo-500 opacity-60"></i>
                       <span class="font-bold">{{ mail.label }}</span>
                     </div>
-                    <div class="flex items-center gap-12" @click.stop>
+                    <div class="flex items-center gap-12">
                       <span class="text-xs font-semibold text-gray-400">{{ config['mail_' + mail.key + '_enabled'] === 'true' ? 'Activé' : 'Désactivé' }}</span>
-                      <label class="switch-sm">
+                      <label class="switch-sm" @click.stop>
                         <input type="checkbox" v-model="config['mail_' + mail.key + '_enabled']" true-value="true" false-value="false">
                         <span class="slider round"></span>
                       </label>
@@ -495,7 +513,14 @@
                       <div class="form-group mb-32">
                         <label class="config-label">Corps de l'email</label>
                         <RichTextEditor v-model="config['mail_' + mail.key + '_body']" />
-                        <p class="help-text mt-8"><code>{{ mail.help }}</code></p>
+                        <div class="flex justify-between items-start mt-12">
+                          <div class="flex flex-wrap gap-4">
+                             <span v-for="v in extractVars(mail.help)" :key="v" class="var-chip">{{ v }}</span>
+                          </div>
+                          <button class="btn btn-xs btn-ghost" @click="resetTemplate(mail.key)">
+                            <i class="fa-solid fa-undo mr-4"></i> Restaurer défaut
+                          </button>
+                        </div>
                       </div>
 
                       <!-- TEST D'ENVOI -->
@@ -601,7 +626,52 @@ const categories = ref([]);
 const testEmailAddress = ref('');
 const activeSection = ref('identity');
 const currentUser = ref(null);
-const previewMailType = ref('reminder');
+const previewMailType = ref('new_decision');
+
+const extractVars = (helpText) => {
+  if (!helpText) return [];
+  const match = helpText.match(/\{(.*?)\}/g);
+  return match || [];
+};
+
+const resetTemplate = (key) => {
+  if (!confirm('Êtes-vous sûr de vouloir restaurer le contenu par défaut ? Vos modifications actuelles seront perdues.')) return;
+  
+  const defaults = {
+    wrapper: configStore.config.mail_template_wrapper_default || '<div style="font-family: \'Inter\', sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #1e293b;">\n  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">\n    <div style="padding: 32px; text-align: center; border-bottom: 1px solid #f1f5f9;">\n      <a href="{site_link}">\n        <img src="{logo}" alt="Logo" style="max-height: 48px; width: auto;">\n      </a>\n    </div>\n    <div style="padding: 40px; line-height: 1.6; font-size: 16px;">\n      {message}\n    </div>\n    <div style="padding: 32px; background: #f8fafc; text-align: center; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9;">\n      <p style="margin: 0 0 16px 0;">Vous recevez cet email car vous participez à la gouvernance sur notre plateforme.</p>\n      <div style="display: flex; justify-content: center; gap: 16px;">\n        <a href="{site_link}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">Notre Site</a>\n      </div>\n    </div>\n  </div>\n</div>',
+    new_decision: {
+      subject: 'Nouvelle proposition de décision',
+      body: '<h1>Nouvelle décision</h1><p>Bonjour {name},</p><p>Une nouvelle proposition "{title}" a été publiée.</p><p><a href="{url}">Voir la décision</a></p>'
+    },
+    phase_change: {
+      subject: 'Changement de Phase',
+      body: '<h1>Changement de phase</h1><p>Bonjour {name},</p><p>La décision "{title}" est passée en nouvelle phase : {phase}.</p><p><a href="{url}">Voir la décision</a></p>'
+    },
+    reminder: {
+      subject: 'Rappel : Action requise sur une décision',
+      body: '<h1>Rappel échéance</h1><p>Bonjour {name},</p><p>Une action est attendue de votre part sur "{title}". Échéance : {deadline}.</p><p><a href="{url}">Accéder à la décision</a></p>'
+    },
+    decision_adopted: {
+      subject: 'Une décision a été adoptée',
+      body: '<h1>Décision adoptée !</h1><p>Bonjour {name},</p><p>La proposition "{title}" a été officiellement adoptée.</p><p><a href="{url}">Voir le résultat</a></p>'
+    },
+    decision_rejected: {
+      subject: 'Une décision n\'a pas été adoptée',
+      body: '<h1>Décision refusée</h1><p>Bonjour {name},</p><p>La proposition "{title}" n\'a pas recueilli le consensus nécessaire.</p><p><a href="{url}">Voir les détails</a></p>'
+    },
+    invitation: {
+      subject: "📩 Invitation à rejoindre le cercle '{circle}'",
+      body: "<h1>Invitation au cercle</h1><p>Bonjour,</p><p>Vous avez été invité à rejoindre le cercle <strong>{circle}</strong> par <strong>{inviter}</strong>.</p><p>Description : {description}</p><p><a href=\"{url}\">Accepter l'invitation</a></p>"
+    }
+  };
+
+  if (key === 'wrapper') {
+    config.value.mail_template_wrapper = defaults.wrapper;
+  } else if (defaults[key]) {
+    config.value['mail_' + key + '_subject'] = defaults[key].subject;
+    config.value['mail_' + key + '_body'] = defaults[key].body;
+  }
+};
 
 const sections = [
   { id: 'identity', label: 'Identité', icon: 'fa-solid fa-fingerprint' },
@@ -647,11 +717,12 @@ const pagesList = [
 ];
 
 const emailList = [
-  { key: 'reminder', label: 'Rappel de décision', icon: 'fa-solid fa-clock-rotate-left', help: 'Variables : {name}, {title}, {phase}, {deadline}, {url}' },
-  { key: 'extended', label: 'Relance Prolongation', icon: 'fa-solid fa-clock-rotate-left', help: 'Variables : {name}, {title}, {phase}, {deadline}, {url}' },
+  { key: 'new_decision', label: 'Nouvelle proposition', icon: 'fa-solid fa-plus-circle', help: 'Variables : {name}, {title}, {phase}, {url}' },
+  { key: 'phase_change', label: 'Changement de phase', icon: 'fa-solid fa-sync', help: 'Variables : {name}, {title}, {phase}, {url}' },
+  { key: 'reminder', label: 'Rappel d\'échéance', icon: 'fa-solid fa-clock', help: 'Variables : {name}, {title}, {phase}, {deadline}, {url}' },
+  { key: 'decision_adopted', label: 'Décision adoptée', icon: 'fa-solid fa-check-circle', help: 'Variables : {name}, {title}, {url}' },
+  { key: 'decision_rejected', label: 'Décision rejetée', icon: 'fa-solid fa-times-circle', help: 'Variables : {name}, {title}, {url}' },
   { key: 'invitation', label: 'Invitation au cercle', icon: 'fa-solid fa-envelope-open-text', help: 'Variables : {inviter}, {circle}, {description}, {url}' },
-  { key: 'notification', label: 'Nouvelle phase', icon: 'fa-solid fa-bullhorn', help: 'Variables : {name}, {title}, {phase}, {url}' },
-  { key: 'contact', label: 'Message de contact', icon: 'fa-solid fa-message', help: 'Variables : {name}, {email}, {subject}, {message}' },
 ];
 
 const publicRegistrationBool = computed({
@@ -750,11 +821,20 @@ const renderedPreview = computed(() => {
   let body = config.value['mail_' + previewMailType.value + '_body'] || '';
   const wrapper = config.value.mail_template_wrapper;
   const mockData = {
-    '{name}': currentUser.value?.name || 'Utilisateur', '{title}': 'TITRE DE LA DÉCISION',
-    '{phase}': 'Objection', '{deadline}': '31/12/2026 à 18:00', '{url}': '#',
-    '{inviter}': 'Jean Dupont', '{circle}': 'Cercle de Gouvernance',
-    '{description}': 'Description de test.', '{email}': currentUser.value?.email || 'admin@dazo.app',
-    '{subject}': 'Sujet de test', '{message}': 'Contenu du message de contact.'
+    '{name}': currentUser.value?.name || 'Utilisateur',
+    '{user_name}': currentUser.value?.name || 'Utilisateur', // Legacy compatibility
+    '{title}': 'TITRE DE LA DÉCISION',
+    '{decision_title}': 'TITRE DE LA DÉCISION', // Legacy compatibility
+    '{phase}': 'Objection',
+    '{deadline}': '31/12/2026 à 18:00',
+    '{url}': '#',
+    '{link}': '#', // Legacy compatibility
+    '{inviter}': 'Jean Dupont',
+    '{circle}': 'Cercle de Gouvernance',
+    '{description}': 'Description de test.',
+    '{email}': currentUser.value?.email || 'admin@dazo.app',
+    '{subject}': 'Sujet de test',
+    '{message}': 'Contenu du message de contact.'
   };
   for (const [key, val] of Object.entries(mockData)) { body = body.split(key).join(val); }
   let logo = config.value.mail_template_logo || config.value.app_logo || '';

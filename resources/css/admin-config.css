@@ -85,35 +85,64 @@
 .switch-lg { position: relative; display: inline-block; width: 60px; height: 32px; }
 .switch-lg input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--gray-300); transition: .3s; border-radius: 34px; }
+.slider.round { border-radius: 34px; }
 .slider:before { position: absolute; content: ""; height: 24px; width: 24px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 input:checked + .slider { background-color: var(--blue-600); }
 input:checked + .slider:before { transform: translateX(28px); }
 .switch-lg.danger input:checked + .slider { background-color: var(--red-600); }
 
-/* Mail Accordion */
-.mail-accordion { border: 1px solid var(--gray-200); border-radius: 12px; overflow: hidden; background: var(--gray-50); }
-.mail-accordion-header { padding: 16px 20px; cursor: pointer; user-select: none; transition: background 0.2s; }
-.mail-accordion-header:hover { background: var(--gray-100); }
+/* Switch Toggle SM */
+.switch-sm { position: relative; display: inline-block; width: 40px; height: 22px; }
+.switch-sm input { opacity: 0; width: 0; height: 0; }
+.switch-sm .slider:before { height: 16px; width: 16px; left: 3px; bottom: 3px; }
+.switch-sm input:checked + .slider:before { transform: translateX(18px); }
 
-.border-top { border-top: 1px solid var(--gray-100); }
+/* Selection Chips (Sexy UI) */
+.selection-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.chip-item { position: relative; cursor: pointer; user-select: none; }
+.chip-item input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+.chip-content {
+  display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+  background: white; border: 1px solid var(--gray-200); border-radius: 10px;
+  font-size: 13px; font-weight: 600; color: var(--gray-600);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.chip-item:hover .chip-content { border-color: var(--blue-300); background: var(--gray-50); }
+.chip-item input:checked + .chip-content {
+  background: var(--blue-50); border-color: var(--blue-500); color: var(--blue-700);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+.chip-item input:checked + .chip-content i { color: var(--blue-500); }
 
-@media (max-width: 1024px) {
-  .config-layout { flex-direction: column; }
-  .config-nav { width: 100%; position: static; flex-direction: row; display: flex; overflow-x: auto; gap: 8px; padding-bottom: 8px; }
-  .nav-item { width: auto; white-space: nowrap; margin-bottom: 0; }
-  .nav-group-title { display: none; }
+/* Custom Badge Selection (for Statuses) */
+.chip-badge {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+  border-radius: 8px; font-size: 12px; font-weight: 700; border: 1px solid transparent;
+  transition: all 0.2s; filter: grayscale(0.8) opacity(0.6);
+}
+.chip-item input:checked + .chip-badge { filter: none; border-color: currentColor; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+/* Variables display */
+.var-chip {
+  background: var(--blue-50); color: var(--blue-600); font-family: var(--font-mono);
+  padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  border: 1px solid var(--blue-100); display: inline-flex; align-items: center; margin-right: 6px; margin-bottom: 6px;
 }
 
 /* Accordion (used in emails & pages sections) */
 .accordion-container { border-radius: 0 0 16px 16px; overflow: hidden; }
-.accordion-item { border-bottom: 1px solid var(--gray-100); background: white; }
-.accordion-item:last-child { border-bottom: none; }
+.accordion-item { border: 1px solid var(--gray-100); background: white; margin-bottom: 12px; border-radius: 14px; transition: all 0.2s; }
+.accordion-item:last-child { margin-bottom: 0; }
+.accordion-item.open { border-color: var(--blue-200); box-shadow: 0 8px 24px rgba(59, 130, 246, 0.08); }
+
 .accordion-header { 
   display: flex; justify-content: space-between; align-items: center; 
   padding: 20px 24px; cursor: pointer; transition: background 0.2s; user-select: none;
+  border-radius: 14px;
 }
+.accordion-item.open .accordion-header { border-bottom-left-radius: 0; border-bottom-right-radius: 0; background: var(--blue-50); }
 .accordion-header:hover { background: var(--gray-50); }
-.accordion-item.open .accordion-header { background: var(--blue-50); }
+
 .accordion-header .arrow { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0.5; }
 .accordion-item.open .arrow { transform: rotate(180deg); opacity: 1; color: var(--blue-600); }
 .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background: white; }
@@ -124,5 +153,14 @@ input:checked + .slider:before { transform: translateX(28px); }
 .preview-body { max-height: 500px; overflow-y: auto; }
 .preview-header { border-bottom: 1px solid var(--gray-200); }
 
-/* pc-header colors for site config additions */
+@media (max-width: 1024px) {
+  .config-layout { flex-direction: column; }
+  .config-nav { width: 100%; position: static; flex-direction: row; display: flex; overflow-x: auto; gap: 8px; padding-bottom: 8px; }
+  .nav-item { width: auto; white-space: nowrap; margin-bottom: 0; }
+  .nav-group-title { display: none; }
+}
+
+/* pc-header colors */
 .pc-header-purple { background: linear-gradient(135deg, #7048e8, #845ef7); }
+.border-top { border-top: 1px solid var(--gray-100); }
+

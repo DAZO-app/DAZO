@@ -16,7 +16,40 @@ class ConfigService
      */
     public function all(): array
     {
-        $defaults = [
+        $defaults = $this->defaults();
+
+        $fromDb = Cache::rememberForever(self::CACHE_KEY, function () {
+            return InstanceConfig::all()->pluck('value', 'key')->toArray();
+        });
+
+        $merged = array_merge($defaults, $fromDb);
+        
+        // Ensure critical fields like mail subjects/bodies/wrapper are not empty if they exist in defaults
+        foreach ($defaults as $key => $val) {
+            if (str_starts_with($key, 'mail_') && (empty($merged[$key]) || $merged[$key] === '')) {
+                $merged[$key] = $val;
+            }
+        }
+
+        // Decode JSON arrays for specific keys so the frontend gets arrays
+        $jsonKeys = ['public_circles', 'public_categories', 'public_statuses', 'public_filters'];
+        foreach ($jsonKeys as $key) {
+            if (isset($merged[$key]) && is_string($merged[$key])) {
+                $decoded = json_decode($merged[$key], true);
+                if (is_array($decoded)) {
+                    $merged[$key] = $decoded;
+                } else {
+                    $merged[$key] = [];
+                }
+            }
+        }
+
+        return $merged;
+    }
+
+    public function defaults(): array
+    {
+        return [
             'app_name'              => 'DAZO',
             'app_logo'              => null,
             'decision_reaction_days' => '3',
@@ -45,23 +78,29 @@ class ConfigService
             'page_terms_content'    => '<h1>Conditions Générales d\'Utilisation</h1><p>Contenu par défaut à personnaliser...</p>',
             
             // Mail Templates Subjects & Bodies
+            'mail_new_decision_enabled' => 'true',
             'mail_new_decision_subject' => 'Nouvelle proposition de décision',
-            'mail_new_decision_body'    => '<h1>Nouvelle décision</h1><p>Bonjour {user_name},</p><p>Une nouvelle proposition "{decision_title}" a été publiée.</p><p><a href="{link}">Voir la décision</a></p>',
+            'mail_new_decision_body'    => '<h1>Nouvelle décision</h1><p>Bonjour {name},</p><p>Une nouvelle proposition "{title}" a été publiée.</p><p><a href="{url}">Voir la décision</a></p>',
             
+            'mail_phase_change_enabled' => 'true',
             'mail_phase_change_subject' => 'Changement de Phase',
-            'mail_phase_change_body'    => '<h1>Changement de phase</h1><p>Bonjour {user_name},</p><p>La décision "{decision_title}" est passée en nouvelle phase.</p><p><a href="{link}">Voir la décision</a></p>',
+            'mail_phase_change_body'    => '<h1>Changement de phase</h1><p>Bonjour {name},</p><p>La décision "{title}" est passée en nouvelle phase : {phase}.</p><p><a href="{url}">Voir la décision</a></p>',
             
+            'mail_reminder_enabled'     => 'true',
             'mail_reminder_subject'     => 'Rappel : Action requise sur une décision',
-            'mail_reminder_body'        => '<h1>Rappel échéance</h1><p>Bonjour {user_name},</p><p>Une action est attendue de votre part sur "{decision_title}".</p><p><a href="{link}">Accéder à la décision</a></p>',
+            'mail_reminder_body'        => '<h1>Rappel échéance</h1><p>Bonjour {name},</p><p>Une action est attendue de votre part sur "{title}". Échéance : {deadline}.</p><p><a href="{url}">Accéder à la décision</a></p>',
             
+            'mail_decision_adopted_enabled' => 'true',
             'mail_decision_adopted_subject' => 'Une décision a été adoptée',
-            'mail_decision_adopted_body'    => '<h1>Décision adoptée !</h1><p>Bonjour {user_name},</p><p>La proposition "{decision_title}" a été officiellement adoptée.</p><p><a href="{link}">Voir le résultat</a></p>',
+            'mail_decision_adopted_body'    => '<h1>Décision adoptée !</h1><p>Bonjour {name},</p><p>La proposition "{title}" a été officiellement adoptée.</p><p><a href="{url}">Voir le résultat</a></p>',
             
+            'mail_decision_rejected_enabled' => 'true',
             'mail_decision_rejected_subject' => 'Une décision n\'a pas été adoptée',
-            'mail_decision_rejected_body'    => '<h1>Décision refusée</h1><p>Bonjour {user_name},</p><p>La proposition "{decision_title}" n\'a pas recueilli le consensus nécessaire.</p><p><a href="{link}">Voir les détails</a></p>',
+            'mail_decision_rejected_body'    => '<h1>Décision refusée</h1><p>Bonjour {name},</p><p>La proposition "{title}" n\'a pas recueilli le consensus nécessaire.</p><p><a href="{url}">Voir les détails</a></p>',
 
+            'mail_invitation_enabled'   => 'true',
             'mail_invitation_subject'   => "📩 Invitation à rejoindre le cercle '{circle}'",
-            'mail_invitation_body'      => "Bonjour,\n\nVous avez été invité à rejoindre le cercle **{circle}** sur la plateforme DAZO par **{inviter}**.\n\nCe cercle traite des sujets suivants : {description}\n\n[Accepter l'invitation]({url})",
+            'mail_invitation_body'      => "<h1>Invitation au cercle</h1><p>Bonjour,</p><p>Vous avez été invité à rejoindre le cercle <strong>{circle}</strong> par <strong>{inviter}</strong>.</p><p>Description : {description}</p><p><a href=\"{url}\">Accepter l'invitation</a></p>",
             
             // SMTP Settings
             'mail_host'             => '',
@@ -108,27 +147,6 @@ class ConfigService
   </div>
 </div>',
         ];
-
-        $fromDb = Cache::rememberForever(self::CACHE_KEY, function () {
-            return InstanceConfig::all()->pluck('value', 'key')->toArray();
-        });
-
-        $merged = array_merge($defaults, $fromDb);
-        
-        // Decode JSON arrays for specific keys so the frontend gets arrays
-        $jsonKeys = ['public_circles', 'public_categories', 'public_statuses', 'public_filters'];
-        foreach ($jsonKeys as $key) {
-            if (isset($merged[$key]) && is_string($merged[$key])) {
-                $decoded = json_decode($merged[$key], true);
-                if (is_array($decoded)) {
-                    $merged[$key] = $decoded;
-                } else {
-                    $merged[$key] = [];
-                }
-            }
-        }
-
-        return $merged;
     }
 
     /**

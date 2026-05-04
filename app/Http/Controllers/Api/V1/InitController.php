@@ -18,6 +18,7 @@ class InitController extends Controller
             'enable_public_front' => filter_var($this->configService->get('enable_public_front'), FILTER_VALIDATE_BOOLEAN),
             'enable_registration' => filter_var($this->configService->get('public_registration'), FILTER_VALIDATE_BOOLEAN),
             'recaptcha_site_key' => $this->configService->get('recaptcha_site_key'),
+            'mail_template_wrapper_default' => $this->configService->defaults()['mail_template_wrapper'] ?? '',
         ];
 
         // Add content pages config
