@@ -105,19 +105,24 @@
                 <h4 class="config-label mb-8">Widgets disponibles</h4>
                 <p class="help-text mb-24">Activez ou désactivez les blocs d'information que vous souhaitez voir sur votre page d'accueil.</p>
                 
-                <div class="widgets-config-list">
-                  <div v-for="w in userWidgets" :key="w.id" class="widget-config-row" :class="{ disabled: !w.enabled }">
-                    <div class="widget-config-info">
-                      <div class="widget-config-icon">
-                        <i :class="getWidgetIcon(w.id)"></i>
-                      </div>
-                      <div>
-                        <div class="widget-config-label">{{ w.label }}</div>
-                        <div class="widget-config-desc">{{ getWidgetDesc(w.id) }}</div>
+                <draggable v-model="userWidgets" item-key="id" handle=".drag-handle" class="widgets-config-list" animation="200">
+                  <template #item="{ element: w }">
+                  <div class="widget-config-row" :class="{ disabled: !w.enabled }">
+                    <div class="flex-items-center">
+                      <div class="drag-handle" style="cursor: grab; padding-right: 16px; color: #aaa;"><i class="fa-solid fa-grip-vertical"></i></div>
+                      <div class="widget-config-info">
+                        <div class="widget-config-icon">
+                          <i :class="getWidgetIcon(w.id)"></i>
+                        </div>
+                        <div>
+                          <div class="widget-config-label">{{ w.label }}</div>
+                          <div class="widget-config-desc">{{ getWidgetDesc(w.id) }}</div>
+                        </div>
                       </div>
                     </div>
                     <div class="widget-config-actions">
                       <div class="widget-width-selector" v-if="w.enabled">
+                         <button @click="setWidgetWidth(w, 'quarter')" class="ww-btn" :class="{active: w.width === 'quarter'}" title="1/4 de largeur">1/4</button>
                          <button @click="setWidgetWidth(w, 'third')" class="ww-btn" :class="{active: w.width === 'third'}" title="1/3 de largeur">1/3</button>
                          <button @click="setWidgetWidth(w, 'half')" class="ww-btn" :class="{active: w.width === 'half'}" title="1/2 de largeur">1/2</button>
                          <button @click="setWidgetWidth(w, 'full')" class="ww-btn" :class="{active: w.width === 'full'}" title="Pleine largeur">1/1</button>
@@ -128,7 +133,8 @@
                       </label>
                     </div>
                   </div>
-                </div>
+                  </template>
+                </draggable>
               </div>
 
               <div class="pt-16 border-top">
@@ -145,7 +151,7 @@
             <div class="pc-header pc-header-teal">
               <div class="pc-header-icon"><i class="fa-solid fa-layer-group"></i></div>
               <div class="pc-header-content">
-                <div class="pc-header-title">Mes Vues Personnalisées</div>
+                <div class="pc-header-title">Mes Vues</div>
                 <div class="pc-header-sub">Configurez vos raccourcis de filtrage dans la barre latérale</div>
               </div>
             </div>
@@ -163,6 +169,80 @@
                     </div>
                     <div class="view-opt-icon"><i :class="opt.icon"></i></div>
                     <div class="view-opt-label">{{ opt.label }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-32 mt-32">
+                <h4 class="config-label mb-8">Ajouter des vues personnalisées</h4>
+                <p class="help-text mb-24">Créez vos propres filtres pour accéder rapidement aux décisions qui vous importent.</p>
+                
+                <div class="custom-view-creator premium-card p-24 mb-32" style="background: var(--gray-50);">
+                  <div class="grid-2 gap-24">
+                    <div class="form-group">
+                      <label class="form-label">Nom de la vue</label>
+                      <input type="text" v-model="customViewForm.label" class="form-control" placeholder="Ex: Projets Urgent">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Icône</label>
+                      <div class="icon-selector">
+                        <button v-for="ico in availableIcons" :key="ico" 
+                          @click="customViewForm.icon = ico"
+                          class="btn-icon-opt" :class="{ active: customViewForm.icon === ico }">
+                          <i :class="ico"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="grid-2 gap-24 mt-16">
+                    <div class="form-group">
+                      <label class="form-label">Type de filtre</label>
+                      <select v-model="customViewForm.filterType" class="form-control">
+                        <option value="status">Par Statut</option>
+                        <option value="circle">Par Cercle</option>
+                        <option value="category">Par Catégorie</option>
+                        <option value="search">Recherche texte</option>
+                        <option value="author_id">Par Porteur</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Valeur du filtre</label>
+                      <select v-if="customViewForm.filterType === 'status'" v-model="customViewForm.filterValue" class="form-control">
+                        <option value="draft">Brouillon</option>
+                        <option value="clarification">Clarification</option>
+                        <option value="reaction">Réactions</option>
+                        <option value="objection">Objections</option>
+                        <option value="adopted">Adopté</option>
+                        <option value="revision">En révision</option>
+                      </select>
+                      <select v-else-if="customViewForm.filterType === 'circle'" v-model="customViewForm.filterValue" class="form-control">
+                        <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
+                      </select>
+                      <select v-else-if="customViewForm.filterType === 'category'" v-model="customViewForm.filterValue" class="form-control">
+                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                      </select>
+                      <input v-else type="text" v-model="customViewForm.filterValue" class="form-control" placeholder="Valeur...">
+                    </div>
+                  </div>
+                  
+                  <div class="mt-24 text-right">
+                    <button @click="addCustomView" class="btn btn-teal">
+                      <i class="fa-solid fa-plus mr-8"></i> Ajouter cette vue
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="userViews.filter(v => v.id.startsWith('custom-')).length" class="mt-24">
+                  <h5 class="text-sm font-bold uppercase tracking-wider text-muted mb-16">Vos vues créées</h5>
+                  <div class="views-grid">
+                    <div v-for="v in userViews.filter(v => v.id.startsWith('custom-'))" :key="v.id" class="view-opt-card active">
+                      <div class="view-opt-icon"><i :class="v.icon"></i></div>
+                      <div class="view-opt-label">{{ v.label }}</div>
+                      <button @click="removeCustomView(v.id)" class="btn-remove-view" title="Supprimer">
+                        <i class="fa-solid fa-times"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -261,11 +341,22 @@
                   <div class="form-group">
                     <label class="config-label">Nouveau mot de passe</label>
                     <input v-model="pwdForm.password" type="password" class="input" required />
+                    <div class="pwd-strength-meter mt-8" v-if="pwdForm.password">
+                      <div class="pwd-strength-bar" :class="'strength-' + passwordStrength"></div>
+                      <div class="flex justify-between mt-4">
+                        <span class="text-xs font-bold" :class="'text-strength-' + passwordStrength">{{ strengthLabel }}</span>
+                        <span class="text-xs opacity-50">{{ pwdForm.password.length }} car.</span>
+                      </div>
+                    </div>
                     <div v-if="pwdValidationErrors.password" class="input-error">{{ pwdValidationErrors.password[0] }}</div>
                   </div>
                   <div class="form-group">
                     <label class="config-label">Confirmer le nouveau mot de passe</label>
-                    <input v-model="pwdForm.password_confirmation" type="password" class="input" required />
+                    <div class="input-with-icon">
+                      <input v-model="pwdForm.password_confirmation" type="password" class="input" :class="{ 'input-error-border': !passwordMatch && pwdForm.password_confirmation }" required />
+                      <i v-if="pwdForm.password_confirmation" class="fa-solid input-icon-right" :class="passwordMatch ? 'fa-check-circle text-teal-500' : 'fa-circle-xmark text-red-500'"></i>
+                    </div>
+                    <p v-if="!passwordMatch && pwdForm.password_confirmation" class="input-error">Les mots de passe ne correspondent pas.</p>
                   </div>
                 </div>
 
@@ -340,6 +431,7 @@
 </template>
 
 <script setup>
+import draggable from 'vuedraggable';
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useDecisionStore } from '../stores/decision';
@@ -359,6 +451,41 @@ const sections = [
   { id: 'password', label: 'Mot de passe', icon: 'fa-solid fa-key' },
   { id: 'social', label: 'Comptes liés', icon: 'fa-solid fa-link' },
 ];
+
+const AVAILABLE_WIDGETS = [
+  { id: 'stats', label: 'Statistiques', defaultEnabled: true, defaultWidth: 'full' },
+  { id: 'tickets', label: 'Clarifications & Objections', defaultEnabled: true, defaultWidth: 'full' },
+  { id: 'urgencies', label: 'Urgences', defaultEnabled: true, defaultWidth: 'full' },
+  { id: 'my_proposals', label: 'Mes propositions', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'my_animated', label: 'Mes animations', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'circles_watch', label: 'Mes cercles (flux)', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'my_circles', label: 'Mes cercles', defaultEnabled: true, defaultWidth: '1/2' },
+  { id: 'categories', label: 'Catégories', defaultEnabled: true, defaultWidth: '1/2' }
+];
+
+const initializeWidgets = (savedWidgets) => {
+  const saved = savedWidgets || [];
+  const merged = AVAILABLE_WIDGETS.map(w => {
+    const existing = saved.find(s => s.id === w.id);
+    return {
+      id: w.id,
+      label: w.label,
+      enabled: existing ? (existing.enabled !== undefined ? existing.enabled : w.defaultEnabled) : w.defaultEnabled,
+      width: existing ? (existing.width || w.defaultWidth) : w.defaultWidth
+    };
+  });
+  // Keep order if saved
+  const ordered = [];
+  saved.forEach(s => {
+    const m = merged.find(item => item.id === s.id);
+    if (m) ordered.push(m);
+  });
+  // Add new ones at the end
+  merged.forEach(m => {
+    if (!ordered.find(o => o.id === m.id)) ordered.push(m);
+  });
+  return ordered;
+};
 
 const notifCategories = [
   { id: 'new_decision', label: 'Nouvelles décisions', icon: 'fa-solid fa-plus-circle', desc: 'Lorsqu\'une décision est créée dans l\'un de vos cercles.' },
@@ -389,6 +516,46 @@ notifCategories.forEach(c => {
 
 const notifLoading = ref(false);
 const notifSuccessMsg = ref('');
+
+const customViewForm = ref({ label: '', icon: 'fa-solid fa-filter', filterType: 'status', filterValue: '' });
+const circles = ref([]);
+const categories = ref([]);
+const availableIcons = [
+  'fa-solid fa-filter', 'fa-solid fa-star', 'fa-solid fa-tag', 'fa-solid fa-circle-nodes',
+  'fa-solid fa-folder', 'fa-solid fa-bolt', 'fa-solid fa-clock', 'fa-solid fa-check-double',
+  'fa-solid fa-user', 'fa-solid fa-comments', 'fa-solid fa-heart'
+];
+
+const fetchMetaData = async () => {
+  try {
+    const [cRes, catRes] = await Promise.all([
+      axios.get('/api/v1/circles'),
+      axios.get('/api/v1/categories')
+    ]);
+    circles.value = cRes.data.circles || [];
+    categories.value = catRes.data.categories || [];
+  } catch (e) {
+    console.error("Settings fetch meta error", e);
+  }
+};
+
+const addCustomView = () => {
+  if (!customViewForm.value.label) return alert('Veuillez donner un nom à votre vue.');
+  
+  const newView = {
+    id: 'custom-' + Date.now(),
+    label: customViewForm.value.label,
+    icon: customViewForm.value.icon,
+    filters: { [customViewForm.value.filterType]: customViewForm.value.filterValue }
+  };
+  
+  userViews.value.push(newView);
+  customViewForm.value = { label: '', icon: 'fa-solid fa-filter', filterType: 'status', filterValue: '' };
+};
+
+const removeCustomView = (id) => {
+  userViews.value = userViews.value.filter(v => v.id !== id);
+};
 
 const fetchNotifPrefs = async () => {
   try {
@@ -453,7 +620,9 @@ const getWidgetIcon = (id) => {
     urgencies: 'fa-solid fa-triangle-exclamation',
     my_proposals: 'fa-solid fa-bullhorn',
     my_animated: 'fa-solid fa-user-tie',
-    circles_watch: 'fa-solid fa-user-group'
+    circles_watch: 'fa-solid fa-user-group',
+    my_circles: 'fa-solid fa-circle-nodes',
+    categories: 'fa-solid fa-folder-tree'
   };
   return icons[id] || 'fa-solid fa-cube';
 };
@@ -465,7 +634,9 @@ const getWidgetDesc = (id) => {
     urgencies: 'Décisions dont l\'échéance est proche (< 24h).',
     my_proposals: 'Décisions dont vous êtes le porteur.',
     my_animated: 'Décisions que vous facilitez.',
-    circles_watch: 'Flux des décisions actives dans vos cercles.'
+    circles_watch: 'Flux des décisions actives dans vos cercles.',
+    my_circles: 'Liste de vos cercles rejoints.',
+    categories: 'Liste des catégories disponibles.'
   };
   return descs[id] || '';
 };
@@ -508,6 +679,28 @@ const userInitials = computed(() => {
   return authStore.user.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 });
 
+const passwordStrength = computed(() => {
+  const p = pwdForm.value.password;
+  if (!p) return 0;
+  let s = 0;
+  if (p.length >= 6) s++;
+  if (p.length >= 10) s++;
+  if (/[A-Z]/.test(p)) s++;
+  if (/[0-9]/.test(p)) s++;
+  if (/[^A-Za-z0-9]/.test(p)) s++;
+  return Math.min(s, 4);
+});
+
+const strengthLabel = computed(() => {
+  const labels = ['Très faible', 'Faible', 'Moyen', 'Fort', 'Très fort'];
+  return labels[passwordStrength.value];
+});
+
+const passwordMatch = computed(() => {
+  if (!pwdForm.value.password_confirmation) return true;
+  return pwdForm.value.password === pwdForm.value.password_confirmation;
+});
+
 const processedUserAvatar = computed(() => {
     const avatar = authStore.user?.avatar_url;
     if (!avatar) return null;
@@ -539,10 +732,11 @@ onMounted(() => {
         profileForm.value.name = authStore.user.name;
         profileForm.value.email = authStore.user.email;
         userViews.value = JSON.parse(JSON.stringify(authStore.user.custom_views || []));
-        userWidgets.value = JSON.parse(JSON.stringify(authStore.user.dashboard_widgets || []));
+        userWidgets.value = initializeWidgets(authStore.user.dashboard_widgets);
     }
     fetchNotifPrefs();
     fetchSocialAccounts();
+    fetchMetaData();
 });
 
 watch(() => authStore.user, (u) => {
@@ -550,7 +744,7 @@ watch(() => authStore.user, (u) => {
         profileForm.value.name = u.name;
         profileForm.value.email = u.email;
         userViews.value = JSON.parse(JSON.stringify(u.custom_views || []));
-        userWidgets.value = JSON.parse(JSON.stringify(u.dashboard_widgets || []));
+        userWidgets.value = initializeWidgets(u.dashboard_widgets);
     }
 });
 
@@ -713,6 +907,7 @@ const unlinkSocial = async (provider) => {
 }
 .widget-config-row:hover { border-color: var(--blue-300); background: var(--gray-50); }
 .widget-config-row.disabled { opacity: 0.6; background: var(--gray-100); }
+.flex-items-center { display: flex; align-items: center; }
 .widget-config-info { display: flex; align-items: center; gap: 16px; }
 .widget-config-icon { 
   width: 44px; height: 44px; border-radius: 12px; background: white; border: 1px solid var(--gray-200);
@@ -745,6 +940,14 @@ const unlinkSocial = async (provider) => {
 .view-opt-card.active .view-opt-check { color: var(--blue-600); }
 .view-opt-icon { font-size: 24px; color: var(--gray-400); margin-bottom: 4px; }
 .view-opt-card.active .view-opt-icon { color: var(--blue-600); }
+
+.icon-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.btn-icon-opt { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--gray-200); background: white; cursor: pointer; transition: all 0.2s; color: var(--gray-600); }
+.btn-icon-opt:hover { border-color: var(--blue-400); color: var(--blue-500); }
+.btn-icon-opt.active { background: var(--blue-500); color: white; border-color: var(--blue-600); }
+
+.btn-remove-view { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 50%; background: var(--red-500); color: white; border: 2px solid white; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s; z-index: 10; }
+.btn-remove-view:hover { background: var(--red-600); transform: scale(1.1); }
 .view-opt-label { font-size: 13px; font-weight: 700; color: var(--gray-700); }
 
 /* Notifications Table */
@@ -793,4 +996,23 @@ const unlinkSocial = async (provider) => {
 .social-account-status { font-size: 11px; font-weight: 600; margin-top: 2px; }
 .social-account-status.linked { color: var(--teal-600); }
 .social-account-status.unlinked { color: var(--gray-400); }
+
+/* Password Strength */
+.pwd-strength-meter { height: 4px; background: var(--gray-200); border-radius: 2px; position: relative; overflow: hidden; }
+.pwd-strength-bar { height: 100%; width: 0; transition: all 0.3s ease; }
+.strength-0 { width: 5%; background: var(--red-500); }
+.strength-1 { width: 25%; background: var(--red-500); }
+.strength-2 { width: 50%; background: var(--amber-500); }
+.strength-3 { width: 75%; background: var(--blue-500); }
+.strength-4 { width: 100%; background: var(--teal-500); }
+
+.text-strength-0 { color: var(--red-600); }
+.text-strength-1 { color: var(--red-600); }
+.text-strength-2 { color: var(--amber-600); }
+.text-strength-3 { color: var(--blue-600); }
+.text-strength-4 { color: var(--teal-600); }
+
+.input-with-icon { position: relative; }
+.input-icon-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; }
+.input-error-border { border-color: var(--red-500) !important; }
 </style>

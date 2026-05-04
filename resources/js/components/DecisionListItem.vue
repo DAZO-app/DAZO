@@ -8,7 +8,9 @@
     </div>
     <div class="decision-item-main">
       <div class="decision-title">
+        <span class="version-pill cursor-pointer hover:underline" @click.stop="emit('filter-circle', decision.circle_id)" style="margin-right: 6px; border-color: transparent;">{{ decision.circle?.name || 'Général' }}</span>
         <span class="version-pill" v-if="decision.current_version" style="margin-right: 6px">v{{ decision.current_version.version_number }}</span>
+        <span v-if="decision.visibility === 'private'" title="Décision Privée" style="margin-right: 4px; opacity: 0.7;"><i class="fa-solid fa-lock"></i></span>
         <span v-if="decision.current_version?.attachments?.length > 0" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;"><i class="fa-solid fa-paperclip"></i></span>
         {{ decision.title }}
       </div>
@@ -39,31 +41,32 @@
           <button @click.stop="emit('open-notifications', decision)" class="mini-btn" :class="{ active: decision.my_settings?.notification_level && decision.my_settings.notification_level !== 'none' }" title="Notifications">
             <i :class="decision.my_settings?.notification_level && decision.my_settings.notification_level !== 'none' ? 'fa-solid fa-bell text-blue-500' : 'fa-regular fa-bell'"></i>
           </button>
+          <button v-if="['clarification', 'reaction', 'objection', 'revision'].includes(decision.status)" @click.stop="openMeetingMode" class="mini-btn" title="Mode réunion">
+            <i class="fa-solid fa-display"></i>
+          </button>
         </div>
-        <div class="decision-tags">
-          <span class="badge" :class="statusClass(decision.status)">{{ translateStatus(decision.status) }}</span>
+        <div class="decision-tags flex gap-8 text-xs font-bold" v-if="decision.categories && decision.categories.length > 0" style="margin-left: 8px;">
+          <span 
+            v-for="cat in decision.categories" 
+            :key="cat.id" 
+            class="cursor-pointer hover:underline" 
+            @click.stop="emit('filter-category', cat.id)"
+            :style="{ color: cat.color_hex }"
+          >
+            #{{ cat.name }}
+          </span>
         </div>
       </div>
     </div>
     <div class="decision-end-actions">
-      <button class="action-badge-btn circle-btn" @click.stop="emit('filter-circle', decision.circle_id)">{{ decision.circle?.name || 'Général' }}</button>
-      <template v-if="decision.categories && decision.categories.length > 0">
-        <button 
-          v-for="cat in decision.categories" 
-          :key="cat.id" 
-          class="action-badge-btn category-btn" 
-          @click.stop="emit('filter-category', cat.id)"
-          :style="{ color: cat.color_hex, background: cat.color_hex + '10', borderColor: cat.color_hex + '30' }"
-        >
-          {{ cat.name }}
-        </button>
-      </template>
+      <button class="badge" :class="statusClass(decision.status)" @click.stop="emit('filter-state', decision.status)" style="font-size: 11px; padding: 4px 10px; border: none; font-weight: 600; cursor: pointer;">{{ translateStatus(decision.status) }}</button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({
@@ -73,9 +76,14 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['click', 'filter-circle', 'filter-category', 'toggle-favorite', 'open-notifications']);
+const emit = defineEmits(['click', 'filter-circle', 'filter-category', 'filter-state', 'toggle-favorite', 'open-notifications']);
 
 const authStore = useAuthStore();
+const router = useRouter();
+
+const openMeetingMode = () => {
+  router.push({ name: 'DecisionDetail', params: { id: props.decision.id }, query: { meeting: '1' } });
+};
 
 const getMyRole = (decision) => {
     if (!authStore.user || !decision.participants) return 'participant';

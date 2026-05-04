@@ -314,19 +314,17 @@ const groupNeedsIntervention = (groupName) => {
     return group.some(fb => isMyTurn(fb));
 };
 
-const headerClass = computed(() => {
-    if (isClarificationPhase.value) return 'pc-header-amber';
-    if (isReactionPhase.value) return 'pc-header-blue';
-    if (isObjectionPhase.value) return 'pc-header-red';
-    return 'pc-header-indigo';
+const needsIntervention = computed(() => {
+    return groupNeedsIntervention('clarifications') || 
+           groupNeedsIntervention('reactions') || 
+           groupNeedsIntervention('objections');
 });
 
-const headerIcon = computed(() => {
-    if (isClarificationPhase.value) return 'fa-solid fa-comments';
-    if (isReactionPhase.value) return 'fa-solid fa-face-smile';
-    if (isObjectionPhase.value) return 'fa-solid fa-hand';
-    return 'fa-solid fa-bolt';
+const headerClass = computed(() => {
+    return needsIntervention.value ? 'pc-header-light-blue' : 'pc-header-blue';
 });
+
+const headerIcon = computed(() => 'fa-solid fa-comments');
 
 const toggleExpand = (id) => {
     expandedStates[id] = !expandedStates[id];

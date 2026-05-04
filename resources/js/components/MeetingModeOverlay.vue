@@ -14,6 +14,28 @@
 
       <div class="meeting-title">
         <h1 class="text-3xl font-bold text-white mb-4">{{ decision.title }}</h1>
+        
+        <!-- Nouvelle Ligne Meta : Cercle, Catégories, Icones -->
+        <div class="flex items-center gap-12 mb-8">
+          <div class="meeting-btn-setting text-xs px-8 font-bold">{{ decision.circle?.name || 'Général' }}</div>
+          
+          <div class="flex gap-8 text-xs font-bold" v-if="decision.categories && decision.categories.length > 0">
+            <span 
+              v-for="cat in decision.categories" 
+              :key="cat.id"
+              class="meeting-hero-badge"
+              :style="{ borderColor: cat.color_hex, color: 'white' }"
+            >
+              #{{ cat.name }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-8 text-sm ml-4 opacity-80">
+            <i class="fa-solid" :class="decision.visibility === 'public' ? 'fa-lock-open text-blue-300' : 'fa-lock text-amber-400'" :title="decision.visibility === 'public' ? 'Décision Publique' : 'Décision Privée'"></i>
+            <i v-if="hasAttachments" class="fa-solid fa-paperclip" title="Pièces jointes"></i>
+          </div>
+        </div>
+
         <div class="meeting-breadcrumb">
           <span class="mb-step" :class="{ active: currentStatus === 'clarification', completed: isPast('clarification') }">Clarification</span>
           <i class="fa-solid fa-chevron-right mb-sep"></i>
@@ -127,7 +149,20 @@
             <div class="sidebar-content" v-show="!isDocSidebarCollapsed">
               <!-- Prose en affichage fluide (Mode Flat) -->
               <div class="meeting-prose-container flex-1">
-                <div class="meeting-prose prose-sm" v-html="displayContent"></div>
+                <div v-if="isDirectEditing">
+                  <div class="mb-24 text-[13px] text-amber-700 bg-amber-50 p-12 rounded border border-amber-200 flex items-start gap-12">
+                    <i class="fa-solid fa-circle-info mt-4"></i>
+                    <div>
+                      <strong class="block mb-4">Édition en direct</strong>
+                      Les pièces jointes de la version précédente sont conservées. Vous ne pouvez modifier que le contenu principal dans ce mode.
+                    </div>
+                  </div>
+                  <RichTextEditor 
+                    v-model="directEditDraft.content"
+                    placeholder="Rédigez la nouvelle version de la proposition ici..."
+                  />
+                </div>
+                <div v-else class="meeting-prose prose-sm" v-html="displayContent"></div>
               </div>
 
               <!-- Pièces jointes (Lecture seule) -->
@@ -310,68 +345,7 @@
       </div>
     </div>
 
-    <!-- Panneau Édition en Direct -->
-    <div v-if="isDirectEditing" class="direct-edit-overlay">
-      <div class="direct-edit-container premium-card shadow-2xl animate-scale-in" style="background: white;">
-        <div class="pc-header pc-header-emerald">
-          <div class="pc-header-icon"><i class="fa-solid fa-pen-to-square"></i></div>
-          <div class="pc-header-content">
-            <div class="pc-header-title">Édition en direct de la proposition</div>
-            <div class="pc-header-sub">Modifiez le contenu et les pièces jointes avant publication</div>
-          </div>
-          <button class="btn btn-ghost text-white ml-auto" @click="isDirectEditing = false">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-        
-        <div class="direct-edit-body flex gap-24 p-24" style="height: calc(90vh - 120px);">
-          <!-- Éditeur Principal -->
-          <div class="flex-1 flex flex-col min-w-0">
-            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Contenu de la proposition</label>
-            <RichTextEditor 
-              v-model="directEditDraft.content"
-              class="flex-1"
-              placeholder="Rédigez la nouvelle version de la proposition ici..."
-            />
-          </div>
-          
-          <!-- Panneau latéral : Pièces jointes -->
-          <div class="w-320 flex-shrink-0 flex flex-col">
-            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Pièces jointes</label>
-            <div class="mb-12 text-[10px] text-amber-600 bg-amber-50 p-8 rounded border border-amber-100">
-              <i class="fa-solid fa-circle-info mr-4"></i>
-              La modification des pièces jointes n'est pas possible en mode édition en direct. Celles de la version précédente sont conservées avec leurs droits.
-            </div>
-            
-            <div class="flex flex-col gap-8 flex-1 overflow-y-auto">
-              <div 
-                v-for="(att, idx) in directEditDraft.attachments" 
-                :key="att.id"
-                class="attachment-row flex items-center p-8 rounded hover:bg-gray-50 border border-transparent hover:border-gray-100 cursor-pointer transition-all"
-                @click.stop.prevent="openFloatingAttachment(att)"
-              >
-                <i class="fa-solid fa-paperclip mr-12 text-indigo-400"></i>
-                <span class="text-sm font-medium truncate flex-1">{{ att.filename }}</span>
-                <i class="fa-solid fa-chevron-right ml-auto text-[10px] opacity-30"></i>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="pc-footer bg-gray-50 flex justify-between items-center p-16 border-t border-gray-200">
-          <button class="btn btn-outline" @click="isDirectEditing = false">
-            Annuler
-          </button>
-          <div class="flex gap-12">
-            <button class="btn btn-emerald" @click="publishDirectEdit" :disabled="publishingDirectEdit">
-              <i class="fa-solid fa-paper-plane mr-8" v-if="!publishingDirectEdit"></i>
-              <i class="fa-solid fa-circle-notch fa-spin mr-8" v-else></i>
-              Publier directement en OBJECTION
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Panneau du Secrétaire (Flottant ou Docké) -->
     <Teleport v-if="isMounted && isAnimator" to="#secretary-dock-target" :disabled="!isPanelDocked">
@@ -545,9 +519,9 @@ const directEditDraft = ref({
   attachmentIds: []
 });
 
-const startDirectEdit = () => {
+const startDirectEdit = (forceStatus = null) => {
   const d = props.decision;
-  const status = d.status?.value || d.status;
+  const status = forceStatus || d.status?.value || d.status;
   const isRev = status === 'revision';
 
   if (!isRev) return;
@@ -585,10 +559,12 @@ const publishDirectEdit = async (targetPhase = 'objection') => {
   publishingDirectEdit.value = true;
   
   try {
+    const resolvedPhase = typeof targetPhase === 'object' && targetPhase !== null ? targetPhase.value || 'objection' : targetPhase;
+    
     const res = await axios.post(`/api/v1/decisions/${props.decision.id}/versions`, {
       content: directEditDraft.value.content,
       attachment_ids: directEditDraft.value.attachmentIds,
-      status: targetPhase, 
+      status: resolvedPhase, 
       notify: true
     });
     
@@ -818,6 +794,59 @@ const triggerCelebration = () => {
   });
 };
 
+// Auto-trigger DAZO Celebration (zéro objection et tour complet)
+const isDazoTriggered = computed(() => {
+  const status = currentStatus.value;
+  if (status !== 'objection') return false;
+
+  const participatedIds = new Set();
+  
+  (consents.value || []).forEach(c => {
+    const sig = typeof c.signal === 'object' && c.signal !== null ? c.signal.value : c.signal;
+    if (sig === 'no_objection' || sig === 'abstention') {
+      participatedIds.add(c.user_id);
+    }
+  });
+
+  let unresolvedObjectionsCount = 0;
+  (feedbacks.value || []).forEach(fb => {
+    const t = fb.type?.value || fb.type;
+    const s = fb.status?.value || fb.status;
+    if (t === 'objection' || t === 'suggestion') participatedIds.add(fb.author_id);
+    if (t === 'objection' && s !== 'resolved') unresolvedObjectionsCount++;
+    if (fb.joins) fb.joins.forEach(j => participatedIds.add(j.user_id));
+  });
+
+  const participantRoles = {};
+  (props.participants || []).forEach(p => {
+    participantRoles[p.user_id] = p.role?.value || p.role;
+  });
+
+  const members = props.decision.circle?.members || [];
+  const eligibleMembers = members.filter(m => {
+    const circleRole = m.role?.value || m.role;
+    if (circleRole === 'observer') return false;
+    const decisionRole = participantRoles[m.user_id];
+    if (['excluded', 'author', 'animator'].includes(decisionRole)) return false;
+    return true;
+  });
+
+  if (eligibleMembers.length === 0) return false;
+
+  const remainingCount = eligibleMembers.filter(m => !participatedIds.has(m.user_id)).length;
+
+  return remainingCount === 0 && unresolvedObjectionsCount === 0;
+});
+
+let dazoCelebratedForVersionId = null;
+
+watch(isDazoTriggered, (triggered) => {
+  if (triggered && dazoCelebratedForVersionId !== props.currentVersion.id) {
+    dazoCelebratedForVersionId = props.currentVersion.id;
+    triggerCelebration();
+  }
+});
+
 // Auto-trigger de la célébration quand on passe en phase "Adoptée"
 watch(currentStatus, (newStatus, oldStatus) => {
   if (newStatus === 'adopted' && oldStatus !== 'adopted') {
@@ -884,6 +913,10 @@ const handleKeyDown = (e) => {
 
 const displayContent = computed(() => {
   return props.currentVersion?.content || '<p class="text-muted">Aucun contenu.</p>';
+});
+
+const hasAttachments = computed(() => {
+  return (props.attachments && props.attachments.length > 0) || (props.decision?.revision_attachments && props.decision.revision_attachments.length > 0);
 });
 
 const filteredFeedbacks = computed(() => {
@@ -1105,6 +1138,7 @@ onMounted(() => {
   else if (status === 'reaction') activeTab.value = 'reactions';
   else if (status === 'objection') activeTab.value = 'objections';
   else if (status === 'adopted' || status === 'rejected') activeTab.value = 'objections';
+  else if (status === 'revision') startDirectEdit('revision');
 
   fetchFeedbacks();
 });
@@ -1879,6 +1913,31 @@ onUnmounted(() => {
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.95) translateY(20px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Styles pour la nouvelle ligne meta */
+.meeting-btn-setting {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meeting-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(4px);
 }
 </style>
 

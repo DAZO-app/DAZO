@@ -2,11 +2,9 @@
   <div class="animator-selector">
     <!-- Affichage actuel + Bouton édition -->
     <div v-if="!editing" class="animator-display">
-      <span class="text-xs text-muted">
-        <span class="font-semibold text-gray-700">Animateur :</span>
-        {{ currentAnimatorName || 'Non défini (Auteur par défaut)' }}
-      </span>
-      <button v-if="canEdit" class="btn btn-ghost btn-xs ml-8" @click="startEditing" title="Changer l'animateur"><i class="fa-solid fa-pen"></i></button>
+      <button v-if="canEdit" class="btn btn-ghost" @click="startEditing" title="Changer l'animateur" style="color: rgba(255, 255, 255, 0.8); border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 22px; height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; min-width: 22px;">
+        <i class="fa-solid fa-pen"></i>
+      </button>
     </div>
 
     <!-- Mode édition -->

@@ -17,37 +17,42 @@
             </select>
           </div>
 
-          <div class="form-group" v-if="circleMembers.length > 0">
-            <label class="label">Animateur de la décision (Optionnel)</label>
-            <select v-model="form.animator_id" class="select">
-              <option value="">Aucun (Auteur par défaut)</option>
-              <option v-for="m in circleMembers" :key="m.user.id" :value="m.user.id">
-                {{ m.user.name }} ({{ m.role }})
-              </option>
-            </select>
-            <!-- Recherche hors cercle -->
-            <div class="mt-8" style="position:relative;">
-              <input
-                v-model="externalSearch"
-                @input="searchExternalUsers"
-                class="input input-sm mt-4"
-                placeholder="Inviter quelqu'un hors du cercle (nom ou email)..."
-              />
-              <div v-if="externalResults.length" class="ext-dropdown">
-                <div
-                  v-for="u in externalResults"
-                  :key="u.id"
-                  class="ext-result"
-                  @click="selectExternal(u)"
-                >
-                  <span class="font-semibold text-xs">{{ u.name }}</span>
-                  <span class="text-xs text-muted ml-8">{{ u.email }}</span>
-                </div>
+          <div v-if="form.circle_id" class="form-group p-16 rounded mb-16" style="background: var(--blue-50); border: 1px solid var(--blue-100);">
+            <label class="label font-bold text-blue-800"><i class="fa-solid fa-user-tie mr-8"></i>Animateur de la décision</label>
+            <div class="flex gap-12 mt-8">
+              <div style="flex:1">
+                <select v-model="form.animator_id" class="select bg-white">
+                  <option value="">Aucun (Auteur par défaut)</option>
+                  <option v-for="m in circleMembers" :key="m.user.id" :value="m.user.id">
+                    {{ m.user.name }} ({{ m.role }})
+                  </option>
+                </select>
+              </div>
+              <div style="flex:1">
+                <input
+                  v-model="externalSearch"
+                  @input="searchExternalUsers"
+                  class="input bg-white"
+                  placeholder="Chercher hors cercle..."
+                />
               </div>
             </div>
-            <div v-if="selectedExternalUser" class="mt-8 text-xs" style="background:var(--blue-50); border:1px solid var(--blue-200); padding:6px 10px; border-radius:6px;">
-              <i class="fa-solid fa-circle-check" style="color:var(--teal-600)"></i> Animateur externe sélectionné : <strong>{{ selectedExternalUser.name }}</strong>
-              <button type="button" class="btn-ghost btn-xs" style="margin-left:8px;" @click="clearExternal"><i class="fa-solid fa-xmark"></i></button>
+
+            <div v-if="externalResults.length" class="ext-dropdown">
+              <div
+                v-for="u in externalResults"
+                :key="u.id"
+                class="ext-result"
+                @click="selectExternal(u)"
+              >
+                <span class="font-semibold text-xs">{{ u.name }}</span>
+                <span class="text-xs text-muted ml-8">{{ u.email }}</span>
+              </div>
+            </div>
+
+            <div v-if="selectedExternalUser" class="mt-8 text-xs font-semibold text-blue-700">
+              <i class="fa-solid fa-circle-check"></i> Animateur sélectionné : {{ selectedExternalUser.name }}
+              <button type="button" class="btn-link ml-8" @click="clearExternal">Changer</button>
             </div>
           </div>
 
@@ -91,7 +96,7 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-ghost" @click="close">Annuler</button>
             <button type="submit" class="btn btn-primary" :disabled="submitting">
-              {{ submitting ? 'Création...' : 'Créer la décision' }}
+              {{ submitting ? 'Enregistrement...' : 'Enregistrer la décision' }}
             </button>
           </div>
         </form>
@@ -104,10 +109,12 @@
 import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({ visible: Boolean });
 const emit = defineEmits(['close', 'created']);
 const router = useRouter();
+const authStore = useAuthStore();
 
 const circles = ref([]);
 const categories = ref([]);
@@ -144,7 +151,16 @@ watch(() => form.value.circle_id, async (newId) => {
     try {
       const { data } = await axios.get(`/api/v1/circles/${newId}/members`);
       circleMembers.value = data.members || [];
-      // form.animator_id = ''; // optional reset
+      
+      // Auto-select animator if someone has the role 'animator'
+      const animator = circleMembers.value.find(m => m.role === 'animator' || m.role?.value === 'animator');
+      if (animator) {
+        form.value.animator_id = animator.user.id;
+        selectedExternalUser.value = animator.user;
+      } else {
+        form.value.animator_id = '';
+        selectedExternalUser.value = null;
+      }
     } catch (e) {
       circleMembers.value = [];
     }
@@ -153,17 +169,39 @@ watch(() => form.value.circle_id, async (newId) => {
   }
 });
 
-onMounted(async () => {
+const loadData = async () => {
   try {
     const [circleRes, modelRes, catRes] = await Promise.all([
-      axios.get('/api/v1/circles'),
+      axios.get('/api/v1/circles', { params: { per_page: 100 } }),
       axios.get('/api/v1/models'),
       axios.get('/api/v1/categories'),
     ]);
-    circles.value = circleRes.data.circles || [];
-    models.value = modelRes.data.data || modelRes.data || [];
-    categories.value = catRes.data.categories || [];
-  } catch (e) { /* silent */ }
+    
+    console.log("Circles response:", circleRes.data);
+    
+    // Robust mapping for various potential response structures
+    circles.value = circleRes.data.data || circleRes.data.circles || (Array.isArray(circleRes.data) ? circleRes.data : []);
+    models.value = modelRes.data.models || modelRes.data.data || (Array.isArray(modelRes.data) ? modelRes.data : []);
+    categories.value = catRes.data.categories || catRes.data.data || (Array.isArray(catRes.data) ? catRes.data : []);
+  } catch (e) {
+    console.error("Erreur lors du chargement des données de création:", e);
+  }
+};
+
+watch(() => props.visible, (isVis) => {
+  if (isVis) {
+    loadData();
+    if (authStore.user?.is_global_animator) {
+      selectedExternalUser.value = authStore.user;
+      form.value.animator_id = authStore.user.id;
+    }
+  }
+});
+
+onMounted(() => {
+  if (props.visible) {
+    loadData();
+  }
 });
 
 const close = () => emit('close');

@@ -103,3 +103,26 @@ input:checked + .slider:before { transform: translateX(28px); }
   .nav-item { width: auto; white-space: nowrap; margin-bottom: 0; }
   .nav-group-title { display: none; }
 }
+
+/* Accordion (used in emails & pages sections) */
+.accordion-container { border-radius: 0 0 16px 16px; overflow: hidden; }
+.accordion-item { border-bottom: 1px solid var(--gray-100); background: white; }
+.accordion-item:last-child { border-bottom: none; }
+.accordion-header { 
+  display: flex; justify-content: space-between; align-items: center; 
+  padding: 20px 24px; cursor: pointer; transition: background 0.2s; user-select: none;
+}
+.accordion-header:hover { background: var(--gray-50); }
+.accordion-item.open .accordion-header { background: var(--blue-50); }
+.accordion-header .arrow { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0.5; }
+.accordion-item.open .arrow { transform: rotate(180deg); opacity: 1; color: var(--blue-600); }
+.accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background: white; }
+.accordion-item.open .accordion-body { max-height: 3000px; transition: max-height 0.5s ease-in; }
+
+/* Preview mail container */
+.mail-preview-container { border: 1px solid var(--gray-200); }
+.preview-body { max-height: 500px; overflow-y: auto; }
+.preview-header { border-bottom: 1px solid var(--gray-200); }
+
+/* pc-header colors for site config additions */
+.pc-header-purple { background: linear-gradient(135deg, #7048e8, #845ef7); }

@@ -45,7 +45,7 @@
             <router-link :to="{ name: 'AdminCircles' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-circle-nodes" style="margin-right: 8px;"></i> Cercles Admin</router-link>
             <router-link :to="{ name: 'AdminCategories' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-tags" style="margin-right: 8px;"></i> Catégories</router-link>
             <router-link :to="{ name: 'AdminSiteConfig' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-sliders" style="margin-right: 8px;"></i> Configuration site</router-link>
-            <router-link :to="{ name: 'AdminPublication' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-globe" style="margin-right: 8px;"></i> Publication API</router-link>
+            <router-link :to="{ name: 'AdminPublication' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-globe" style="margin-right: 8px;"></i> API</router-link>
             
             <template v-if="isSuperAdmin">
               <div class="mobile-menu-divider"></div>
@@ -157,7 +157,7 @@
                 <span><i class="fa-solid fa-sliders"></i></span> Configuration site
               </router-link>
               <router-link :to="{ name: 'AdminPublication' }" class="sidebar-item" active-class="active">
-                <span><i class="fa-solid fa-globe"></i></span> Publication API
+                <span><i class="fa-solid fa-globe"></i></span> API
               </router-link>
             </div>
           </transition>
@@ -256,6 +256,9 @@ const user = computed(() => authStore.user);
 const isAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
 const isSuperAdmin = computed(() => user.value?.role === 'superadmin');
 const isImpersonating = computed(() => authStore.isImpersonating);
+
+const isActuallyAdmin = computed(() => ['admin', 'superadmin'].includes(user.value?.role));
+const isActuallySuperAdmin = computed(() => user.value?.role === 'superadmin');
 
 const userInitials = computed(() => {
   if (!user.value) return '?';

@@ -117,10 +117,10 @@ const canManage = computed(() => {
 const fetchData = async () => {
   try {
     const { data } = await axios.get(`/api/v1/circles/${route.params.id}`);
-    circle.value = data.circle;
-    members.value = data.circle?.members || [];
+    circle.value = data.data || data.circle;
+    members.value = circle.value?.members || [];
     const decRes = await axios.get(`/api/v1/circles/${route.params.id}/decisions`);
-    decisions.value = decRes.data.decisions || [];
+    decisions.value = decRes.data.data || decRes.data.decisions || [];
   } catch (e) { /* */ } finally { loading.value = false; }
 };
 

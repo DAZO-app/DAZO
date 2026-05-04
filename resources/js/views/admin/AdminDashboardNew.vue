@@ -32,7 +32,7 @@
           </div>
         </div>
 
-        <div class="stat-card v-proposals clickable" @click="$router.push('/admin/categories')">
+        <div class="stat-card v-proposals clickable" @click="$router.push('/decisions')">
           <div class="stat-icon-part">
             <div class="stat-icon-wrap"><i class="fa-solid fa-handshake"></i></div>
           </div>
@@ -94,13 +94,50 @@
                     </router-link>
                     <router-link to="/admin/publication" class="btn btn-white btn-action">
                         <i class="fa-solid fa-globe text-purple-500"></i>
-                        <span>Publication & API</span>
+                        <span>API</span>
                     </router-link>
                     <router-link to="/admin/wiki" class="btn btn-white btn-action">
                         <i class="fa-solid fa-book text-emerald-500"></i>
-                        <span>Gestion de l'Aide</span>
+                        <span>Wiki</span>
                     </router-link>
                   </div>
+                </div>
+            </div>
+
+            <!-- BLOCS CERCLES & CATEGORIES -->
+            <div class="grid-2 gap-32 mt-32">
+                <!-- CERCLES WIDGET -->
+                <div class="premium-card">
+                    <div class="pc-header pc-header-blue">
+                        <div class="pc-header-icon"><i class="fa-solid fa-circle-nodes"></i></div>
+                        <div class="pc-header-content">
+                            <div class="pc-header-title">Tous les cercles</div>
+                            <div class="pc-header-sub">{{ circles.length }} cercle(s) configuré(s)</div>
+                        </div>
+                    </div>
+                    <div class="pc-body pc-chips">
+                        <div v-if="circles.length === 0" class="p-24 text-center text-muted italic">Aucun cercle.</div>
+                        <button v-for="c in circles" :key="c.id" class="chip chip-blue" @click="$router.push('/admin/circles')">
+                            <i class="fa-solid fa-circle-nodes" style="margin-right: 4px;"></i> {{ c.name }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CATEGORIES WIDGET -->
+                <div class="premium-card">
+                    <div class="pc-header pc-header-blue">
+                        <div class="pc-header-icon"><i class="fa-solid fa-folder-tree"></i></div>
+                        <div class="pc-header-content">
+                            <div class="pc-header-title">Toutes les catégories</div>
+                            <div class="pc-header-sub">{{ categories.length }} catégorie(s) définie(s)</div>
+                        </div>
+                    </div>
+                    <div class="pc-body pc-chips">
+                        <div v-if="categories.length === 0" class="p-24 text-center text-muted italic">Aucune catégorie.</div>
+                        <button v-for="c in categories" :key="c.id" class="chip chip-blue" @click="$router.push('/admin/categories')">
+                            {{ c.name }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -137,21 +174,29 @@ import { useConfigStore } from '../../stores/config';
 const configStore = useConfigStore();
 const stats = ref({});
 const loading = ref(true);
+const circles = ref([]);
+const categories = ref([]);
 
-const fetchStats = async () => {
+const fetchData = async () => {
     loading.value = true;
     try {
-        const { data } = await axios.get('/api/v1/admin/stats');
-        stats.value = data.stats || data || {};
+        const [statsRes, circleRes, catRes] = await Promise.all([
+            axios.get('/api/v1/admin/stats'),
+            axios.get('/api/v1/admin/circles?per_page=100'),
+            axios.get('/api/v1/admin/categories?per_page=100')
+        ]);
+        stats.value = statsRes.data.stats || statsRes.data || {};
+        circles.value = circleRes.data.data || [];
+        categories.value = catRes.data.data || [];
     } catch (e) {
-        console.error("Admin Dashboard Stats error", e);
+        console.error("Admin Dashboard Fetch error", e);
     } finally {
         loading.value = false;
     }
 };
 
 onMounted(() => {
-    fetchStats();
+    fetchData();
 });
 </script>
 
@@ -195,4 +240,19 @@ onMounted(() => {
 .btn-action i { font-size: 20px; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--gray-50); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
 .btn-action span { font-weight: 700; color: var(--gray-800); font-size: 14px; }
 .btn-action:hover { border-color: var(--blue-400); transform: translateX(5px); }
+
+.pc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 20px;
+}
+
+.chip {
+  font-size: 12px; font-weight: 600; border-radius: 8px; padding: 6px 14px;
+  border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.chip-blue   { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.chip-blue:hover { background: #dbeafe; }
 </style>

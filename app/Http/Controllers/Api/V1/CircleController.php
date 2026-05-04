@@ -25,10 +25,16 @@ class CircleController extends Controller
         $perPage = $request->integer('per_page', 20);
         $perPage = min(max($perPage, 5), 100);
 
-        $circles = Circle::whereHas('members', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })
-        ->with(['members.user' => function($q) {
+        $query = Circle::query();
+        $isAdmin = $user->is_global_animator || in_array($user->role?->value ?? $user->role, ['admin', 'superadmin']);
+        
+        if (!$isAdmin) {
+            $query->whereHas('members', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        }
+
+        $circles = $query->with(['members.user' => function($q) {
             $q->limit(10); // Limite pour l'affichage de la pile d'avatars
         }])
         ->withCount('members')

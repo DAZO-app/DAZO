@@ -10,7 +10,7 @@
           <div class="hero-action gap-12 flex">
             <button class="btn btn-white" @click="$router.back()">Annuler</button>
             <button class="btn btn-secondary" @click="submit" :disabled="submitting">
-              <i class="fa-solid fa-paper-plane mr-8"></i> {{ submitting ? 'Création...' : 'Créer la décision' }}
+              <i class="fa-solid fa-save mr-8"></i> {{ submitting ? 'Enregistrement...' : 'Enregistrer la décision' }}
             </button>
           </div>
         </div>
@@ -20,7 +20,7 @@
       <div class="grid-layout">
         <div class="col-main">
           <div class="premium-card mb-16">
-            <div class="pc-header pc-header-blue">
+            <div class="pc-header pc-header-light-blue">
               <div class="pc-header-icon"><i class="fa-solid fa-pen-nib"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Contenu de la décision</div>
@@ -42,7 +42,7 @@
 
           <!-- Zone de pièces jointes -->
           <div class="premium-card">
-            <div class="pc-header pc-header-indigo">
+            <div class="pc-header pc-header-light-blue">
               <div class="pc-header-icon"><i class="fa-solid fa-paperclip"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Pièces jointes</div>
@@ -98,8 +98,33 @@
         </div>
 
         <div class="col-side">
+          <!-- Bloc Animateur (apparaît quand un cercle est sélectionné) -->
+          <div v-if="form.circle_id" class="premium-card mb-16">
+            <div class="pc-header pc-header-light-blue">
+              <div class="pc-header-icon"><i class="fa-solid fa-user-tie"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Animateur de la décision</div>
+                <div class="pc-header-sub">Qui facilite le processus pour ce cercle ?</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-group mb-0">
+                <label class="label">Choisir l'animateur parmi les membres</label>
+                <select v-model="form.animator_id" class="select">
+                  <option value="">Auteur (vous)</option>
+                  <option v-for="m in circleMembers" :key="m.user.id" :value="m.user.id">
+                    {{ m.user.name }} {{ m.role === 'animator' || m.role?.value === 'animator' ? '(Animateur du cercle)' : '' }}
+                  </option>
+                </select>
+                <div class="text-xs text-muted mt-8">
+                  Par défaut, l'animateur du cercle est sélectionné s'il existe.
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="premium-card mb-16">
-            <div class="pc-header pc-header-amber">
+            <div class="pc-header pc-header-light-blue">
               <div class="pc-header-icon"><i class="fa-solid fa-sliders"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Paramètres de la décision</div>
@@ -112,16 +137,6 @@
                     <select v-model="form.circle_id" class="select" required>
                     <option value="" disabled>Sélectionner un cercle...</option>
                     <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
-                    </select>
-                </div>
-
-                <div class="form-group" v-if="circleMembers.length > 0">
-                    <label class="label">Animateur (Optionnel)</label>
-                    <select v-model="form.animator_id" class="select">
-                    <option value="">Auteur (vous)</option>
-                    <option v-for="m in circleMembers" :key="m.user.id" :value="m.user.id">
-                        {{ m.user.name }}
-                    </option>
                     </select>
                 </div>
 
@@ -212,6 +227,7 @@ const toggleCategory = (id) => {
 let quill = null;
 
 onMounted(async () => {
+  try {
     if (route.query.circle_id) {
         form.value.circle_id = route.query.circle_id;
     }
@@ -237,16 +253,20 @@ onMounted(async () => {
     };
     initQuill();
 
-  try {
     const [circleRes, modelRes, catRes] = await Promise.all([
-      axios.get('/api/v1/circles'),
+      axios.get('/api/v1/circles', { params: { per_page: 100 } }),
       axios.get('/api/v1/models'),
       axios.get('/api/v1/categories'),
     ]);
-    circles.value = circleRes.data.circles || [];
-    models.value = modelRes.data.data || modelRes.data || [];
-    categories.value = catRes.data.categories || [];
-  } catch (e) { /* silent */ }
+    
+    console.log("Circles response (DecisionCreate):", circleRes.data);
+    
+    circles.value = circleRes.data.data || circleRes.data.circles || (Array.isArray(circleRes.data) ? circleRes.data : []);
+    models.value = modelRes.data.models || modelRes.data.data || (Array.isArray(modelRes.data) ? modelRes.data : []);
+    categories.value = catRes.data.categories || catRes.data.data || (Array.isArray(catRes.data) ? catRes.data : []);
+  } catch (e) { 
+    console.error("Erreur lors du chargement des données (DecisionCreate):", e);
+  }
 });
 
 watch(() => form.value.circle_id, async (newId) => {
@@ -254,8 +274,20 @@ watch(() => form.value.circle_id, async (newId) => {
     try {
       const { data } = await axios.get(`/api/v1/circles/${newId}/members`);
       circleMembers.value = data.members || [];
-    } catch (e) { circleMembers.value = []; }
-  } else { circleMembers.value = []; }
+      
+      // Auto-select animator if someone has the role 'animator'
+      const animator = circleMembers.value.find(m => m.role === 'animator' || m.role?.value === 'animator');
+      if (animator) {
+        form.value.animator_id = animator.user.id;
+      } else {
+        form.value.animator_id = '';
+      }
+    } catch (e) { 
+      circleMembers.value = []; 
+    }
+  } else { 
+    circleMembers.value = []; 
+  }
 });
 
 const handleFileSelect = (e) => {

@@ -1,79 +1,88 @@
 <template>
   <div class="hero-card" v-if="decision">
-    <div class="hero-flex">
-      <div class="flex items-center gap-20">
-        <div>
-          <div class="hero-title">{{ decision.title }}</div>
-          <div class="flex flex-wrap gap-8 mt-8 mb-4" v-if="decision.categories && decision.categories.length > 0">
-            <span 
-              v-for="cat in decision.categories" 
-              :key="cat.id"
-              class="category-hero-badge"
-              :style="{ '--cat-color': cat.color_hex }"
-            >
-              <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
-              {{ cat.name }}
-            </span>
-          </div>
-          <div class="hero-subtitle">
-            {{ decision.circle?.name }} · Version {{ currentVersion?.version_number || 1 }} ·
-            Porteur: <strong>{{ authorName }}</strong>
-          </div>
-        </div>
+    <!-- LIGNE 1 : Titre + Phase à droite -->
+    <div class="flex justify-between items-start mb-8">
+      <div class="hero-title">{{ decision.title }}</div>
+      <span class="badge" :class="statusClass" style="font-size: 14px; padding: 6px 16px;">{{ statusLabel }}</span>
+    </div>
+
+    <!-- LIGNE 2 : Personnes (Porteur/Animateur) -->
+    <div class="hero-subtitle mb-12 text-sm flex items-center">
+      <span class="flex items-center">
+        <i class="fa-solid fa-bullhorn mr-8"></i>Porteur: <strong>{{ authorName }}</strong>
+        <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="$emit('refresh')" style="margin-left: 8px;" />
+      </span>
+      <span class="opacity-30 mx-12">|</span>
+      <span class="flex items-center">
+        <i class="fa-solid fa-user-tie mr-8"></i>Animateur: <strong>{{ animatorName }}</strong>
+      </span>
+    </div>
+
+    <!-- LIGNE 3 : Trombonne/Cadenna/Dates -->
+    <div class="hero-dates flex items-center gap-12 text-xs mb-12 opacity-90">
+      <div class="flex items-center gap-8 text-sm">
+        <i class="fa-solid" :class="decision.visibility === 'public' ? 'fa-lock-open text-blue-500' : 'fa-lock text-amber-600'" :title="decision.visibility === 'public' ? 'Décision Publique' : 'Décision Privée'"></i>
+        <i v-if="hasAttachments" class="fa-solid fa-paperclip opacity-70" title="Pièces jointes"></i>
       </div>
-      <div class="hero-action flex items-center gap-12">
-        <span class="badge" :class="statusClass" style="font-size: 14px; padding: 6px 16px;">{{ statusLabel }}</span>
-        
-        <div class="header-nav">
-          <template v-if="isRevision && isAuthorOrAnimator">
-            <button class="btn btn-secondary" :disabled="savingDraft || publishing" @click="$emit('save-revision')">
-              Enregistrer
-            </button>
-            <button class="btn btn-primary" :disabled="savingDraft || publishing" @click="$emit('publish-revision')">
-              {{ publishing ? 'Publier...' : 'Publier' }}
-            </button>
-          </template>
-          <template v-else>
-            <button class="btn btn-white btn-icon" :disabled="!previousDecisionId" @click="$emit('go-to-decision', previousDecisionId)">
-              <i class="fa-solid fa-chevron-left"></i>
-            </button>
-            <button class="btn btn-white btn-icon" :disabled="!nextDecisionId" @click="$emit('go-to-decision', nextDecisionId)">
-              <i class="fa-solid fa-chevron-right"></i>
-            </button>
-          </template>
-        </div>
+
+      <span class="opacity-30 mx-4">|</span>
+
+      <span><i class="fa-solid fa-calendar-plus mr-8"></i>Créée le {{ formatDateOnly(decision.created_at) }}</span>
+      <span><i class="fa-solid fa-clock mr-8"></i>Actu. le {{ formatDateOnly(decision.updated_at) }}</span>
+      <span v-if="decision.current_deadline && !['adopted', 'abandoned'].includes(currentStatus)" :class="{ 'text-red font-bold': isUrgent }">
+        <i class="fa-solid fa-hourglass-half mr-8"></i>{{ deadlineLabel }}
+      </span>
+      <span v-if="decision.share_count > 0"><i class="fa-solid fa-share-nodes mr-8"></i>{{ decision.share_count }} partage(s)</span>
+    </div>
+
+    <!-- LIGNE 4 : Méta (Cercle, Version, Catégories) -->
+    <div class="flex items-center gap-12 mb-16">
+      <div class="btn-setting text-xs px-8 font-bold" style="width:auto; padding-left: 8px; padding-right: 8px; border-color: transparent;">{{ decision.circle?.name || 'Général' }}</div>
+      <div class="btn-setting text-xs font-mono font-bold" style="width:auto; padding-left: 8px; padding-right: 8px; border-color: transparent;">v{{ currentVersion?.version_number || 1 }}</div>
+      
+      <div class="flex gap-8 text-xs font-bold" v-if="decision.categories && decision.categories.length > 0">
+        <span 
+          v-for="cat in decision.categories" 
+          :key="cat.id"
+          class="badge text-white"
+          :style="{ borderColor: cat.color_hex, background: 'transparent', border: '1.5px solid', padding: '4px 10px', borderRadius: '99px' }"
+        >
+          #{{ cat.name }}
+        </span>
       </div>
     </div>
-    
-    <div class="hero-footer-meta mt-16 flex items-center gap-16 text-xs" style="opacity: 0.9;">
-      <div class="flex items-center gap-8 mr-4">
+
+    <!-- LIGNE 5 : Actions (Boutons carrés) + Navigation -->
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-8">
         <button class="btn-setting" :class="{ 'is-fav': isFavorite }" @click="$emit('toggle-favorite')" :title="isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'">
           <i :class="isFavorite ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
         </button>
-        
         <button class="btn-setting" @click="$emit('show-notif-levels')" title="Préférences de notification">
           <i :class="notifLevelIcon"></i>
         </button>
-
         <button v-if="canOpenMeetingMode" class="btn-setting" @click="$emit('open-meeting-mode')" title="Mode réunion">
           <i class="fa-solid fa-display"></i>
         </button>
-
         <button v-if="isAuthorOrAnimator" class="btn-setting" @click="$emit('show-reminder')" title="Relancer les participants en attente">
           <i class="fa-solid fa-envelope"></i>
         </button>
-
         <button class="btn-setting" @click="$emit('print-decision')" title="Imprimer / Export PDF">
           <i class="fa-solid fa-print"></i>
         </button>
+        
+        <div class="w-16" style="width: 16px;"></div> <!-- Espace -->
       </div>
-      <span><i class="fa-solid fa-calendar-plus mr-4"></i> Créée le {{ formatDateOnly(decision.created_at) }}</span>
-      <span><i class="fa-solid fa-clock mr-4"></i> Actu. le {{ formatDateOnly(decision.updated_at) }}</span>
-      <span v-if="decision.current_deadline && !['adopted', 'abandoned'].includes(currentStatus)" :class="{ 'text-red font-bold': isUrgent }">
-        <i class="fa-solid fa-hourglass-half mr-4"></i> {{ deadlineLabel }}
-      </span>
-      <span><i class="fa-solid fa-share-nodes mr-4"></i> {{ decision.share_count || 0 }} partage(s)</span>
-      <AnimatorSelector :decision="decision" :canEdit="isAuthorOrAnimator" @updated="$emit('refresh')" style="margin-left: auto;" />
+      
+      <!-- Navigation (Précédent / Suivant) -->
+      <div class="header-nav">
+        <button class="btn btn-white btn-icon" :disabled="!previousDecisionId" @click="$emit('go-to-decision', previousDecisionId)">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button class="btn btn-white btn-icon" :disabled="!nextDecisionId" @click="$emit('go-to-decision', nextDecisionId)">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -118,6 +127,15 @@ const authorName = computed(() => {
   return a?.user?.name || '—';
 });
 
+const animatorName = computed(() => {
+  const a = props.decision?.participants?.find(p => p.role?.value === 'animator' || p.role === 'animator');
+  return a?.user?.name || 'Non assigné';
+});
+
+const hasAttachments = computed(() => {
+  return props.currentVersion?.attachments?.length > 0 || props.decision?.revision_attachments?.length > 0;
+});
+
 const statusLabels = {
   draft: 'Brouillon',
   clarification: 'Phase de Clarification',
@@ -133,11 +151,11 @@ const statusClasses = {
   draft: 'badge-gray',
   clarification: 'badge-blue',
   reaction: 'badge-blue',
-  objection: 'badge-orange',
-  revision: 'badge-purple',
-  adopted: 'badge-green',
-  adopted_override: 'badge-green',
-  abandoned: 'badge-red'
+  objection: 'badge-amber',
+  revision: 'badge-amber',
+  adopted: 'badge-teal',
+  adopted_override: 'badge-teal',
+  abandoned: 'badge-gray'
 };
 
 const statusLabel = computed(() => statusLabels[props.currentStatus] || props.currentStatus);

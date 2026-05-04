@@ -15,14 +15,6 @@
       </div>
     </div>
 
-    <!-- Panel des Pièces jointes (si pas en édition) -->
-    <AttachmentPanel
-      :attachments="displayAttachments"
-      :editable="false"
-      :can-reload="canReloadAttachments"
-      :version-id="viewingVersionId || currentVersionId || ''"
-    />
-    
     <!-- Vue contextuelle pendant une révision -->
     <div v-if="isRevision && !isDraft" class="premium-card mb-16">
       <div class="pc-header pc-header-blue" style="opacity: 0.9;">
@@ -37,6 +29,14 @@
         <div v-else class="text-muted text-sm">Aucun contenu disponible pour cette version.</div>
       </div>
     </div>
+
+    <!-- Panel des Pièces jointes (si pas en édition) -->
+    <AttachmentPanel
+      :attachments="displayAttachments"
+      :editable="false"
+      :can-reload="canReloadAttachments && !isRevision"
+      :version-id="viewingVersionId || currentVersionId || ''"
+    />
   </div>
 </template>
 

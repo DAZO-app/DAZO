@@ -62,7 +62,7 @@
 
     <!-- REVISION MODE -->
     <div v-if="isRevision && isAuthorOrAnimator" class="premium-card mb-16">
-      <div class="pc-header pc-header-amber">
+      <div class="pc-header pc-header-light-blue">
         <div class="pc-header-icon"><i class="fa-solid fa-pen-to-square"></i></div>
         <div class="pc-header-content">
           <div class="pc-header-title">Révision de la proposition</div>
@@ -90,26 +90,6 @@
           />
         </div>
 
-        <div v-if="currentVersion?.attachments?.length > 0" class="mb-16 p-12 bg-gray-50 border-radius-sm">
-          <div class="flex items-center justify-between mb-8">
-            <label class="label mb-0" style="font-size: 13px;">Conserver des pièces jointes de la version précédente</label>
-            <button type="button" class="btn btn-link btn-sm" @click="$emit('toggle-all-attachments')" style="font-size: 12px;">
-              {{ allAttachmentsReused ? 'Tout décocher' : 'Tout cocher' }}
-            </button>
-          </div>
-          <div class="flex flex-wrap gap-12">
-            <div v-for="att in currentVersion.attachments" :key="att.id" class="flex items-center gap-8">
-              <input 
-                type="checkbox" 
-                :id="'prev-att-' + att.id"
-                :checked="reusedAttachmentIds.includes(att.id)"
-                @change="$emit('toggle-attachment', att)"
-                class="checkbox-sm"
-              >
-              <label :for="'prev-att-' + att.id" class="text-sm cursor-pointer" style="margin-bottom: 0;">{{ att.filename }}</label>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>

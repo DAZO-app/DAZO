@@ -103,8 +103,8 @@
           />
 
           <div v-if="showParticipationCard" class="premium-card mb-16 border-2" :class="hasAlreadyParticipated ? 'border-teal-500' : 'border-red-500'">
-            <div class="pc-header" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-red'">
-              <div class="pc-header-icon"><i class="fa-solid fa-comments"></i></div>
+            <div class="pc-header" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-light-blue'">
+              <div class="pc-header-icon"><i class="fa-solid fa-comment"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">{{ participationCardTitle }}</div>
                 <div class="pc-header-sub">{{ hasAlreadyParticipated ? 'Participation enregistrée' : 'Action requise de votre part' }}</div>
@@ -119,36 +119,32 @@
               </div>
 
               <template v-else>
-                <div class="grid-2 gap-12">
-                  <button class="btn btn-secondary" @click="openReactionModal" style="padding: 12px 8px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
-                    <span class="text-xl"><i class="fa-solid fa-comments"></i></span>
+                <div :style="{ display: 'grid', gridTemplateColumns: decision.status === 'objection' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '12px' }">
+                  <button class="btn btn-secondary" @click="openReactionModal" style="padding: 12px 8px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 100%;">
+                    <span class="text-xl"><i class="fa-solid fa-comment"></i></span>
                     <span>{{ modalActionLabelShort }}</span>
                   </button>
 
-                  <div v-if="decision.status === 'clarification'">
-                    <button class="vote-btn vote-ok" @click="submitConsent('no_questions')" style="width: 100%; height: 100%;">
-                      <span class="vote-icon"><i class="fa-solid fa-circle-check"></i></span>
-                      C'est clair
-                    </button>
-                  </div>
+                  <button v-if="decision.status === 'clarification'" class="vote-btn vote-ok" @click="submitConsent('no_questions')" style="width: 100%; height: 100%;">
+                    <span class="vote-icon"><i class="fa-solid fa-circle-check"></i></span>
+                    <span style="font-size: 13px; font-weight: 600;">C'est clair</span>
+                  </button>
 
-                  <div v-if="decision.status === 'reaction'">
-                    <button class="vote-btn vote-ok" @click="submitConsent('no_reaction')" style="width: 100%; height: 100%;">
-                      <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
-                      RAS
-                    </button>
-                  </div>
+                  <button v-if="decision.status === 'reaction'" class="vote-btn vote-ok" @click="submitConsent('no_reaction')" style="width: 100%; height: 100%;">
+                    <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
+                    <span style="font-size: 13px; font-weight: 600;">RAS</span>
+                  </button>
 
-                  <div v-if="decision.status === 'objection'" class="grid-1 gap-8">
-                    <button class="vote-btn vote-ok" @click="submitConsent('no_objection')" style="width: 100%;">
+                  <template v-if="decision.status === 'objection'">
+                    <button class="vote-btn vote-ok" @click="submitConsent('no_objection')" style="width: 100%; height: 100%;">
                       <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
-                      Sans objection
+                      <span style="font-size: 13px; font-weight: 600;">Sans objection</span>
                     </button>
-                    <button class="vote-btn vote-abs" @click="submitConsent('abstention')" style="width: 100%;">
+                    <button class="vote-btn vote-abs" @click="submitConsent('abstention')" style="width: 100%; height: 100%;">
                       <span class="vote-icon"><i class="fa-solid fa-eye"></i></span>
-                      Abstention
+                      <span style="font-size: 13px; font-weight: 600;">Abstention</span>
                     </button>
-                  </div>
+                  </template>
                 </div>
               </template>
             </div>
@@ -216,7 +212,7 @@
 
           <!-- Paramètres de la décision -->
           <div v-if="isDraft && isAuthorOrAnimator" class="premium-card mb-16">
-            <div class="pc-header pc-header-indigo">
+            <div class="pc-header pc-header-light-blue">
               <div class="pc-header-icon"><i class="fa-solid fa-sliders"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Paramètres de la décision</div>
@@ -268,7 +264,7 @@
 
           <!-- Navigation entre versions -->
           <div v-if="allVersions.length > 1" class="premium-card mb-16">
-            <div class="pc-header pc-header-indigo" style="padding: 12px;">
+            <div class="pc-header pc-header-light-blue" style="padding: 12px;">
               <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-clock-rotate-left"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title" style="font-size: 14px;">Versions précédentes</div>
@@ -660,8 +656,11 @@ const feedbackKey = ref(0);
 
 const handleMeetingModeClose = () => {
   showMeetingMode.value = false;
-  // We reload the page to ensure all components, stats and feedback engines are 100% synchronized
-  window.location.reload();
+  // We reload the page to ensure all components, stats and feedback engines are 100% synchronized.
+  // We also remove the 'meeting' query parameter to prevent it from reopening automatically.
+  const url = new URL(window.location.href);
+  url.searchParams.delete('meeting');
+  window.location.href = url.toString();
 };
 
 const openAttachment = (idx) => {
@@ -708,7 +707,7 @@ const isCircleMember = computed(() => {
 });
 
 // Droits de gestion (vue classique, boutons de changement de phase sidebar)
-const isAuthorOrAnimator = computed(() => isAuthor.value || isAnimator.value || authStore.user?.is_global_animator);
+const isAuthorOrAnimator = computed(() => isAuthor.value || isAnimator.value);
 
 // Droits d'ouvrir le mode meeting (élargis aux membres du cercle)
 const canOpenMeetingMode = computed(() => isAuthorOrAnimator.value || isCircleMember.value);
@@ -950,6 +949,21 @@ const stepActions = computed(() => {
       label: 'Passer à l’adoption',
       primary: true,
       run: () => transitionStatus('adopted'),
+    });
+  }
+
+  if (currentStatus.value === 'revision') {
+    actions.push({
+      key: 'save-revision',
+      label: 'Enregistrer',
+      primary: false,
+      run: saveRevision,
+    });
+    actions.push({
+      key: 'publish-revision',
+      label: publishing.value ? 'Publier...' : 'Publier',
+      primary: true,
+      run: publishRevision,
     });
   }
 
@@ -1383,6 +1397,11 @@ onMounted(async () => {
     await decisionStore.fetchDecisionById(route.params.id);
     updateDraftForm();
     await fetchAllVersions();
+
+    // Auto-open meeting mode if requested via query param
+    if (route.query.meeting) {
+      showMeetingMode.value = true;
+    }
   }
 
   try {

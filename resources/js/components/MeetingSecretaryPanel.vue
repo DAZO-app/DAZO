@@ -852,7 +852,7 @@ const handleQuickAction = async (type) => {
     // If revision-direct, open the editor after a short delay for data refresh
     if (type === 'revision-direct') {
       setTimeout(() => {
-        emit('direct-edit');
+        emit('direct-edit', 'revision');
       }, 500);
     }
   } catch (err) {
