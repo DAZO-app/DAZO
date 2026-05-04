@@ -8,11 +8,13 @@
     </div>
     <div class="decision-item-main">
       <div class="decision-title">
+        {{ decision.title }}
+      </div>
+      <div class="decision-listing-meta-row flex items-center mb-4">
         <span class="version-pill cursor-pointer hover:underline" @click.stop="emit('filter-circle', decision.circle_id)" style="margin-right: 6px; border-color: transparent;">{{ decision.circle?.name || 'Général' }}</span>
         <span class="version-pill" v-if="decision.current_version" style="margin-right: 6px">v{{ decision.current_version.version_number }}</span>
         <span v-if="decision.visibility === 'private'" title="Décision Privée" style="margin-right: 4px; opacity: 0.7;"><i class="fa-solid fa-lock"></i></span>
         <span v-if="decision.current_version?.attachments?.length > 0" title="Contient des pièces jointes" style="margin-right: 4px; opacity: 0.7;"><i class="fa-solid fa-paperclip"></i></span>
-        {{ decision.title }}
       </div>
       <div class="decision-people">
         <span class="text-author">Auteur : {{ getParticipantName(decision, 'author') || 'Inconnu' }}</span>

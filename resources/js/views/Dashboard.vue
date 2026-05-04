@@ -116,93 +116,117 @@
               </div>
             </div>
 
-            <!-- TICKETS WIDGET -->
-            <div v-if="widget.id === 'tickets'">
-              <div class="grid-2-internal">
-                <!-- Clarifications actives -->
-                <div class="premium-card h-full">
-                  <div class="pc-header pc-header-amber">
-                    <div class="pc-header-icon"><i class="fa-solid fa-comments"></i></div>
-                    <div class="pc-header-content">
-                      <div class="pc-header-title">Clarifications actives</div>
-                      <div class="pc-header-sub">Tickets en attente de réponse</div>
-                    </div>
+            <!-- CLARIFICATIONS WIDGET -->
+            <div v-if="widget.id === 'clarifications'">
+              <div class="premium-card h-full">
+                <div class="pc-header pc-header-amber">
+                  <div class="pc-header-icon"><i class="fa-solid fa-comments"></i></div>
+                  <div class="pc-header-content">
+                    <div class="pc-header-title">Clarifications actives</div>
+                    <div class="pc-header-sub">Tickets en attente de réponse</div>
                   </div>
-                  <div class="pc-body">
-                    <EmptyState v-if="!dashboard.my_clarifications?.length" message="Aucune clarification." />
-                    <div v-for="fb in dashboard.my_clarifications" :key="fb.id"
-                         class="decision-item" @click="goToDecision(fb.version?.decision_id)">
-                      <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
-                        <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+                </div>
+                <div class="pc-body">
+                  <EmptyState v-if="!dashboard.my_clarifications?.length" message="Aucune clarification." />
+                  <div v-for="fb in dashboard.my_clarifications" :key="fb.id"
+                        class="decision-item" @click="goToDecision(fb.version?.decision_id)">
+                    <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
+                      <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+                    </div>
+                    <div class="decision-item-main">
+                      <div class="decision-title">
+                        <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
+                        {{ fb.version?.decision?.title }}
                       </div>
-                      <div class="decision-item-main">
-                        <div class="decision-title">
-                          <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
-                          <span v-if="fb.version?.attachments_count > 0"
-                                title="Contient des pièces jointes"
-                                style="margin-right: 4px; opacity: 0.7;">
-                            <i class="fa-solid fa-paperclip"></i>
-                          </span>
-                          {{ fb.version?.decision?.title }}
-                        </div>
-                        <div class="decision-people">
-                          <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
-                        </div>
-                        <div class="ticket-msg" v-if="getLastMessageContent(fb)">
-                          <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>
-                          : "{{ getLastMessageContent(fb) }}"
-                        </div>
+                      <div class="decision-people">
+                        <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
                       </div>
-                      <div class="decision-end-actions">
-                        <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
-                          {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
-                        </span>
-                        <div class="text-xs text-muted mt-4">{{ getLastMessageDate(fb) }}</div>
+                      <div class="ticket-msg" v-if="getLastMessageContent(fb)">
+                        <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>: "{{ getLastMessageContent(fb) }}"
                       </div>
+                    </div>
+                    <div class="decision-end-actions">
+                      <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
+                        {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
+                      </span>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <!-- Objections actives -->
-                <div class="premium-card h-full">
-                  <div class="pc-header pc-header-red">
-                    <div class="pc-header-icon"><i class="fa-solid fa-scale-balanced"></i></div>
-                    <div class="pc-header-content">
-                      <div class="pc-header-title">Objections actives</div>
-                      <div class="pc-header-sub">Tickets en attente de réponse</div>
+            <!-- SUGGESTIONS WIDGET -->
+            <div v-if="widget.id === 'suggestions'">
+              <div class="premium-card h-full">
+                <div class="pc-header pc-header-blue" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);">
+                  <div class="pc-header-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                  <div class="pc-header-content">
+                    <div class="pc-header-title">Suggestions actives</div>
+                    <div class="pc-header-sub">Tickets en attente de réponse</div>
+                  </div>
+                </div>
+                <div class="pc-body">
+                  <EmptyState v-if="!dashboard.my_suggestions?.length" message="Aucune suggestion." />
+                  <div v-for="fb in dashboard.my_suggestions" :key="fb.id"
+                        class="decision-item" @click="goToDecision(fb.version?.decision_id)">
+                    <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
+                      <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+                    </div>
+                    <div class="decision-item-main">
+                      <div class="decision-title">
+                        <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
+                        {{ fb.version?.decision?.title }}
+                      </div>
+                      <div class="decision-people">
+                        <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
+                      </div>
+                      <div class="ticket-msg" v-if="getLastMessageContent(fb)">
+                        <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>: "{{ getLastMessageContent(fb) }}"
+                      </div>
+                    </div>
+                    <div class="decision-end-actions">
+                      <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
+                        {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
+                      </span>
                     </div>
                   </div>
-                  <div class="pc-body">
-                    <EmptyState v-if="!dashboard.my_objections?.length" message="Aucune objection." />
-                    <div v-for="fb in dashboard.my_objections" :key="fb.id"
-                         class="decision-item" @click="goToDecision(fb.version?.decision_id)">
-                      <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
-                        <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- OBJECTIONS WIDGET -->
+            <div v-if="widget.id === 'objections'">
+              <div class="premium-card h-full">
+                <div class="pc-header pc-header-red">
+                  <div class="pc-header-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                  <div class="pc-header-content">
+                    <div class="pc-header-title">Objections actives</div>
+                    <div class="pc-header-sub">Tickets en attente de réponse</div>
+                  </div>
+                </div>
+                <div class="pc-body">
+                  <EmptyState v-if="!dashboard.my_objections?.length" message="Aucune objection." />
+                  <div v-for="fb in dashboard.my_objections" :key="fb.id"
+                        class="decision-item" @click="goToDecision(fb.version?.decision_id)">
+                    <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
+                      <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+                    </div>
+                    <div class="decision-item-main">
+                      <div class="decision-title">
+                        <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
+                        {{ fb.version?.decision?.title }}
                       </div>
-                      <div class="decision-item-main">
-                        <div class="decision-title">
-                          <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
-                          <span v-if="fb.version?.attachments_count > 0"
-                                title="Contient des pièces jointes"
-                                style="margin-right: 4px; opacity: 0.7;">
-                            <i class="fa-solid fa-paperclip"></i>
-                          </span>
-                          {{ fb.version?.decision?.title }}
-                        </div>
-                        <div class="decision-people">
-                          <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
-                        </div>
-                        <div class="ticket-msg" v-if="getLastMessageContent(fb)">
-                          <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>
-                          : "{{ getLastMessageContent(fb) }}"
-                        </div>
+                      <div class="decision-people">
+                        <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
                       </div>
-                      <div class="decision-end-actions">
-                        <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
-                          {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
-                        </span>
-                        <div class="text-xs text-muted mt-4">{{ getLastMessageDate(fb) }}</div>
+                      <div class="ticket-msg" v-if="getLastMessageContent(fb)">
+                        <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>: "{{ getLastMessageContent(fb) }}"
                       </div>
+                    </div>
+                    <div class="decision-end-actions">
+                      <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
+                        {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -327,20 +351,30 @@ const loading = ref(true);
 const dashboard = ref({ my_decisions: {}, my_animated: {}, circle_decisions: {}, my_clarifications: [], my_objections: [], stats: null, categories: [] });
 
 const enabledWidgets = computed(() => {
-  let widgets = [];
-  try {
-    widgets = JSON.parse(authStore.user?.dashboard_widgets || '[]');
-  } catch (e) {}
-  if (!widgets.length) widgets = [
-    { id: 'stats', enabled: true, width: 'full' },
-    { id: 'urgencies', enabled: true, width: 'full' },
-    { id: 'tickets', enabled: true, width: 'full' },
-    { id: 'my_proposals', enabled: true, width: '1/3' },
-    { id: 'my_animated', enabled: true, width: '1/3' },
-    { id: 'circles_watch', enabled: true, width: '1/3' },
-    { id: 'my_circles', enabled: true, width: '1/2' },
-    { id: 'categories', enabled: true, width: '1/2' }
-  ];
+  let widgets = authStore.user?.dashboard_widgets;
+  
+  // Si c'est une chaîne (JSON), on parse
+  if (typeof widgets === 'string') {
+    try {
+      widgets = JSON.parse(widgets);
+    } catch (e) {
+      widgets = [];
+    }
+  }
+
+  // Si c'est vide ou pas un tableau, on met les défauts
+  if (!Array.isArray(widgets) || widgets.length === 0) {
+    widgets = [
+      { id: 'stats', enabled: true, width: 'full' },
+      { id: 'urgencies', enabled: true, width: 'full' },
+      { id: 'tickets', enabled: true, width: 'full' },
+      { id: 'my_proposals', enabled: true, width: '1/3' },
+      { id: 'my_animated', enabled: true, width: '1/3' },
+      { id: 'circles_watch', enabled: true, width: '1/3' },
+      { id: 'my_circles', enabled: true, width: '1/2' },
+      { id: 'categories', enabled: true, width: '1/2' }
+    ];
+  }
   return widgets.filter(w => w.enabled);
 });
 

@@ -454,7 +454,9 @@ const sections = [
 
 const AVAILABLE_WIDGETS = [
   { id: 'stats', label: 'Statistiques', defaultEnabled: true, defaultWidth: 'full' },
-  { id: 'tickets', label: 'Clarifications & Objections', defaultEnabled: true, defaultWidth: 'full' },
+  { id: 'clarifications', label: 'Clarifications actives', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'suggestions', label: 'Suggestions actives', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'objections', label: 'Objections actives', defaultEnabled: true, defaultWidth: '1/3' },
   { id: 'urgencies', label: 'Urgences', defaultEnabled: true, defaultWidth: 'full' },
   { id: 'my_proposals', label: 'Mes propositions', defaultEnabled: true, defaultWidth: '1/3' },
   { id: 'my_animated', label: 'Mes animations', defaultEnabled: true, defaultWidth: '1/3' },

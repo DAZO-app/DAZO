@@ -66,28 +66,23 @@ class DashboardController extends Controller
 
         // 3. My Clarifications (active threads)
         $terminal = [FeedbackStatus::WITHDRAWN->value, FeedbackStatus::ACKNOWLEDGED->value, FeedbackStatus::REJECTED->value, FeedbackStatus::TREATED->value];
-        $clarifications = Feedback::where('type', 'clarification')
-            ->whereNotIn('status', $terminal)
-            ->where(function($q) use ($user) {
-                $q->where('author_id', $user->id)
-                  ->orWhereHas('version.decision.participants', function($q2) use ($user) {
-                      $q2->where('user_id', $user->id)->whereIn('role', [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value]);
-                  });
-            })
-            ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'version.decision.participants.user', 'messages.author'])
-            ->orderByDesc('created_at')->get();
+        
+        $fetchFeedbacks = function($type) use ($user, $terminal) {
+            return Feedback::where('type', $type)
+                ->whereNotIn('status', $terminal)
+                ->where(function($q) use ($user) {
+                    $q->where('author_id', $user->id)
+                      ->orWhereHas('version.decision.participants', function($q2) use ($user) {
+                          $q2->where('user_id', $user->id)->whereIn('role', [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value]);
+                      });
+                })
+                ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'version.decision.participants.user', 'messages.author'])
+                ->orderByDesc('created_at')->get();
+        };
 
-        // 4. My Objections (active threads)
-        $objections = Feedback::where('type', 'objection')
-            ->whereNotIn('status', $terminal)
-            ->where(function($q) use ($user) {
-                $q->where('author_id', $user->id)
-                  ->orWhereHas('version.decision.participants', function($q2) use ($user) {
-                      $q2->where('user_id', $user->id)->whereIn('role', [DecisionParticipantRole::AUTHOR->value, DecisionParticipantRole::ANIMATOR->value]);
-                  });
-            })
-            ->with(['author', 'version.decision.circle', 'version.decision.currentVersion.attachments', 'version.decision.participants.user', 'messages.author'])
-            ->orderByDesc('created_at')->get();
+        $clarifications = $fetchFeedbacks('clarification');
+        $suggestions    = $fetchFeedbacks('suggestion');
+        $objections     = $fetchFeedbacks('objection');
 
         // 5. STATS (Query optimized)
         $visibleQuery = Decision::where(function ($q) use ($user) {
@@ -113,19 +108,17 @@ class DashboardController extends Controller
             'abandoned'    => (clone $visibleQuery)->whereIn('status', [DecisionStatus::ABANDONED->value, DecisionStatus::DESERTED->value, DecisionStatus::LAPSED->value])->count(),
         ];
 
-        // Cache categories for 1 hour
-        $categories = \Illuminate\Support\Facades\Cache::remember('categories_all', 3600, function () {
-            return \App\Models\Category::all();
-        });
+        $categories = \App\Models\Category::where('is_active', true)->orderBy('name')->get();
 
         return response()->json([
-            'my_decisions'     => $myDecisionsGrouped,
-            'my_animated'      => $myAnimatedGrouped,
-            'circle_decisions' => $circleDecisionsGrouped,
-            'my_clarifications'=> $clarifications,
-            'my_objections'    => $objections,
-            'stats'            => $stats,
-            'categories'       => $categories,
+            'my_decisions'      => $myDecisionsGrouped,
+            'my_animated'       => $myAnimatedGrouped,
+            'circle_decisions'  => $circleDecisionsGrouped,
+            'my_clarifications' => $clarifications,
+            'my_suggestions'    => $suggestions,
+            'my_objections'     => $objections,
+            'stats'             => $stats,
+            'categories'        => $categories,
         ]);
     }
 }

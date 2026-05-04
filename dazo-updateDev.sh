@@ -30,6 +30,7 @@ sudo chown -R $USER:$USER public/build
 # 5. Laravel optimize
 echo -e "${YELLOW}🧹 Clearing Laravel caches...${NC}"
 docker compose exec app php artisan optimize:clear
+docker compose exec app php artisan cache:clear
 
 echo -e "${GREEN}=====================================${NC}"
 echo -e "${GREEN}✅ BOURRIN UPDATE FINISHED! ✨${NC}"
