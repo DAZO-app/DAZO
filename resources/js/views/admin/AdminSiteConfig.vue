@@ -226,6 +226,57 @@
             </div>
           </div>
 
+          <!-- SECTION PHASES -->
+          <div v-if="activeSection === 'phases'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-blue">
+              <div class="pc-header-icon"><i class="fa-solid fa-layer-group"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Couleurs des Phases</div>
+                <div class="pc-header-sub">Personnalisez l'affichage visuel des différentes étapes d'une décision</div>
+              </div>
+            </div>
+            <div class="pc-body p-24">
+              <p class="help-text mb-24">Définissez les couleurs qui seront utilisées pour identifier chaque phase dans les listes et les détails de décisions.</p>
+              
+              <div class="phases-config-grid">
+                <div v-for="phase in availableStatuses" :key="phase.value" class="phase-config-card">
+                  <div class="phase-config-header">
+                    <div class="phase-preview-badge" 
+                         :style="{ 
+                           color: config['phase_' + phase.value + '_primary'] || phase.defaultPrimary,
+                           borderColor: config['phase_' + phase.value + '_primary'] || phase.defaultPrimary,
+                           backgroundColor: config['phase_' + phase.value + '_secondary'] || phase.defaultSecondary
+                         }">
+                      {{ phase.label }}
+                    </div>
+                  </div>
+                  
+                  <div class="phase-config-body">
+                    <div class="form-group mb-12">
+                      <label class="text-xs font-bold text-gray-500 mb-4 block">Couleur Primaire (Texte/Bordure)</label>
+                      <div class="color-picker-wrapper">
+                        <input type="color" v-model="config['phase_' + phase.value + '_primary']" class="color-input">
+                        <input type="text" v-model="config['phase_' + phase.value + '_primary']" class="input input-sm font-mono" placeholder="#000000">
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="text-xs font-bold text-gray-500 mb-4 block">Couleur Secondaire (Fond)</label>
+                      <div class="color-picker-wrapper">
+                        <input type="color" v-model="config['phase_' + phase.value + '_secondary']" class="color-input">
+                        <input type="text" v-model="config['phase_' + phase.value + '_secondary']" class="input input-sm font-mono" placeholder="#000000">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer les Phases
+              </button>
+            </div>
+          </div>
+
 
           <div v-if="activeSection === 'access'" class="premium-card animate-fade-in">
             <div class="pc-header pc-header-blue">
@@ -558,6 +609,7 @@ const sections = [
   { id: 'theme_public', label: 'Thème Public', icon: 'fa-solid fa-globe' },
   { id: 'theme_meeting', label: 'Thème Meeting', icon: 'fa-solid fa-desktop' },
   { id: 'decisions', label: 'Gouvernance', icon: 'fa-solid fa-scale-balanced' },
+  { id: 'phases', label: 'Phases', icon: 'fa-solid fa-layer-group' },
   { id: 'access', label: 'Sécurité', icon: 'fa-solid fa-user-shield' },
   { id: 'notifications', label: 'Alertes', icon: 'fa-solid fa-bell' },
   { id: 'emails', label: 'Contenu Emails', icon: 'fa-solid fa-envelope-open-text' },
@@ -577,15 +629,15 @@ const toggleAccordionEmail = (key) => {
 
 
 const availableStatuses = [
-  { value: 'draft', label: 'Brouillon' },
-  { value: 'clarification', label: 'Clarification' },
-  { value: 'reaction', label: 'Réaction' },
-  { value: 'objection', label: 'Objection' },
-  { value: 'revision', label: 'En Révision' },
-  { value: 'adopted', label: 'Adoptée' },
-  { value: 'suspended', label: 'Suspendue' },
-  { value: 'abandoned', label: 'Abandonnée' },
-  { value: 'rejected', label: 'Rejetée' },
+  { value: 'draft', label: 'Brouillon', defaultPrimary: '#64748b', defaultSecondary: '#f1f5f9' },
+  { value: 'clarification', label: 'Clarification', defaultPrimary: '#f59e0b', defaultSecondary: '#fffbeb' },
+  { value: 'reaction', label: 'Réaction', defaultPrimary: '#3b82f6', defaultSecondary: '#eff6ff' },
+  { value: 'objection', label: 'Objection', defaultPrimary: '#ef4444', defaultSecondary: '#fef2f2' },
+  { value: 'revision', label: 'En Révision', defaultPrimary: '#8b5cf6', defaultSecondary: '#f5f3ff' },
+  { value: 'adopted', label: 'Adoptée', defaultPrimary: '#10b981', defaultSecondary: '#ecfdf5' },
+  { value: 'suspended', label: 'Suspendue', defaultPrimary: '#6366f1', defaultSecondary: '#eef2ff' },
+  { value: 'abandoned', label: 'Abandonnée', defaultPrimary: '#94a3b8', defaultSecondary: '#f8fafc' },
+  { value: 'rejected', label: 'Rejetée', defaultPrimary: '#475569', defaultSecondary: '#f1f5f9' },
 ];
 
 const pagesList = [
@@ -633,6 +685,17 @@ onMounted(async () => {
     categories.value = catRes.data.data || [];
     const { data } = await axios.get('/api/v1/admin/config');
     config.value = data.config || data || {};
+
+    // Initialiser les couleurs par défaut si absentes pour rafraîchir les inputs color
+    availableStatuses.forEach(s => {
+      if (!config.value['phase_' + s.value + '_primary']) {
+        config.value['phase_' + s.value + '_primary'] = s.defaultPrimary;
+      }
+      if (!config.value['phase_' + s.value + '_secondary']) {
+        config.value['phase_' + s.value + '_secondary'] = s.defaultSecondary;
+      }
+    });
+
     const meRes = await axios.get('/api/v1/auth/me');
     currentUser.value = meRes.data.user || meRes.data;
     if (currentUser.value && currentUser.value.email) {
@@ -752,4 +815,65 @@ const handleLogoUpload = async (event) => {
 
 <style scoped>
 @import "../../../css/admin-config.css";
+
+.phases-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.phase-config-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.phase-config-card:hover {
+  border-color: var(--blue-300);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.phase-config-header {
+  padding: 16px;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: center;
+}
+
+.phase-preview-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.phase-config-body {
+  padding: 16px;
+}
+
+.color-picker-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-input {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+}
+
+.input-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}
 </style>
