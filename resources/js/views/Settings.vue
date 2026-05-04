@@ -105,32 +105,39 @@
                 <h4 class="config-label mb-8">Widgets disponibles</h4>
                 <p class="help-text mb-24">Activez ou désactivez les blocs d'information que vous souhaitez voir sur votre page d'accueil.</p>
                 
-                <draggable v-model="userWidgets" item-key="id" handle=".drag-handle" class="widgets-config-list" animation="200">
+                <draggable v-model="userWidgets" item-key="id" class="widgets-config-list" animation="250" @end="handleDragEnd" ghost-class="widget-ghost" drag-class="widget-dragging">
                   <template #item="{ element: w }">
-                  <div class="widget-config-row" :class="{ disabled: !w.enabled }">
-                    <div class="flex-items-center">
-                      <div class="drag-handle" style="cursor: grab; padding-right: 16px; color: #aaa;"><i class="fa-solid fa-grip-vertical"></i></div>
-                      <div class="widget-config-info">
+                  <div :id="'widget-config-' + w.id" class="widget-config-row-container" :class="[(!w.enabled ? 'w-config-full' : 'w-config-' + (w.width || 'full')), { 'is-disabled': !w.enabled, 'just-activated': activeWidgetId === w.id }]">
+                    <div class="widget-config-row" :class="{ disabled: !w.enabled }">
+                      <!-- Barre de contrôle verticale à gauche -->
+                      <div class="widget-config-sidebar">
                         <div class="widget-config-icon">
                           <i :class="getWidgetIcon(w.id)"></i>
                         </div>
-                        <div>
-                          <div class="widget-config-label">{{ w.label }}</div>
-                          <div class="widget-config-desc">{{ getWidgetDesc(w.id) }}</div>
+                        
+                        <div class="widget-config-actions-vertical" @mousedown.stop @touchstart.stop>
+                          <select v-if="w.enabled" v-model="w.width" class="ww-select-compact">
+                            <option value="quarter">1/4</option>
+                            <option value="third">1/3</option>
+                            <option value="half">1/2</option>
+                            <option value="full">1/1</option>
+                          </select>
                         </div>
                       </div>
-                    </div>
-                    <div class="widget-config-actions">
-                      <div class="widget-width-selector" v-if="w.enabled">
-                         <button @click="setWidgetWidth(w, 'quarter')" class="ww-btn" :class="{active: w.width === 'quarter'}" title="1/4 de largeur">1/4</button>
-                         <button @click="setWidgetWidth(w, 'third')" class="ww-btn" :class="{active: w.width === 'third'}" title="1/3 de largeur">1/3</button>
-                         <button @click="setWidgetWidth(w, 'half')" class="ww-btn" :class="{active: w.width === 'half'}" title="1/2 de largeur">1/2</button>
-                         <button @click="setWidgetWidth(w, 'full')" class="ww-btn" :class="{active: w.width === 'full'}" title="Pleine largeur">1/1</button>
+                      
+                      <!-- Contenu à droite -->
+                      <div class="widget-config-content">
+                        <div class="widget-config-label">{{ w.label }}</div>
+                        <div class="widget-config-desc">{{ getWidgetDesc(w.id) }}</div>
                       </div>
-                      <label class="switch-sm">
-                        <input type="checkbox" v-model="w.enabled">
-                        <span class="slider round"></span>
-                      </label>
+
+                      <!-- Switch en bas à droite -->
+                      <div class="widget-config-toggle-br" @mousedown.stop @touchstart.stop>
+                        <label class="switch-sm" title="Activer / Désactiver">
+                          <input type="checkbox" v-model="w.enabled" @change="handleWidgetToggle(w)">
+                          <span class="slider round"></span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                   </template>
@@ -443,6 +450,7 @@ const decisionStore = useDecisionStore();
 const configStore = useConfigStore();
 
 const activeSection = ref('profile');
+const activeWidgetId = ref(null);
 const sections = [
   { id: 'profile', label: 'Mon profil', icon: 'fa-solid fa-user-circle' },
   { id: 'dashboard', label: 'Mon tableau de bord', icon: 'fa-solid fa-gauge-high' },
@@ -651,6 +659,7 @@ const saveDashboardConfig = async () => {
   loading.value = true;
   dashSuccessMsg.value = '';
   try {
+    // Re-sync order with stored base before saving
     await axios.put('/api/v1/auth/me', { dashboard_widgets: userWidgets.value });
     dashSuccessMsg.value = 'Configuration du tableau de bord enregistrée.';
     await authStore.fetchUser();
@@ -660,6 +669,50 @@ const saveDashboardConfig = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const lastActiveOrder = ref([]);
+
+const handleWidgetToggle = (w) => {
+    if (!w.enabled) {
+        // Find current position in list to remember it
+        const idx = userWidgets.value.indexOf(w);
+        // Move to the end of the list
+        userWidgets.value.splice(idx, 1);
+        userWidgets.value.push(w);
+        activeWidgetId.value = null;
+    } else {
+        // When reactivating, we move it back to the end of the "active" section
+        const idx = userWidgets.value.indexOf(w);
+        userWidgets.value.splice(idx, 1);
+        
+        // Find the index of the first disabled widget
+        const firstDisabledIdx = userWidgets.value.findIndex(x => !x.enabled);
+        if (firstDisabledIdx === -1) {
+            userWidgets.value.push(w);
+        } else {
+            userWidgets.value.splice(firstDisabledIdx, 0, w);
+        }
+
+        // WOW EFFECT
+        activeWidgetId.value = w.id;
+        
+        // Scroll to the element
+        setTimeout(() => {
+            const el = document.getElementById('widget-config-' + w.id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            // Clear effect after animation
+            setTimeout(() => {
+                activeWidgetId.value = null;
+            }, 2000);
+        }, 100);
+    }
+};
+
+const handleDragEnd = () => {
+    // No specific logic needed, draggable already updated the array
 };
 
 // Profile state
@@ -902,33 +955,76 @@ const unlinkSocial = async (provider) => {
 .avatar-preview-wrap:hover .avatar-edit-overlay { opacity: 1; }
 
 /* Dashboard Config */
-.widgets-config-list { display: flex; flex-direction: column; gap: 12px; }
-.widget-config-row { 
-  display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; 
-  background: white; border: 1px solid var(--gray-200); border-radius: 16px; transition: all 0.2s;
+.widgets-config-list { display: flex; flex-wrap: wrap; gap: 12px; }
+.widget-config-row-container { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.widget-config-row-container.is-disabled { order: 999; }
+.w-config-quarter { width: calc(25% - 9px); }
+.w-config-third { width: calc(33.33% - 8px); }
+.w-config-half { width: calc(50% - 6px); }
+.w-config-full { width: 100%; }
+
+@media (max-width: 800px) {
+  .w-config-quarter, .w-config-third, .w-config-half { width: 100%; }
 }
-.widget-config-row:hover { border-color: var(--blue-300); background: var(--gray-50); }
-.widget-config-row.disabled { opacity: 0.6; background: var(--gray-100); }
-.flex-items-center { display: flex; align-items: center; }
-.widget-config-info { display: flex; align-items: center; gap: 16px; }
+
+.widget-config-row { 
+  display: flex; align-items: flex-start; gap: 16px; padding: 12px 16px; 
+  background: white; border: 1px solid var(--gray-200); border-radius: 16px; transition: border 0.2s, background 0.2s, box-shadow 0.2s;
+  height: 100%; position: relative; cursor: grab;
+}
+.widget-config-row:active { cursor: grabbing; }
+.widget-config-row:hover { border-color: var(--blue-400); background: var(--gray-50); box-shadow: 0 8px 16px rgba(0,0,0,0.06); }
+.widget-config-row.disabled { opacity: 0.5; background: var(--gray-50); cursor: default; }
+
+.widget-ghost {
+  opacity: 0.3 !important;
+  background: var(--blue-50) !important;
+  border: 2px dashed var(--blue-400) !important;
+  border-radius: 16px !important;
+}
+
+.widget-dragging {
+  opacity: 1 !important;
+  transform: scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
+  z-index: 9999 !important;
+}
+
+/* Sidebar à gauche */
+.widget-config-sidebar { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 44px; flex-shrink: 0; }
 .widget-config-icon { 
   width: 44px; height: 44px; border-radius: 12px; background: white; border: 1px solid var(--gray-200);
   display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--indigo-600);
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
-.widget-config-label { font-size: 14px; font-weight: 800; color: var(--gray-800); }
-.widget-config-desc { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
-.widget-config-actions { display: flex; align-items: center; gap: 20px; }
+.widget-config-actions-vertical { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
 
-.widget-width-selector { 
-  display: flex; background: var(--gray-100); padding: 3px; border-radius: 8px; border: 1px solid var(--gray-200);
+.ww-select-compact { 
+  width: 100%; padding: 4px 2px; font-size: 10px; font-weight: 800; border-radius: 6px; 
+  border: 1px solid var(--gray-200); background: white; color: var(--gray-700); cursor: pointer; text-align: center;
 }
-.ww-btn {
-  padding: 4px 10px; font-size: 10px; font-weight: 800; border-radius: 6px; border: none;
-  background: transparent; color: var(--gray-500); cursor: pointer; transition: all 0.2s;
+.ww-select-compact:focus { border-color: var(--blue-400); outline: none; }
+
+/* Contenu à droite */
+.widget-config-content { flex: 1; min-width: 0; padding-top: 4px; padding-bottom: 24px; }
+.widget-config-label { font-size: 14px; font-weight: 800; color: var(--gray-800); }
+.widget-config-desc { font-size: 11px; color: var(--gray-500); margin-top: 4px; line-height: 1.4; }
+
+.widget-config-toggle-br { position: absolute; bottom: 12px; right: 12px; z-index: 5; }
+
+/* Wow Effect Activation */
+.just-activated .widget-config-row {
+  animation: success-glow 1.5s ease-out;
+  border-color: var(--teal-500) !important;
+  background: var(--teal-50) !important;
+  z-index: 10;
 }
-.ww-btn:hover { color: var(--blue-600); }
-.ww-btn.active { background: white; color: var(--blue-600); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+@keyframes success-glow {
+  0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.6); transform: scale(1.03); }
+  50% { box-shadow: 0 0 40px 20px rgba(20, 184, 166, 0); transform: scale(1); }
+  100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+}
 
 /* Views */
 .views-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }

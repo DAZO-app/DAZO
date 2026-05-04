@@ -1,5 +1,5 @@
 <template>
-  <div class="empty-state">
+  <div class="empty-state" :class="{ small: small }">
     <div class="empty-state-container">
       <img src="/DAZO-picto-carre-gris.svg" class="empty-state-img" alt="Pas de données" />
       <div class="empty-state-message">
@@ -14,6 +14,10 @@ defineProps({
   message: {
     type: String,
     default: 'Aucune donnée disponible.'
+  },
+  small: {
+    type: Boolean,
+    default: false
   }
 });
 </script>
@@ -46,14 +50,26 @@ defineProps({
 }
 
 .empty-state-message {
-  position: absolute;
-  width: 220px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+  margin-top: 15px;
+}
+
+.empty-state.small {
+  padding: 30px 10px;
+  min-height: 120px;
+}
+.empty-state.small .empty-state-img {
+  width: 90px;
+  height: 90px;
+}
+.empty-state.small .empty-state-message {
+  width: 110px;
+}
+.empty-state.small .empty-state-message span {
+  font-size: 10px;
 }
 
 .empty-state-message span {

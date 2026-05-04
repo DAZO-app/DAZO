@@ -96,7 +96,7 @@
             </div>
 
             <!-- URGENCY WIDGET -->
-            <div v-if="widget.id === 'urgencies' && urgentDecisions.length > 0">
+            <div v-if="widget.id === 'urgencies'">
               <div class="premium-card border-red h-full">
                 <div class="pc-header pc-header-red">
                   <div class="pc-header-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
@@ -106,6 +106,7 @@
                   </div>
                 </div>
                 <div class="pc-body" :class="{ 'grid-3-no-gap': widget.width === 'full' || widget.width === '1/1' }">
+                  <EmptyState v-if="urgentDecisions.length === 0" message="Aucune urgence à signaler." />
                   <DecisionListItem
                       v-for="d in urgentDecisions" :key="d.id" :decision="d"
                       @click="goToDecision"
@@ -127,7 +128,7 @@
                   </div>
                 </div>
                 <div class="pc-body">
-                  <EmptyState v-if="!dashboard.my_clarifications?.length" message="Aucune clarification." />
+                  <EmptyState v-if="!dashboard.my_clarifications?.length" message="Aucune clarification." :small="widget.width !== 'full' && widget.width !== '1/1'" />
                   <div v-for="fb in dashboard.my_clarifications" :key="fb.id"
                         class="decision-item" @click="goToDecision(fb.version?.decision_id)">
                     <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
@@ -166,7 +167,7 @@
                   </div>
                 </div>
                 <div class="pc-body">
-                  <EmptyState v-if="!dashboard.my_suggestions?.length" message="Aucune suggestion." />
+                  <EmptyState v-if="!dashboard.my_suggestions?.length" message="Aucune suggestion." :small="widget.width !== 'full' && widget.width !== '1/1'" />
                   <div v-for="fb in dashboard.my_suggestions" :key="fb.id"
                         class="decision-item" @click="goToDecision(fb.version?.decision_id)">
                     <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
@@ -205,7 +206,7 @@
                   </div>
                 </div>
                 <div class="pc-body">
-                  <EmptyState v-if="!dashboard.my_objections?.length" message="Aucune objection." />
+                  <EmptyState v-if="!dashboard.my_objections?.length" message="Aucune objection." :small="widget.width !== 'full' && widget.width !== '1/1'" />
                   <div v-for="fb in dashboard.my_objections" :key="fb.id"
                         class="decision-item" @click="goToDecision(fb.version?.decision_id)">
                     <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
@@ -243,7 +244,7 @@
                   </div>
                 </div>
                 <div class="pc-body">
-                  <EmptyState v-if="Object.keys(dashboard.my_decisions).length === 0" message="Aucune proposition." />
+                  <EmptyState v-if="Object.keys(dashboard.my_decisions).length === 0" message="Aucune proposition." :small="widget.width !== 'full' && widget.width !== '1/1'" />
                   <template v-for="(decisions, circleName) in dashboard.my_decisions" :key="circleName">
                     <DecisionListItem v-for="d in decisions" :key="d.id" :decision="d" @click="goToDecision" />
                   </template>
@@ -254,14 +255,14 @@
             <!-- ANIMATED WIDGET -->
             <div v-if="widget.id === 'my_animated'">
               <div class="premium-card h-full">
-                <div class="pc-header pc-header-blue">
+                <div class="pc-header pc-header-amber">
                   <div class="pc-header-icon"><i class="fa-solid fa-user-tie"></i></div>
                   <div class="pc-header-content">
-                    <div class="pc-header-title">J'anime</div>
+                    <div class="pc-header-title">Mes animations</div>
                   </div>
                 </div>
                 <div class="pc-body">
-                  <EmptyState v-if="Object.keys(dashboard.my_animated || {}).length === 0" message="Aucune animation." />
+                  <EmptyState v-if="Object.keys(dashboard.my_animated || {}).length === 0" message="Aucune animation." :small="widget.width !== 'full' && widget.width !== '1/1'" />
                   <template v-for="(decisions, circleName) in dashboard.my_animated" :key="circleName">
                     <DecisionListItem v-for="d in decisions" :key="d.id" :decision="d" @click="goToDecision" />
                   </template>
@@ -279,7 +280,7 @@
                   </div>
                 </div>
                 <div class="pc-body">
-                  <EmptyState v-if="Object.keys(dashboard.circle_decisions).length === 0" message="Rien à signaler." />
+                  <EmptyState v-if="Object.keys(dashboard.circle_decisions).length === 0" message="Rien à signaler." :small="widget.width !== 'full' && widget.width !== '1/1'" />
                   <template v-for="(decisions, circleName) in dashboard.circle_decisions" :key="circleName">
                     <DecisionListItem v-for="d in decisions" :key="d.id" :decision="d" @click="goToDecision" />
                   </template>
@@ -298,7 +299,7 @@
                   </div>
                 </div>
                 <div class="pc-body pc-chips">
-                  <EmptyState v-if="circleStore.circles.length === 0" message="Aucun cercle rejoint." />
+                  <EmptyState v-if="circleStore.circles.length === 0" message="Aucun cercle rejoint." :small="widget.width !== 'full' && widget.width !== '1/1'" />
                   <button v-for="c in circleStore.circles" :key="c.id" class="chip chip-blue" @click="$router.push({ name: 'CircleDetail', params: { id: c.id } })">
                     <i class="fa-solid fa-circle-nodes" style="margin-right: 4px;"></i> {{ c.name }}
                   </button>
@@ -317,9 +318,10 @@
                   </div>
                 </div>
                 <div class="pc-body pc-chips">
-                  <EmptyState v-if="!dashboard.categories || dashboard.categories.length === 0" message="Aucune catégorie." />
-                  <button v-for="c in (dashboard.categories || [])" :key="c.id" class="chip chip-blue" @click="$router.push({ name: 'DecisionList', query: { category: c.id } })">
-                    {{ c.name }}
+                  <EmptyState v-if="(dashboard.categories || []).length === 0" message="Aucune catégorie." :small="widget.width !== 'full' && widget.width !== '1/1'" />
+                  <button v-for="cat in (dashboard.categories || [])" :key="cat.id" class="chip chip-blue" @click="$router.push({ name: 'DecisionList', query: { category: cat.id } })">
+                    <i :class="cat.icon || 'fa-solid fa-tag'" :style="{ color: cat.color_hex }" style="margin-right: 6px;"></i>
+                    {{ cat.name }}
                   </button>
                 </div>
               </div>
