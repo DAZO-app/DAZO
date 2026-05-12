@@ -137,6 +137,7 @@ class AttachmentController extends Controller
             's3_path'             => $path,
             'mime_type'           => $mime,
             'size_bytes'          => $size,
+            'is_private'          => filter_var($request->input('is_private', false), FILTER_VALIDATE_BOOLEAN),
         ]);
 
         return response()->json([
@@ -241,6 +242,26 @@ class AttachmentController extends Controller
             $attachment->filename,
             ['Content-Type' => $attachment->mime_type]
         );
+    }
+
+    public function update(Request $request, Attachment $attachment): JsonResponse
+    {
+        $this->authorize('update', $attachment);
+
+        $request->validate([
+            'is_private' => 'sometimes|boolean',
+        ]);
+
+        if ($request->has('is_private')) {
+            $attachment->is_private = $request->boolean('is_private');
+        }
+
+        $attachment->save();
+
+        return response()->json([
+            'message' => 'Pièce jointe mise à jour.',
+            'attachment' => $attachment,
+        ]);
     }
 
     public function destroy(Attachment $attachment): JsonResponse

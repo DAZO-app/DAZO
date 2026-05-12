@@ -14,6 +14,7 @@ class AttachmentResource extends JsonResource
             'filename' => $this->filename,
             'mime_type' => $this->mime_type,
             'size_bytes' => $this->size_bytes,
+            'is_private' => (bool)$this->is_private,
             'created_at' => $this->created_at,
             'download_url' => route('attachments.download', $this->id),
         ];

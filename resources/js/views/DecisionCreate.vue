@@ -84,13 +84,23 @@
                            <i v-else :class="fileGlyph(a.mime_type)" class="text-lg"></i>
                         </div>
                         <div class="attachment-info" @click.stop.prevent="runLightbox(idx)" style="cursor: pointer;">
-                            <div class="attachment-name">{{ a.filename }}</div>
+                            <div class="attachment-name">
+                                {{ a.filename }}
+                                <span v-if="a.is_private" class="badge badge-amber ml-8" style="font-size: 10px; padding: 2px 6px;">Privée</span>
+                            </div>
                             <div class="attachment-size">{{ formatSize(a.size_bytes) }}</div>
                         </div>
                         <div v-if="a.uploading" class="upload-progress-bar">
                              <div class="progress" :style="{ width: a.progress + '%' }"></div>
                         </div>
-                        <button v-else class="btn btn-ghost btn-icon btn-sm" @click.stop="removeAttachment(idx)"><i class="fa-solid fa-xmark"></i></button>
+                        <div v-else style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary btn-sm" @click.stop="togglePrivacy(idx)">
+                                <i class="fa-solid" :class="a.is_private ? 'fa-lock' : 'fa-lock-open'"></i>
+                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm" @click.stop="removeAttachment(idx)">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -98,31 +108,6 @@
         </div>
 
         <div class="col-side">
-          <!-- Bloc Animateur (apparaît quand un cercle est sélectionné) -->
-          <div v-if="form.circle_id" class="premium-card mb-16">
-            <div class="pc-header pc-header-light-blue">
-              <div class="pc-header-icon"><i class="fa-solid fa-user-tie"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title">Animateur de la décision</div>
-                <div class="pc-header-sub">Qui facilite le processus pour ce cercle ?</div>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="form-group mb-0">
-                <label class="label">Choisir l'animateur parmi les membres</label>
-                <select v-model="form.animator_id" class="select">
-                  <option value="">Auteur (vous)</option>
-                  <option v-for="m in circleMembers" :key="m.user.id" :value="m.user.id">
-                    {{ m.user.name }} {{ m.role === 'animator' || m.role?.value === 'animator' ? '(Animateur du cercle)' : '' }}
-                  </option>
-                </select>
-                <div class="text-xs text-muted mt-8">
-                  Par défaut, l'animateur du cercle est sélectionné s'il existe.
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div class="premium-card mb-16">
             <div class="pc-header pc-header-light-blue">
               <div class="pc-header-icon"><i class="fa-solid fa-sliders"></i></div>
@@ -132,50 +117,82 @@
               </div>
             </div>
             <div class="card-body">
-                <div class="form-group">
-                    <label class="label">Cercle *</label>
-                    <select v-model="form.circle_id" class="select" required>
-                    <option value="" disabled>Sélectionner un cercle...</option>
-                    <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
-                    </select>
+              <div class="form-group mb-24">
+                <label class="label">Visibilité</label>
+                <div class="visibility-toggles" style="display: flex; gap: 16px;">
+                  <label class="visibility-option" :class="{ active: form.visibility === 'public' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="form.visibility === 'public' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
+                    <input type="radio" v-model="form.visibility" value="public" class="hidden" style="display:none;">
+                    <i class="fa-solid fa-globe mb-8 text-xl"></i>
+                    <span class="font-bold">Publique</span>
+                    <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Visible par tous les membres</span>
+                  </label>
+                  <label class="visibility-option" :class="{ active: form.visibility === 'private' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="form.visibility === 'private' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
+                    <input type="radio" v-model="form.visibility" value="private" class="hidden" style="display:none;">
+                    <i class="fa-solid fa-lock mb-8 text-xl"></i>
+                    <span class="font-bold">Privée</span>
+                    <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Restreint aux participants</span>
+                  </label>
                 </div>
+              </div>
 
-                <div class="form-group">
-                    <label class="label">Catégories</label>
-                    <div class="categories-selector mt-8">
-                       <div class="category-chips">
-                          <div 
-                            v-for="cat in categories" 
-                            :key="cat.id"
-                            class="category-chip"
-                            :class="{ active: form.category_ids.includes(cat.id) }"
-                            @click="toggleCategory(cat.id)"
-                            :style="form.category_ids.includes(cat.id) ? { borderColor: cat.color_hex, background: cat.color_hex + '15', color: cat.color_hex } : {}"
-                          >
-                             <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
-                             {{ cat.name }}
-                          </div>
-                       </div>
-                    </div>
-                    <div class="text-xxs text-muted mt-8">Vous pouvez sélectionner plusieurs thématiques.</div>
+              <div class="form-group">
+                <label class="label">Cercle *</label>
+                <select v-model="form.circle_id" class="select" required>
+                  <option value="" disabled>Sélectionner un cercle...</option>
+                  <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="label">Catégories</label>
+                <div class="categories-selector mt-8">
+                   <div class="category-chips">
+                      <div 
+                        v-for="cat in categories" 
+                        :key="cat.id"
+                        class="category-chip"
+                        :class="{ active: form.category_ids.includes(cat.id) }"
+                        @click="toggleCategory(cat.id)"
+                        :style="form.category_ids.includes(cat.id) ? { borderColor: cat.color_hex, background: cat.color_hex + '15', color: cat.color_hex } : {}"
+                      >
+                         <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
+                         {{ cat.name }}
+                      </div>
+                   </div>
                 </div>
+                <div class="text-xxs text-muted mt-8">Vous pouvez sélectionner plusieurs thématiques.</div>
+              </div>
 
+              <template v-if="form.circle_id">
                 <div class="form-group mt-16 pt-16 border-t border-gray-100">
-                    <label class="label mb-8">Visibilité de la décision</label>
-                    <div class="radio-group" style="display: flex; gap: 16px;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="radio" v-model="form.visibility" value="public">
-                            <span>Publique</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="radio" v-model="form.visibility" value="private">
-                            <span>Privée</span>
-                        </label>
-                    </div>
-                    <div class="text-xs text-muted mt-8">
-                        Une décision privée ne sera jamais exposée sur l'API publique (CMS tiers), même si son cercle l'est.
-                    </div>
+                  <label class="label">Animateur désigné</label>
+                  <select v-model="form.animator_id" class="select">
+                    <option value="">Auteur (vous)</option>
+                    <option v-for="m in circleMembers" :key="m.user.id" :value="m.user.id">
+                      {{ m.user.name }} {{ m.role === 'animator' || m.role?.value === 'animator' ? '(Animateur du cercle)' : '' }}
+                    </option>
+                  </select>
+                  <div class="text-xs text-muted mt-8 mb-16">
+                    Par défaut, l'animateur du cercle est sélectionné s'il existe.
+                  </div>
                 </div>
+
+                <div class="form-group mb-0 mt-16 pt-16 border-t border-gray-100">
+                  <label class="label">Membres à exclure</label>
+                  <div class="checkbox-panel max-h-200 overflow-y-auto border p-8 rounded bg-gray-50">
+                    <label
+                      v-for="member in excludableMembers"
+                      :key="member.user.id"
+                      class="checkbox-row"
+                      style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;"
+                    >
+                      <input v-model="form.excluded_members" type="checkbox" :value="member.user.id">
+                      <span class="text-xs">{{ member.user.name }}</span>
+                    </label>
+                    <div v-if="!excludableMembers.length" class="text-xs text-muted">Aucun membre à exclure</div>
+                  </div>
+                </div>
+              </template>
 
             </div>
           </div>
@@ -188,6 +205,7 @@
 <script setup>
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
 import axios from 'axios';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import PhotoSwipe from 'photoswipe';
@@ -203,6 +221,7 @@ const attachments = ref([]);
 const dragActive = ref(false);
 const error = ref('');
 const submitting = ref(false);
+const authStore = useAuthStore();
 
 const form = ref({
   title: '',
@@ -212,7 +231,17 @@ const form = ref({
   category_ids: [],
   visibility: 'public',
   priority: 0,
-  emergency_mode: false
+  emergency_mode: false,
+  excluded_members: [],
+});
+
+const excludableMembers = computed(() => {
+  return circleMembers.value.filter((member) => {
+    if (member.role === 'observer' || member.role?.value === 'observer') return false;
+    if (member.user.id === authStore.user?.id) return false;
+    if (member.user.id === form.value.animator_id) return false;
+    return true;
+  });
 });
 
 const toggleCategory = (id) => {
@@ -301,24 +330,27 @@ const handleDrop = (e) => {
 
 const uploadFiles = (files) => {
     files.forEach(file => {
-        const item = { filename: file.name, size_bytes: file.size, uploading: true, progress: 0, id: null };
-        attachments.value.push(item);
+        const item = { filename: file.name, size_bytes: file.size, uploading: true, progress: 0, id: null, is_private: false };
+        const newLen = attachments.value.push(item);
+        
+        const reactiveItem = attachments.value[newLen - 1];
         
         const formData = new FormData();
         formData.append('file', file);
         
         axios.post('/api/v1/attachments', formData, {
             onUploadProgress: (progressEvent) => {
-                item.progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                reactiveItem.progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             }
         }).then(res => {
-            item.uploading = false;
-            item.id = res.data.attachment.id;
-            item.url = res.data.url;
-            item.mime_type = res.data.attachment.mime_type;
+            reactiveItem.uploading = false;
+            reactiveItem.id = res.data.attachment.id;
+            reactiveItem.url = res.data.url;
+            reactiveItem.mime_type = res.data.attachment.mime_type;
+            reactiveItem.is_private = res.data.attachment.is_private;
         }).catch(() => {
-            item.uploading = false;
-            item.filename += " (Erreur)";
+            reactiveItem.uploading = false;
+            reactiveItem.filename += " (Erreur)";
         });
     });
 };
@@ -329,6 +361,19 @@ const removeAttachment = (idx) => {
         axios.delete(`/api/v1/attachments/${item.id}`);
     }
     attachments.value.splice(idx, 1);
+};
+
+const togglePrivacy = async (idx) => {
+    const item = attachments.value[idx];
+    if (!item.id) return;
+    try {
+        const { data } = await axios.patch(`/api/v1/attachments/${item.id}`, {
+            is_private: !item.is_private
+        });
+        item.is_private = data.attachment.is_private;
+    } catch (e) {
+        window.alert(e.response?.data?.message || 'Erreur lors de la mise à jour de la confidentialité.');
+    }
 };
 
 const formatSize = (bytes) => {
@@ -362,6 +407,7 @@ const submit = async () => {
             category_ids: form.value.category_ids.length ? form.value.category_ids : undefined,
             model_id: form.value.model_id || undefined,
             visibility: form.value.visibility,
+            excluded_members: form.value.excluded_members.length ? form.value.excluded_members : undefined,
         });
 
         const decision = data.decision;

@@ -219,9 +219,27 @@
               </div>
             </div>
             <div class="card-body">
+              <div class="form-group mb-24">
+                <label class="label">Visibilité</label>
+                <div class="visibility-toggles" style="display: flex; gap: 16px;">
+                  <label class="visibility-option" :class="{ active: draftForm.visibility === 'public' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="draftForm.visibility === 'public' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
+                    <input type="radio" v-model="draftForm.visibility" value="public" class="hidden" style="display:none;">
+                    <i class="fa-solid fa-globe mb-8 text-xl"></i>
+                    <span class="font-bold">Publique</span>
+                    <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Visible par tous les membres</span>
+                  </label>
+                  <label class="visibility-option" :class="{ active: draftForm.visibility === 'private' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="draftForm.visibility === 'private' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
+                    <input type="radio" v-model="draftForm.visibility" value="private" class="hidden" style="display:none;">
+                    <i class="fa-solid fa-lock mb-8 text-xl"></i>
+                    <span class="font-bold">Privée</span>
+                    <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Restreint aux participants</span>
+                  </label>
+                </div>
+              </div>
+
               <div class="form-group">
                 <label class="label">Cercle *</label>
-                <select :key="circles.length + '-' + draftForm.circle_id" v-model.number="draftForm.circle_id" class="select" required>
+                <select :key="circles.length + '-' + draftForm.circle_id" v-model="draftForm.circle_id" class="select" required>
                   <option value="" disabled>Choisir un cercle...</option>
                   <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
@@ -579,6 +597,7 @@ const draftForm = ref({
   circle_id: '',
   category_ids: [],
   model_id: '',
+  visibility: 'public',
   revision_attachment_ids: [],
   excluded_members: [],
 });
@@ -999,6 +1018,7 @@ const updateDraftForm = () => {
     circle_id: value.circle_id || '',
     category_ids: value.categories ? value.categories.map(c => c.id) : [],
     model_id: value.model_id || '',
+    visibility: value.visibility || 'public',
     excluded_members: (value.participants || [])
       .filter((p) => p.role === 'excluded')
       .map((p) => p.user_id),
@@ -1033,10 +1053,9 @@ watch(decision, () => {
 // Sync draftForm circle_id when circles metadata is loaded
 watch(circles, async (newList) => {
   if (newList.length > 0 && decision.value && isDraft.value) {
-    // Brute force sync
     if (decision.value.circle_id) {
        await nextTick();
-       draftForm.value.circle_id = Number(decision.value.circle_id);
+       draftForm.value.circle_id = decision.value.circle_id;
     }
   }
 }, { deep: true, immediate: true });

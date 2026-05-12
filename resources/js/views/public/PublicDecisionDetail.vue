@@ -232,19 +232,24 @@
                 v-for="(att, idx) in decision.current_version.attachments"
                 :key="att.id"
                 class="attachment-card dazo-public-attachment-card"
-                @click="openAttachment(idx)"
+                @click="!att.is_private ? openAttachment(idx) : null"
+                :style="att.is_private ? { opacity: 0.6, cursor: 'not-allowed' } : {}"
               >
                 <div class="attachment-icon">
-                  <i class="fa-regular fa-file-pdf" v-if="att.mime_type?.includes('pdf')"></i>
+                  <i class="fa-solid fa-lock" v-if="att.is_private"></i>
+                  <i class="fa-regular fa-file-pdf" v-else-if="att.mime_type?.includes('pdf')"></i>
                   <i class="fa-regular fa-image" v-else-if="att.mime_type?.includes('image')"></i>
                   <i class="fa-regular fa-file-word" v-else-if="att.mime_type?.includes('word')"></i>
                   <i class="fa-regular fa-file" v-else></i>
                 </div>
                 <div class="attachment-info">
-                  <div class="attachment-name">{{ att.filename }}</div>
-                  <div class="attachment-size">{{ formatSize(att.size_bytes) }}</div>
+                  <div class="attachment-name">
+                    {{ att.filename }}
+                    <span v-if="att.is_private" class="text-xs text-muted ml-4" style="font-weight: 500;">[Confidenciel]</span>
+                  </div>
+                  <div class="attachment-size" v-if="!att.is_private">{{ formatSize(att.size_bytes) }}</div>
                 </div>
-                <div class="attachment-action"><i class="fa-solid fa-expand"></i></div>
+                <div class="attachment-action" v-if="!att.is_private"><i class="fa-solid fa-expand"></i></div>
               </div>
             </div>
           </div>
@@ -467,6 +472,16 @@ const openAttachment = (index) => {
   const items = decision.value.current_version.attachments.map(a => {
     const isImg = a.mime_type?.includes('image');
     const url = `/api/v1/attachments/${a.id}/download`;
+
+    if (a.is_private) {
+      return {
+        html: `<div class="pswp-doc-slide">
+          <i class="fa-solid fa-lock" style="font-size:60px;margin-bottom:20px;"></i>
+          <div style="font-size:18px;margin-bottom:24px;">${a.filename}</div>
+          <div style="color:var(--gray-400); font-weight: 500;">[Confidenciel] Pièce jointe privée</div>
+        </div>`
+      };
+    }
     
     if (isImg) {
       return { src: url, w: 1200, h: 800, alt: a.filename };

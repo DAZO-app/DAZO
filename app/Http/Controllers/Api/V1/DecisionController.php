@@ -179,11 +179,13 @@ class DecisionController extends Controller
             'model_id' => 'nullable|exists:decision_models,id',
             'revision_attachment_ids' => 'nullable|array',
             'revision_attachment_ids.*' => 'exists:attachments,id',
+            'visibility' => ['nullable', \Illuminate\Validation\Rule::enum(\App\Enums\DecisionVisibility::class)],
         ]);
 
         $decision->update([
             'title' => $validated['title'],
             'model_id' => $validated['model_id'] ?? null,
+            'visibility' => $validated['visibility'] ?? $decision->visibility,
         ]);
 
         if (isset($validated['category_ids'])) {

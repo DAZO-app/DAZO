@@ -64,7 +64,10 @@
           </div>
 
           <div class="attachment-content">
-            <div class="attachment-name" :title="attachment.filename">{{ attachment.filename }}</div>
+            <div class="attachment-name" :title="attachment.filename">
+                {{ attachment.filename }}
+                <span v-if="attachment.is_private" class="badge badge-amber ml-8" style="font-size: 10px; padding: 2px 6px;">Privée</span>
+            </div>
             <div class="attachment-meta">
               <span>{{ formatSize(attachment.size_bytes) }}</span>
               <span v-if="attachment.mime_type">{{ attachment.mime_type }}</span>
@@ -100,6 +103,15 @@
                 @click="reloadAttachment(attachment)"
               >
                 <i class="fa-solid fa-sync mr-4"></i> Charger à nouveau
+              </button>
+              <button
+                v-if="editable && attachment.id"
+                type="button"
+                class="btn btn-secondary btn-sm"
+                @click="togglePrivacy(attachment)"
+              >
+                <i class="fa-solid" :class="attachment.is_private ? 'fa-lock' : 'fa-lock-open'"></i>
+                <span class="ml-4">{{ attachment.is_private ? 'Rendre publique' : 'Rendre privée' }}</span>
               </button>
               <button
                 v-if="editable && attachment.id"
@@ -282,6 +294,19 @@ const removeAttachment = async (attachment) => {
     emit('changed');
   } catch (error) {
     window.alert(error.response?.data?.message || 'Suppression impossible pour le moment.');
+  }
+};
+
+const togglePrivacy = async (attachment) => {
+  if (!attachment.id) return;
+  try {
+    const { data } = await axios.patch(`/api/v1/attachments/${attachment.id}`, {
+      is_private: !attachment.is_private
+    });
+    attachment.is_private = data.attachment.is_private;
+    emit('changed');
+  } catch (error) {
+    window.alert(error.response?.data?.message || 'Erreur lors de la mise à jour de la confidentialité.');
   }
 };
 

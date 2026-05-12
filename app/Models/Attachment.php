@@ -11,12 +11,13 @@ class Attachment extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = ['decision_version_id', 'uploader_id', 'filename', 's3_path', 'mime_type', 'size_bytes'];
+    protected $fillable = ['decision_version_id', 'uploader_id', 'filename', 's3_path', 'mime_type', 'size_bytes', 'is_private'];
 
     protected function casts(): array
     {
         return [
             'size_bytes' => 'integer',
+            'is_private' => 'boolean',
         ];
     }
 
