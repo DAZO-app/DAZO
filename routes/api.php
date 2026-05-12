@@ -28,6 +28,9 @@ Route::prefix('v1')->group(function () {
     // Public Invitation check
     Route::get('/invitations/{token}', [\App\Http\Controllers\Api\V1\InvitationController::class, 'show']);
 
+    // Public Invite Link check
+    Route::get('/invite/{token}', [\App\Http\Controllers\Api\V1\InviteLinkController::class, 'show']);
+
     // OAuth / SSO (Public — redirects & callbacks)
     Route::get('/auth/social/{provider}/redirect', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'redirect']);
     Route::get('/auth/social/{provider}/callback', [\App\Http\Controllers\Api\V1\SocialAuthController::class, 'callback']);
@@ -52,6 +55,7 @@ Route::prefix('v1')->group(function () {
         Route::put('/auth/password', [ProfileController::class, 'updatePassword']);
         Route::get('/auth/notifications', [ProfileController::class, 'getNotificationPreferences']);
         Route::put('/auth/notifications', [ProfileController::class, 'updateNotificationPreferences']);
+        Route::post('/auth/me/delete', [ProfileController::class, 'deleteAccount']);
 
         Route::post('/auth/email/resend', [AuthController::class, 'resendEmailVerification']);
 
@@ -94,6 +98,9 @@ Route::prefix('v1')->group(function () {
         // Invitations
         Route::post('/invitations', [\App\Http\Controllers\Api\V1\InvitationController::class, 'store']);
         Route::post('/invitations/{token}/accept', [\App\Http\Controllers\Api\V1\InvitationController::class, 'accept']);
+
+        // Invite Link accept (auth required)
+        Route::post('/invite/{token}/accept', [\App\Http\Controllers\Api\V1\InviteLinkController::class, 'accept']);
 
         // Moteur de Décision (Core)
         // Templates (Models)
@@ -202,6 +209,15 @@ Route::prefix('v1')->group(function () {
 
             Route::delete('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'removeMember']);
             Route::put('/circles/{circle}/members/{user}', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'updateMemberRole']);
+
+            // Circle archive & invite links
+            Route::put('/circles/{circle}/archive', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'archiveChild']);
+            Route::put('/circles/{circle}/unarchive', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'unarchiveChild']);
+            Route::post('/circles/{circle}/invite-link', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'createInviteLink']);
+            Route::delete('/circles/{circle}/invite-link', [\App\Http\Controllers\Api\V1\Admin\CircleController::class, 'deleteInviteLink']);
+
+            // Shares overview
+            Route::get('/shares', [\App\Http\Controllers\Api\V1\Admin\ShareController::class, 'index']);
 
             // Wiki Admin CRUD
             Route::get('wiki/categories/search', [\App\Http\Controllers\Api\V1\Admin\WikiController::class, 'searchCategories']);

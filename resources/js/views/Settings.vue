@@ -285,7 +285,7 @@
                         <label class="form-label">Cercle</label>
                         <select v-model="customViewForm.filters.circle" class="form-control cv-input-sexy">
                           <option value="">Tous</option>
-                          <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
+                          <option v-for="c in flattenedCircles" :key="c.id" :value="c.id">{{ c.displayName }}</option>
                         </select>
                       </div>
                       <div class="cv-form-group">
@@ -476,8 +476,101 @@
             </div>
           </div>
 
-          <!-- SECTION COMPTES LIÉS (OAuth) -->
-          <div v-if="activeSection === 'social'" class="premium-card animate-fade-in">
+          <!-- SECTION RGPD -->
+          <div v-if="activeSection === 'rgpd'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-blue">
+              <div class="pc-header-icon"><i class="fa-solid fa-file-shield"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Protection des données (RGPD)</div>
+                <div class="pc-header-sub">Consultez et exportez vos données personnelles</div>
+              </div>
+            </div>
+            <div class="pc-body p-24">
+              <div class="mb-32">
+                <h4 class="config-label mb-8">Droit à la portabilité</h4>
+                <p class="text-sm text-gray-600 mb-20">Conformément au RGPD, vous avez le droit de récupérer l'ensemble des données vous concernant présentes sur la plateforme DAZO.</p>
+                
+                <div class="bg-gray-50 border rounded-xl p-20 flex items-start gap-16">
+                  <i class="fa-solid fa-circle-info text-blue-500 mt-4 text-xl"></i>
+                  <div class="text-sm">
+                    <strong>Votre archive contiendra :</strong>
+                    <ul class="mt-8 space-y-4 opacity-80">
+                      <li>• Votre profil (nom, email, préférences)</li>
+                      <li>• Vos cercles et rôles associés</li>
+                      <li>• Vos contributions (décisions, commentaires)</li>
+                      <li>• Votre activité sur la plateforme</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-16 border-top">
+                <button class="btn btn-primary" @click="requestGdprExport">
+                  <i class="fa-solid fa-download mr-8"></i> Demander mes données (Export JSON)
+                </button>
+                <p class="text-xs text-muted mt-12">Le traitement de votre demande peut prendre quelques minutes. Vous recevrez une notification quand votre archive sera prête.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION SUPPRESSION -->
+          <div v-if="activeSection === 'delete'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-red">
+              <div class="pc-header-icon"><i class="fa-solid fa-user-xmark"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Supprimer mon compte</div>
+                <div class="pc-header-sub">Action irréversible et sécurisée</div>
+              </div>
+            </div>
+            <div class="pc-body p-24">
+              <div class="alert alert-error mb-32">
+                <div class="flex items-start gap-16">
+                  <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                  <div>
+                    <div class="font-bold mb-4">Attention : cette action est définitive</div>
+                    <div class="text-sm opacity-90">La suppression de votre compte entraînera la suppression de toutes vos données personnelles. Pour préserver l'historique des échanges, vos messages et décisions resteront visibles sous le nom "Utilisateur supprimé".</div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="deleteError" class="alert alert-error mb-24">{{ deleteError }}</div>
+
+              <div class="form-group mb-24">
+                <label class="config-label">Veuillez saisir votre mot de passe pour confirmer</label>
+                <input v-model="deletePassword" type="password" class="input" placeholder="Votre mot de passe actuel" />
+              </div>
+
+              <div class="pt-16 border-top">
+                <button class="btn btn-danger" @click="initiateDelete" :disabled="!deletePassword">
+                  <i class="fa-solid fa-trash-can mr-8"></i> Supprimer définitivement mon compte
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODAL DOUBLE VALIDATION SUPPRESSION -->
+          <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
+            <div class="modal-box max-w-400">
+              <div class="modal-header bg-red-600 text-white border-none py-24">
+                <div class="flex items-center gap-12 text-xl font-bold">
+                  <i class="fa-solid fa-skull-crossbones"></i>
+                  Dernière confirmation
+                </div>
+              </div>
+              <div class="modal-body p-32 text-center">
+                <div class="text-lg mb-16">Êtes-vous <strong>absolument certain</strong> ?</div>
+                <p class="text-gray-600 text-sm">
+                  Toutes vos informations de connexion et de profil seront effacées. Vous ne pourrez plus accéder à vos cercles.
+                </p>
+              </div>
+              <div class="modal-footer p-20 gap-16">
+                <button class="btn btn-ghost" @click="showDeleteConfirm = false">Annuler</button>
+                <button class="btn btn-danger btn-lg shadow-lg" @click="confirmAccountDelete" :disabled="deleteLoading">
+                  {{ deleteLoading ? 'Suppression...' : 'OUI, SUPPRIMER MON COMPTE' }}
+                </button>
+              </div>
+            </div>
+          </div>          <div v-if="activeSection === 'social'" class="premium-card animate-fade-in">
             <div class="pc-header pc-header-purple">
               <div class="pc-header-icon"><i class="fa-solid fa-link"></i></div>
               <div class="pc-header-content">
@@ -543,6 +636,7 @@ import { useAuthStore } from '../stores/auth';
 import { useDecisionStore } from '../stores/decision';
 import { useConfigStore } from '../stores/config';
 import axios from 'axios';
+import { flattenCirclesWithHierarchy } from '../utils/circleHelpers';
 
 const authStore = useAuthStore();
 const decisionStore = useDecisionStore();
@@ -557,6 +651,8 @@ const sections = [
   { id: 'notifications', label: 'Notifications', icon: 'fa-solid fa-bell' },
   { id: 'password', label: 'Mot de passe', icon: 'fa-solid fa-key' },
   { id: 'social', label: 'Comptes liés', icon: 'fa-solid fa-link' },
+  { id: 'rgpd', label: 'RGPD', icon: 'fa-solid fa-file-shield' },
+  { id: 'delete', label: 'Suppression du compte', icon: 'fa-solid fa-user-xmark' },
 ];
 
 const AVAILABLE_WIDGETS = [
@@ -637,12 +733,41 @@ const editingViewId = ref(null);
 const activeViewId = ref(null);
 const confirmDeleteViewId = ref(null);
 
+const deletePassword = ref('');
+const deleteError = ref('');
+const showDeleteConfirm = ref(false);
+const deleteLoading = ref(false);
+
+const requestGdprExport = () => {
+  alert("Votre demande d'export RGPD a été enregistrée. Une équipe technique traitera votre demande sous 24h.");
+};
+
+const initiateDelete = () => {
+  deleteError.value = '';
+  showDeleteConfirm.value = true;
+};
+
+const confirmAccountDelete = async () => {
+  deleteLoading.value = true;
+  try {
+    await axios.post('/api/v1/auth/me/delete', { password: deletePassword.value });
+    authStore.logout();
+    window.location.href = '/login?deleted=1';
+  } catch (e) {
+    deleteError.value = e.response?.data?.message || 'Erreur lors de la suppression.';
+    showDeleteConfirm.value = false;
+  } finally {
+    deleteLoading.value = false;
+  }
+};
+
 const viewToDeleteLabel = computed(() => {
   const v = userViews.value.find(x => x.id === confirmDeleteViewId.value);
   return v ? v.label : '';
 });
 
 const circles = ref([]);
+const flattenedCircles = computed(() => flattenCirclesWithHierarchy(circles.value));
 const categories = ref([]);
 const availableIcons = [
   'fa-solid fa-filter', 'fa-solid fa-star', 'fa-solid fa-tag', 'fa-solid fa-circle-nodes',

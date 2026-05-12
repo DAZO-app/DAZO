@@ -16,33 +16,37 @@
         </div>
       </div>
 
-      <!-- FILTER CARD -->
-      <div class="premium-card mb-32">
-        <div class="pc-header pc-header-indigo" style="padding: 16px 24px;">
-          <div class="pc-header-icon" style="width: 32px; height: 32px; font-size: 14px;"><i class="fa-solid fa-filter"></i></div>
-          <div class="pc-header-content">
-            <div class="pc-header-title">Filtres & Recherche</div>
-            <div class="pc-header-sub">Recherchez des cercles par nom ou par type de participation.</div>
-          </div>
-        </div>
-        <div class="pc-body p-20">
-          <div class="filter-group main-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input v-model="filters.search" placeholder="Rechercher un cercle par nom..." class="input-inline">
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <div class="filter-row">
+          <div class="filter-item" style="flex: 2; min-width: 250px;">
+            <label>Recherche textuelle</label>
+            <div class="main-search" style="margin-bottom: 0;">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input v-model="filters.search" placeholder="Nom, description..." class="input-inline">
+            </div>
           </div>
           
-          <div class="filter-row">
-            <div class="filter-item">
-              <label>Type de cercle</label>
-              <select v-model="filters.type" class="select-sm">
-                <option value="">Tous les types</option>
-                <option value="open">Ouvert</option>
-                <option value="closed">Fermé</option>
-                <option value="observer_open">Observateur ouvert</option>
-              </select>
-            </div>
+          <div class="filter-item" style="flex: 1; min-width: 150px;">
+            <label>Type de cercle</label>
+            <select v-model="filters.type" class="select-sm">
+              <option value="">Tous les types</option>
+              <option value="open">Ouvert</option>
+              <option value="closed">Fermé</option>
+              <option value="observer_open">Observateur ouvert</option>
+            </select>
+          </div>
 
-            <button class="btn btn-ghost btn-sm ml-auto" @click="resetFilters">
+          <div class="filter-item" style="flex: 1; min-width: 200px;">
+            <label>Organisation</label>
+            <select v-model="filters.parent_id" class="select-sm">
+              <option value="">Toutes les organisations</option>
+              <option v-for="c in topLevelCircles" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <button class="btn btn-ghost btn-sm" style="height: 38px;" @click="resetFilters">
               <i class="fa-solid fa-rotate-left"></i> Réinitialiser
             </button>
           </div>
@@ -52,8 +56,8 @@
       <!-- Create/Edit Modal -->
       <div v-if="showCreate" class="modal-overlay" @click.self="showCreate = false">
         <div class="modal-card">
-          <div class="modal-header modal-header-indigo">
-             <span class="modal-title">{{ editingCircleData ? 'Éditer le cercle' : 'Nouveau cercle' }}</span>
+          <div class="modal-header modal-header-sexy">
+             <span class="modal-title">{{ editingCircleData ? 'Éditer le cercle' : (circleForm.parent_id ? 'Nouveau sous-cercle' : 'Nouveau cercle') }}</span>
              <button class="btn btn-ghost btn-icon text-white" @click="showCreate = false"><i class="fa-solid fa-xmark"></i></button>
           </div>
           <div class="modal-body">
@@ -67,9 +71,16 @@
                   <option value="observer_open">Observateur ouvert (Lecture seule par défaut)</option>
                 </select>
               </div>
+              <div class="form-group">
+                <label class="label">Cercle Parent (Optionnel)</label>
+                <select v-model="circleForm.parent_id" class="select">
+                  <option :value="null">Aucun (Cercle de premier niveau)</option>
+                  <option v-for="c in flattenedCircles.filter(c => c.id !== editingCircleData?.id)" :key="c.id" :value="c.id">{{ c.displayName }}</option>
+                </select>
+              </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-ghost" @click="showCreate = false">Annuler</button>
-                <button type="submit" class="btn btn-primary">{{ editingCircleData ? 'Sauvegarder' : 'Créer le cercle' }}</button>
+                <button type="submit" class="btn btn-primary">{{ editingCircleData ? 'Sauvegarder' : 'Créer' }}</button>
               </div>
             </form>
           </div>
@@ -79,11 +90,27 @@
       <!-- Add Member Modal -->
        <div v-if="showAddMember" class="modal-overlay" @click.self="closeAddMemberModal">
          <div class="modal-card">
-           <div class="modal-header modal-header-indigo">
+           <div class="modal-header modal-header-sexy">
              <span class="modal-title">Inviter : {{ editingCircle?.name }}</span>
              <button class="btn btn-ghost btn-icon text-white" @click="closeAddMemberModal"><i class="fa-solid fa-xmark"></i></button>
            </div>
           <div class="modal-body">
+            <!-- Invitation par lien -->
+            <div class="form-group pb-16 border-b border-gray-100 mb-16">
+              <label class="label">Invitation par lien</label>
+              <div v-if="editingCircleInviteLink && !editingCircleInviteLink.is_expired" class="invite-link-box">
+                <div class="flex items-center gap-8 mb-8">
+                  <input :value="editingCircleInviteLink.url" readonly class="input text-xs" style="flex:1;background:var(--gray-50)">
+                  <button class="btn btn-secondary btn-sm" @click="copyInviteLink" title="Copier"><i class="fa-solid fa-copy"></i></button>
+                  <button class="btn btn-ghost btn-sm text-red" @click="deleteInviteLink" title="Révoquer"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                <div class="text-xs text-muted">Expire le {{ new Date(editingCircleInviteLink.expires_at).toLocaleDateString('fr-FR') }} · {{ editingCircleInviteLink.use_count }} utilisation(s)</div>
+              </div>
+              <button v-else class="btn btn-secondary btn-sm w-full" @click="generateInviteLink">
+                <i class="fa-solid fa-link mr-8"></i> Générer un lien d'invitation (7 jours)
+              </button>
+            </div>
+
             <div class="form-group" style="position:relative;">
               <label class="label">Utilisateur (Nom ou Email)</label>
               <div class="search-input-wrap">
@@ -132,8 +159,8 @@
               <label class="label">Ou importer d'un autre cercle</label>
               <select v-model="importCircleId" @change="importMembersFromCircle" class="select select-sm w-full">
                 <option value="">Sélectionner un cercle pour importer...</option>
-                <option v-for="c in circles.filter(c => c.id !== editingCircle?.id)" :key="c.id" :value="c.id">
-                  {{ c.name }} ({{ c.members?.length || 0 }} membres)
+                <option v-for="c in flattenedCircles.filter(c => c.id !== editingCircle?.id)" :key="c.id" :value="c.id">
+                  {{ c.displayName }}
                 </option>
               </select>
             </div>
@@ -210,28 +237,95 @@
         </div>
       </div>
 
+      <!-- Sub-Circle Detail Modal -->
+      <div v-if="showSubCircleDetail" class="modal-overlay" @click.self="showSubCircleDetail = false">
+        <div class="modal-card" style="max-width:560px">
+          <div class="modal-header modal-header-sexy">
+            <span class="modal-title">{{ subCircleDetail?.name }}</span>
+            <button class="btn btn-ghost btn-icon text-white" @click="showSubCircleDetail = false"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="modal-body" v-if="subCircleDetail">
+            <p class="circle-desc mb-16">{{ subCircleDetail.description || 'Pas de description fournie.' }}</p>
+            <div class="flex items-center gap-8 mb-16">
+              <span class="badge" :class="typeBadge(subCircleDetail.type)" style="font-size:10px;text-align:center">{{ typeLabel(subCircleDetail.type) }}</span>
+              <span v-if="subCircleDetail.is_archived" class="badge badge-gray" style="font-size:10px">Archivé</span>
+            </div>
+
+            <div class="flex items-center justify-between mb-8">
+              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Membres ({{ subCircleDetail.members?.length || 0 }})</div>
+              <button class="btn btn-ghost btn-sm" style="padding:2px 6px; font-size:10px" @click="openAddMemberForSub(subCircleDetail)">
+                <i class="fa-solid fa-user-plus"></i> Inviter
+              </button>
+            </div>
+            <div class="member-list-compact">
+              <div v-for="m in subCircleDetail.members" :key="m.id" class="member-row">
+                <div class="member-info">
+                  <span class="font-medium">{{ m.user?.name }}</span>
+                  <span class="text-xs text-muted ml-8 hide-tablet">{{ m.user?.email }}</span>
+                </div>
+                <div class="member-controls">
+                  <select class="select-member-role" :value="m.role" @change="updateMemberRole(subCircleDetail, m, $event.target.value)">
+                    <option value="animator">Animateur</option>
+                    <option value="member">Membre</option>
+                    <option value="observer">Observateur</option>
+                  </select>
+                  <button class="btn btn-ghost btn-icon btn-sm text-red" @click="removeMember(subCircleDetail, m)" title="Retirer"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+              </div>
+              <div v-if="!subCircleDetail.members?.length" class="text-xs text-muted italic py-8 text-center">Aucun membre.</div>
+            </div>
+
+            <div class="modal-footer">
+              <button v-if="!subCircleDetail.is_archived" class="btn btn-ghost btn-sm" @click="archiveSubCircle(subCircleDetail)">
+                <i class="fa-solid fa-archive mr-8"></i> Archiver
+              </button>
+              <button v-else class="btn btn-ghost btn-sm" @click="unarchiveSubCircle(subCircleDetail)">
+                <i class="fa-solid fa-box-open mr-8"></i> Restaurer
+              </button>
+              <button class="btn btn-ghost btn-sm" @click="openEditCircle(subCircleDetail)">
+                <i class="fa-solid fa-pen mr-8"></i> Modifier
+              </button>
+              <button class="btn btn-ghost btn-sm text-red" @click="deleteCircle(subCircleDetail); showSubCircleDetail = false">
+                <i class="fa-solid fa-trash mr-8"></i> Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div v-if="loading" class="text-center text-muted py-24">Chargement des cercles...</div>
 
       <div v-else class="premium-grid mt-24">
         <div v-for="circle in circles" :key="circle.id" class="premium-card">
-          <div class="pc-header pc-header-blue" style="padding: 14px 20px;">
-            <div class="pc-header-icon" style="width: 36px; height: 36px; font-size: 16px;">
-              <i class="fa-solid fa-circle-nodes"></i>
-            </div>
+          <div class="pc-header relative" :class="circle.parent_id ? 'pc-header-indigo' : 'pc-header-blue'" style="min-height: 85px;">
+            <div class="pc-header-icon"><i class="fa-solid fa-circle-nodes"></i></div>
             <div class="pc-header-content">
-              <div class="pc-header-title">{{ circle.name }}</div>
-              <div class="pc-header-sub">{{ typeLabel(circle.type) }}</div>
+              <div class="pc-header-title text-xl">
+                {{ circle.name }}
+              </div>
+              <div v-if="circle.parent" class="text-xs font-normal italic opacity-80" style="margin-top: -2px">
+                Lié à {{ circle.parent.name }}
+              </div>
             </div>
-            <div class="flex flex-col items-end gap-6 ml-auto">
-               <span class="badge" :class="typeBadge(circle.type)" style="font-size: 10px;">{{ circle.type }}</span>
-               <div class="flex gap-4">
-                  <button class="btn btn-ghost btn-icon btn-sm text-white opacity-80 hover:opacity-100" @click="openEditCircle(circle)" title="Modifier">
-                    <i class="fa-solid fa-pen text-xs"></i>
-                  </button>
-                  <button class="btn btn-ghost btn-icon btn-sm text-white opacity-80 hover:opacity-100" @click="deleteCircle(circle)" title="Supprimer">
-                    <i class="fa-solid fa-trash text-xs"></i>
-                  </button>
-               </div>
+
+            <!-- Badge top right -->
+            <div class="pc-badge-wrap absolute" style="top: 10px; right: 10px;">
+              <span class="badge" :class="typeBadge(circle.type)" style="font-size:10px; min-width:80px; justify-content: center; height: 22px;">
+                {{ typeLabel(circle.type) }}
+              </span>
+            </div>
+
+            <!-- Actions bottom right -->
+            <div class="absolute flex gap-4" style="bottom: 10px; right: 10px;">
+              <button class="btn btn-ghost btn-icon btn-sm text-white opacity-70 hover:opacity-100" @click="openEditCircle(circle)" title="Modifier">
+                <i class="fa-solid fa-pen text-xs"></i>
+              </button>
+              <button class="btn btn-ghost btn-icon btn-sm text-white opacity-70 hover:opacity-100" @click="openShareLink(circle)" title="Lien de partage">
+                <i class="fa-solid fa-share-nodes text-xs"></i>
+              </button>
+              <button class="btn btn-ghost btn-icon btn-sm text-white opacity-70 hover:opacity-100" @click="deleteCircle(circle)" title="Supprimer">
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
             </div>
           </div>
           
@@ -281,6 +375,38 @@
                 <div v-if="!circle.members?.length && !circle.invitations?.length" class="text-xs text-muted italic py-8 text-center">Aucun membre dans ce cercle.</div>
               </div>
             </div>
+
+            <!-- Cercles liés -->
+            <div class="mt-16">
+              <div class="flex items-center justify-between mb-8">
+                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cercles liés ({{ (circle.active_children?.length || 0) + (circle.archived_children?.length || 0) }})</div>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px; font-size:10px" @click="openCreateSubCircle(circle)">
+                  <i class="fa-solid fa-plus"></i> Ajouter
+                </button>
+              </div>
+              <div class="member-list-compact" v-if="(circle.active_children?.length || 0) + (circle.archived_children?.length || 0) > 0">
+                <div v-for="sub in circle.active_children" :key="sub.id" class="member-row cursor-pointer" @click="openSubCircleDetail(sub)">
+                  <div class="member-info">
+                    <i class="fa-solid fa-circle-nodes text-blue mr-8" style="font-size:11px"></i>
+                    <span class="font-medium">{{ sub.name }}</span>
+                    <span class="text-xs text-muted ml-8">({{ sub.members?.length || 0 }})</span>
+                  </div>
+                  <div class="member-controls">
+                    <span class="badge" :class="typeBadge(sub.type)" style="font-size:9px;text-align:center">{{ typeLabel(sub.type) }}</span>
+                  </div>
+                </div>
+                <div v-for="sub in circle.archived_children" :key="sub.id" class="member-row" style="opacity:0.5" @click="openSubCircleDetail(sub)">
+                  <div class="member-info cursor-pointer">
+                    <i class="fa-solid fa-archive text-gray mr-8" style="font-size:11px"></i>
+                    <span class="font-medium">{{ sub.name }}</span>
+                  </div>
+                  <div class="member-controls">
+                    <span class="badge badge-gray" style="font-size:9px;text-align:center">Archivé</span>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-xs text-muted italic">Aucun sous-cercle.</div>
+            </div>
           </div>
         </div>
         <EmptyState v-if="circles.length === 0" message="Aucun cercle trouvé." />
@@ -308,11 +434,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import axios from 'axios';
 import EmptyState from '../../components/EmptyState.vue';
+import { flattenCirclesWithHierarchy } from '../../utils/circleHelpers';
 
 const circles = ref([]);
+const flattenedCircles = computed(() => flattenCirclesWithHierarchy(circles.value));
 const loading = ref(true);
 const showCreate = ref(false);
 const showAddMember = ref(false);
@@ -322,6 +450,9 @@ const resendingInviteData = ref(null);
 const loadingResend = ref(false);
 const editingCircle = ref(null);
 const editingCircleData = ref(null);
+const showSubCircleDetail = ref(false);
+const subCircleDetail = ref(null);
+const editingCircleInviteLink = ref(null);
 const selectedUsersToInvite = ref([]);
 const importCircleId = ref('');
 const addMemberEmails = ref('');
@@ -329,12 +460,23 @@ const addMemberSearchQuery = ref('');
 const addMemberSearchResults = ref([]);
 const loadingUserSearch = ref(false);
 const addMemberRole = ref('member');
-const circleForm = ref({ name: '', description: '', type: 'open' });
+const circleForm = ref({ name: '', description: '', type: 'open', parent_id: null });
 
 const filters = ref({
   search: '',
-  type: ''
+  type: '',
+  parent_id: ''
 });
+
+const topLevelCircles = ref([]);
+
+const fetchTopLevelCircles = async () => {
+    try {
+        const { data } = await axios.get('/api/v1/admin/circles', { params: { per_page: 100 } });
+        // Since no search is provided, backend returns top-level circles
+        topLevelCircles.value = data.data || [];
+    } catch (e) { /* fallback if needed */ }
+};
 
 const pagination = ref({
   current_page: 1,
@@ -364,10 +506,13 @@ const loadCircles = async (page = 1) => {
 };
 
 const resetFilters = () => {
-  filters.value = { search: '', type: '' };
+  filters.value = { search: '', type: '', parent_id: '' };
 };
 
-onMounted(loadCircles);
+onMounted(() => {
+    loadCircles();
+    fetchTopLevelCircles();
+});
 
 let searchTimeout = null;
 watch(filters, () => {
@@ -379,13 +524,25 @@ watch(filters, () => {
 
 const openCreateCircle = () => {
   editingCircleData.value = null;
-  circleForm.value = { name: '', description: '', type: 'open' };
+  circleForm.value = { name: '', description: '', type: 'open', parent_id: null };
   showCreate.value = true;
 };
 
+const openCreateSubCircle = (parentCircle) => {
+  editingCircleData.value = null;
+  circleForm.value = { name: '', description: '', type: 'open', parent_id: parentCircle.id };
+  showCreate.value = true;
+};
+
+const openSubCircleDetail = (subCircle) => {
+  subCircleDetail.value = subCircle;
+  showSubCircleDetail.value = true;
+};
+
 const openEditCircle = (circle) => {
+  showSubCircleDetail.value = false;
   editingCircleData.value = circle;
-  circleForm.value = { name: circle.name, description: circle.description, type: circle.type };
+  circleForm.value = { name: circle.name, description: circle.description, type: circle.type, parent_id: circle.parent_id };
   showCreate.value = true;
 };
 
@@ -397,6 +554,7 @@ const saveCircle = async () => {
       await axios.post('/api/v1/admin/circles', circleForm.value);
     }
     showCreate.value = false;
+    showSubCircleDetail.value = false;
     await loadCircles();
   } catch (e) { alert(e.response?.data?.message || 'Erreur lors de l\'enregistrement.'); }
 };
@@ -411,6 +569,7 @@ const deleteCircle = async (circle) => {
 
 const openAddMember = (circle) => {
   editingCircle.value = circle;
+  editingCircleInviteLink.value = circle.invite_link;
   selectedUsersToInvite.value = [];
   importCircleId.value = '';
   addMemberEmails.value = '';
@@ -418,6 +577,11 @@ const openAddMember = (circle) => {
   addMemberSearchResults.value = [];
   addMemberRole.value = 'member';
   showAddMember.value = true;
+};
+
+const openAddMemberForSub = (subCircle) => {
+  showSubCircleDetail.value = false;
+  openAddMember(subCircle);
 };
 
 const closeAddMemberModal = () => {
@@ -558,8 +722,53 @@ const removeMember = async (circle, member) => {
   } catch (e) { alert(e.response?.data?.message || 'Erreur lors du retrait.'); }
 };
 
-const typeBadge = (t) => ({ open: 'badge-teal', closed: 'badge-red', observer_open: 'badge-blue' }[t] || 'badge-gray');
-const typeLabel = (t) => ({ open: 'Cercle Ouvert', closed: 'Cercle Fermé', observer_open: 'Observateurs' }[t] || 'Standard');
+const archiveSubCircle = async (circle) => {
+  try {
+    await axios.put(`/api/v1/admin/circles/${circle.id}/archive`);
+    showSubCircleDetail.value = false;
+    await loadCircles();
+  } catch (e) { alert(e.response?.data?.message || 'Erreur lors de l\'archivage.'); }
+};
+
+const unarchiveSubCircle = async (circle) => {
+  try {
+    await axios.put(`/api/v1/admin/circles/${circle.id}/unarchive`);
+    showSubCircleDetail.value = false;
+    await loadCircles();
+  } catch (e) { alert(e.response?.data?.message || 'Erreur lors de la restauration.'); }
+};
+
+const openShareLink = (circle) => {
+  openAddMember(circle);
+};
+
+const generateInviteLink = async () => {
+  try {
+    const { data } = await axios.post(`/api/v1/admin/circles/${editingCircle.value.id}/invite-link`);
+    editingCircleInviteLink.value = data.invite_link;
+    await loadCircles(); // update circle object in background
+  } catch (e) { alert(e.response?.data?.message || 'Erreur de génération du lien.'); }
+};
+
+const deleteInviteLink = async () => {
+  if (!confirm('Voulez-vous vraiment révoquer ce lien ?')) return;
+  try {
+    await axios.delete(`/api/v1/admin/circles/${editingCircle.value.id}/invite-link`);
+    editingCircleInviteLink.value = null;
+    await loadCircles();
+  } catch (e) { alert(e.response?.data?.message || 'Erreur de suppression du lien.'); }
+};
+
+const copyInviteLink = () => {
+  if (editingCircleInviteLink.value?.url) {
+    navigator.clipboard.writeText(editingCircleInviteLink.value.url);
+    alert('Lien copié dans le presse-papier !');
+  }
+};
+
+import { circleTypeLabel, circleTypeBadge } from '../../utils/circleHelpers';
+const typeLabel = circleTypeLabel;
+const typeBadge = circleTypeBadge;
 </script>
 
 <style scoped>

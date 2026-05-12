@@ -115,4 +115,36 @@ class ProfileController extends Controller
             'preferences' => \App\Models\NotificationPreference::where('user_id', $user->id)->get()
         ]);
     }
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Le mot de passe est incorrect.'], 422);
+        }
+
+        // Anonymize user
+        $user->update([
+            'name' => 'Utilisateur supprimé',
+            'email' => null,
+            'password' => Hash::make(\Illuminate\Support\Str::random(32)), // Random hash to lock it
+            'avatar_url' => null,
+            'is_active' => false,
+            'custom_views' => null,
+            'dashboard_widgets' => null,
+        ]);
+
+        // Unlink social accounts
+        $user->socialAccounts()->delete();
+
+        // Soft delete
+        $user->delete();
+
+        return response()->json(['message' => 'Compte supprimé avec succès.']);
+    }
 }

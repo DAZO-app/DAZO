@@ -104,18 +104,18 @@ class PublicDecisionController extends Controller
         }
 
         $baseQuery = $this->buildBaseQuery();
-        $termLike = '%' . $term . '%';
+        $termLike = '%' . strtolower($term) . '%';
 
         $results = [];
 
         // 1. Titles
-        $results['titles'] = (clone $baseQuery)->where('title', 'like', $termLike)
+        $results['titles'] = (clone $baseQuery)->whereRaw('LOWER(title) LIKE ?', [$termLike])
             ->limit(5)
             ->get(['id', 'title']);
 
         // 2. Content
         $results['content'] = (clone $baseQuery)->whereHas('currentVersion', function($q) use ($termLike) {
-                $q->where('content', 'like', $termLike);
+                $q->whereRaw('LOWER(content) LIKE ?', [$termLike]);
             })
             ->whereNotIn('id', $results['titles']->pluck('id'))
             ->limit(5)
@@ -123,14 +123,14 @@ class PublicDecisionController extends Controller
 
         // 3. Circles
         $publicCircleIds = $this->configService->get('public_circles', []);
-        $results['circles'] = Circle::where('name', 'like', $termLike)
+        $results['circles'] = Circle::whereRaw('LOWER(name) LIKE ?', [$termLike])
             ->when(!empty($publicCircleIds), fn($q) => $q->whereIn('id', $publicCircleIds))
             ->limit(3)
             ->get(['id', 'name']);
 
         // 4. Categories
         $publicCatIds = $this->configService->get('public_categories', []);
-        $results['categories'] = Category::where('name', 'like', $termLike)
+        $results['categories'] = Category::whereRaw('LOWER(name) LIKE ?', [$termLike])
             ->when(!empty($publicCatIds), fn($q) => $q->whereIn('id', $publicCatIds))
             ->limit(3)
             ->get(['id', 'name']);
@@ -200,13 +200,13 @@ class PublicDecisionController extends Controller
     {
         // Texte libre — titre ou auteur
         if ($request->filled('search')) {
-            $searchTerm = '%' . $request->query('search') . '%';
+            $searchTerm = '%' . strtolower($request->query('search')) . '%';
             $query->where(function($q) use ($searchTerm) {
-                $q->where('title', 'like', $searchTerm)
+                $q->whereRaw('LOWER(title) LIKE ?', [$searchTerm])
                   ->orWhereHas('participants', function($q2) use ($searchTerm) {
                       $q2->where('role', 'author')
                          ->whereHas('user', function($q3) use ($searchTerm) {
-                             $q3->where('name', 'like', $searchTerm);
+                             $q3->whereRaw('LOWER(name) LIKE ?', [$searchTerm]);
                          });
                   });
             });

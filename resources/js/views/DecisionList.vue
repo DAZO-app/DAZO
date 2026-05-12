@@ -18,12 +18,15 @@
 
       <!-- FILTER BAR -->
       <div class="filter-bar">
-        <div class="filter-group main-search">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input v-model="filters.search" placeholder="Rechercher une décision par titre ou auteur..." class="input-inline">
-        </div>
-        
         <div class="filter-row">
+          <div class="filter-item" style="flex: 2; min-width: 250px;">
+            <label>Recherche</label>
+            <div class="main-search" style="margin-bottom: 0;">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input v-model="filters.search" placeholder="Titre, auteur..." class="input-inline">
+            </div>
+          </div>
+          
           <div class="filter-item">
             <label>État</label>
             <select v-model="filters.state" class="select-sm">
@@ -54,7 +57,7 @@
             <label>Cercle</label>
             <select v-model="filters.circle" class="select-sm">
               <option value="all">Tous cercles</option>
-              <option v-for="c in allCircles" :key="c.id" :value="c.id">{{ c.name }}</option>
+              <option v-for="c in flattenedCircles" :key="c.id" :value="c.id">{{ c.displayName }}</option>
             </select>
           </div>
 
@@ -78,9 +81,11 @@
             </select>
           </div>
 
-          <button class="btn btn-ghost btn-sm ml-auto" @click="resetFilters">
-            <i class="fa-solid fa-rotate-left"></i> Réinitialiser
-          </button>
+          <div class="filter-item">
+            <button class="btn btn-ghost btn-sm" style="height: 38px;" @click="resetFilters">
+              <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+            </button>
+          </div>
         </div>
       </div>
 
@@ -158,6 +163,7 @@ import { useCircleStore } from '../stores/circle';
 import DecisionListItem from '../components/DecisionListItem.vue';
 import EmptyState from '../components/EmptyState.vue';
 import NotificationLevelModal from '../components/NotificationLevelModal.vue';
+import { flattenCirclesWithHierarchy } from '../utils/circleHelpers';
 
 const decisionStore = useDecisionStore();
 const circleStore = useCircleStore();
@@ -220,6 +226,7 @@ watch(paginationFromStore, (newVal) => {
 const decisionsList = computed(() => decisions.value);
 
 const allCircles = computed(() => circleStore.circles || []);
+const flattenedCircles = computed(() => flattenCirclesWithHierarchy(allCircles.value));
 
 const allCategories = ref([]);
 

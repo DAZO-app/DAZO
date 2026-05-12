@@ -80,6 +80,17 @@ Toutes les briques fondamentales du moteur de décision sociocratique, de l'inte
 - [x] **Partage Social Premium** : Popin de partage avec prévisualisation dynamique et tracking des intentions.
 - [x] **Intégration Admin** : Visualisation du taux de partage dans le back-office.
 
+## ✅ Bloc 21 — Administration Hiérarchique
+- [x] **Cercles imbriqués** : Structure parent/enfant pour une gouvernance plus fine.
+- [x] **Héritage automatique** : Les membres d'un cercle parent sont automatiquement importés lors de la création d'un sous-cercle.
+- [x] **UX Listing** : Séparation visuelle claire entre cercles de premier niveau et sous-cercles.
+- [x] **Filtrage par organisation** : Filtrage dynamique du listing par cercle parent.
+
+## ✅ Bloc 22 — Protection des Données & Vie Privée (RGPD)
+- [x] **Droit à l'oubli** : Processus de suppression de compte sécurisé en plusieurs étapes.
+- [x] **Anonymisation** : Remplacement automatique du nom par "Utilisateur supprimé" sur toutes les contributions passées.
+- [x] **Portabilité (Roadmap)** : Plan d'implémentation pour l'export JSON des données personnelles.
+
 ## 🚀 Prochaines Étapes (V1.5 / V2)
 - [ ] **Snippet Generator** : Générateur d'extraits HTML/JS pour l'intégration web facilitée.
 - [ ] **Notification Push** : Intégration Firebase pour alertes mobiles en temps réel.

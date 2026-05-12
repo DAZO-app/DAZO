@@ -23,6 +23,11 @@ const routes = [
         component: () => import('../views/InvitationAccept.vue')
     },
     {
+        path: '/invite/:token',
+        name: 'InviteAccept',
+        component: () => import('../views/InviteAccept.vue')
+    },
+    {
         path: '/reset-password',
         name: 'ResetPassword',
         component: () => import('../views/ResetPassword.vue')
@@ -111,6 +116,12 @@ const routes = [
                 path: 'admin/circles',
                 name: 'AdminCircles',
                 component: () => import('../views/admin/AdminCircles.vue'),
+                meta: { requiresAdmin: true }
+            },
+            {
+                path: 'admin/shares',
+                name: 'AdminShares',
+                component: () => import('../views/admin/AdminShares.vue'),
                 meta: { requiresAdmin: true }
             },
             {

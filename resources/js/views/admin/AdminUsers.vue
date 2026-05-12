@@ -46,7 +46,7 @@
               <label>Cercle</label>
               <select v-model="filters.circle_id" class="select-sm">
                 <option value="">Tous les cercles</option>
-                <option v-for="c in availableCircles" :key="c.id" :value="c.id">{{ c.name }}</option>
+                <option v-for="c in flattenedCircles" :key="c.id" :value="c.id">{{ c.displayName }}</option>
               </select>
             </div>
 
@@ -235,12 +235,14 @@ import axios from 'axios';
 import { useAuthStore } from '../../stores/auth';
 import { useRouter } from 'vue-router';
 import EmptyState from '../../components/EmptyState.vue';
+import { flattenCirclesWithHierarchy } from '../../utils/circleHelpers';
 
 const authStore = useAuthStore();
 const router = useRouter();
 
 const users = ref([]);
 const availableCircles = ref([]);
+const flattenedCircles = computed(() => flattenCirclesWithHierarchy(availableCircles.value));
 const loading = ref(true);
 
 const filters = ref({

@@ -373,11 +373,11 @@ class DecisionController extends Controller
     {
         // Search
         if ($request->filled('search')) {
-            $searchTerm = '%' . $request->search . '%';
+            $searchTerm = '%' . strtolower($request->search) . '%';
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', $searchTerm)
+                $q->whereRaw('LOWER(title) LIKE ?', [$searchTerm])
                     ->orWhereHas('participants.user', function ($q2) use ($searchTerm) {
-                        $q2->where('name', 'like', $searchTerm);
+                        $q2->whereRaw('LOWER(name) LIKE ?', [$searchTerm]);
                     });
             });
         }

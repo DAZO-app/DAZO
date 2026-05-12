@@ -139,7 +139,7 @@
                 <label class="label">Cercle *</label>
                 <select v-model="form.circle_id" class="select" required>
                   <option value="" disabled>Sélectionner un cercle...</option>
-                  <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
+                  <option v-for="c in flattenedCircles" :key="c.id" :value="c.id">{{ c.displayName }}</option>
                 </select>
               </div>
 
@@ -210,10 +210,12 @@ import axios from 'axios';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
+import { flattenCirclesWithHierarchy } from '../utils/circleHelpers';
 
 const router = useRouter();
 const route = useRoute();
 const circles = ref([]);
+const flattenedCircles = computed(() => flattenCirclesWithHierarchy(circles.value));
 const categories = ref([]);
 const models = ref([]);
 const circleMembers = ref([]);

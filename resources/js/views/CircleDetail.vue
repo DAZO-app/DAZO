@@ -4,25 +4,21 @@
     <template v-else-if="circle">
       <div class="page-body">
         <!-- HERO HEADER -->
-        <div class="hero-card">
+        <div class="hero-card relative">
           <div class="hero-flex">
             <div>
-              <div class="hero-title">
-                {{ circle.name }} 
-                <span class="text-xs opacity-60 font-normal">({{ members.length }} membres)</span>
+              <div class="hero-title mb-4">{{ circle.name }}</div>
+              <div class="hero-subtitle">{{ circle.description || 'Cercle de décision digital.' }}</div>
+              
+              <div v-if="circle.parent" class="mt-16">
+                <router-link :to="{ name: 'CircleDetail', params: { id: circle.parent_id } }" class="btn btn-white btn-outline btn-sm rounded-full bg-white/10 text-white border-white/20 hover:bg-white/20">
+                  <i class="fa-solid fa-arrow-left mr-8"></i>
+                  Cercle parent : <span class="font-bold ml-4">{{ circle.parent.name }}</span>
+                </router-link>
               </div>
-              <div class="hero-subtitle">{{ circle.description }}</div>
             </div>
-            <div class="hero-action">
-              <span class="badge mr-8" :class="typeBadge(circle.type)" style="background:rgba(255,255,255,0.2); color:white; border:none; vertical-align: middle;">{{ circle.type }}</span>
-              <template v-if="canManage">
-                 <button class="btn btn-ghost btn-sm text-white" @click="handleEdit" title="Modifier le cercle">
-                   <i class="fa-solid fa-pen"></i>
-                 </button>
-                 <button class="btn btn-ghost btn-sm text-red" @click="handleDelete" title="Supprimer le cercle" style="color:var(--red-400)">
-                   <i class="fa-solid fa-trash"></i>
-                 </button>
-              </template>
+            <div class="hero-action absolute" style="top: 20px; right: 20px;">
+              <span class="badge" :class="circleTypeBadge(circle.type)" style="background:rgba(255,255,255,0.2); color:white; border:none; vertical-align: middle; min-width: 80px; justify-content: center;">{{ circleTypeLabel(circle.type) }}</span>
             </div>
           </div>
         </div>
@@ -48,7 +44,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card mb-32">
           <div class="card-header card-header-sexy justify-between cursor-pointer" @click="membersExpanded = !membersExpanded">
             <span class="card-title">
               <i class="fa-solid fa-chevron-right mr-8 transition-transform" :class="{ 'rotate-90': membersExpanded }"></i>
@@ -69,6 +65,66 @@
                 <div class="member-email">{{ m.user?.email }}</div>
               </div>
               <span class="badge badge-sm" :class="roleBadge(m.role)">{{ m.role }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="!circle.is_sub_circle" class="card mb-32">
+          <div class="card-header card-header-sexy justify-between cursor-pointer" @click="subcirclesExpanded = !subcirclesExpanded">
+            <span class="card-title">
+              <i class="fa-solid fa-chevron-right mr-8 transition-transform" :class="{ 'rotate-90': subcirclesExpanded }"></i>
+              Cercles liés ({{ (circle.active_children?.length || 0) + (circle.archived_children?.length || 0) }})
+            </span>
+          </div>
+          <div v-show="subcirclesExpanded" class="card-body" style="padding:16px; background:var(--gray-50)">
+            <EmptyState v-if="(circle.active_children?.length || 0) + (circle.archived_children?.length || 0) === 0" message="Aucun cercle lié." />
+            
+            <div v-if="circle.active_children?.length" class="circles-grid mb-16">
+              <div v-for="sub in circle.active_children" :key="sub.id" class="premium-card clickable-card relative" @click="$router.push({ name: 'CircleDetail', params: { id: sub.id } })">
+                  <div class="pc-header pc-header-indigo relative" style="min-height: 70px;">
+                      <div class="pc-header-icon"><i class="fa-solid fa-circle-nodes"></i></div>
+                      <div class="pc-header-content">
+                          <div class="pc-header-title text-xl">{{ sub.name }}</div>
+                          <div class="text-xs font-normal italic opacity-80" style="margin-top: -2px">Lié à {{ circle.name }}</div>
+                      </div>
+                      <div class="pc-badge-wrap absolute" style="top: 10px; right: 10px;">
+                        <span class="badge" :class="circleTypeBadge(sub.type)" style="font-size:10px; min-width:80px; justify-content: center; height: 22px;">{{ circleTypeLabel(sub.type) }}</span>
+                      </div>
+                  </div>
+                  <div class="pc-body p-20 flex flex-col justify-between h-full">
+                      <div class="circle-desc text-sm mb-20 line-clamp-2" style="color: var(--gray-900); font-weight: 500;">
+                          {{ sub.description || 'Sous-cercle de décision digital.' }}
+                      </div>
+                      <div class="flex justify-between items-end">
+                          <div class="flex items-center" style="gap: 24px;">
+                              <div class="text-xs text-gray-400 flex items-center">
+                                  <i class="fa-solid fa-users mr-8" style="font-size: 12px; width: 14px; text-align: center;"></i>
+                                  {{ sub.members?.length || 0 }} membres
+                              </div>
+                          </div>
+                          <button class="btn btn-primary btn-sm rounded-full px-16">
+                              Explorer <i class="fa-solid fa-arrow-right ml-6"></i>
+                          </button>
+                      </div>
+                  </div>
+              </div>
+            </div>
+
+            <div v-if="circle.archived_children?.length">
+              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-8">Sous-cercles archivés</div>
+              <div class="circles-grid" style="opacity:0.6">
+                <div v-for="sub in circle.archived_children" :key="sub.id" class="premium-card clickable-card" @click="$router.push({ name: 'CircleDetail', params: { id: sub.id } })">
+                    <div class="pc-header pc-header-blue" style="filter: grayscale(1);">
+                        <div class="pc-header-icon"><i class="fa-solid fa-archive"></i></div>
+                        <div class="pc-header-content">
+                            <div class="pc-header-title">{{ sub.name }}</div>
+                        </div>
+                        <div class="pc-badge-wrap">
+                          <span class="badge badge-gray" style="font-size:10px;">Archivé</span>
+                        </div>
+                    </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -104,6 +160,7 @@ const loading = ref(true);
 const showAddMember = ref(false);
 const decisionsExpanded = ref(false);
 const membersExpanded = ref(true);
+const subcirclesExpanded = ref(true);
 
 const myRole = computed(() => {
   const m = members.value.find(m => m.user_id === authStore.user?.id);
@@ -126,7 +183,13 @@ const fetchData = async () => {
 
 onMounted(fetchData);
 
-const typeBadge = (t) => ({ open: 'badge-teal', closed: 'badge-red', observer_open: 'badge-blue' }[t] || 'badge-gray');
+// Watch for route changes (e.g. navigating from parent to sub-circle)
+import { watch } from 'vue';
+watch(() => route.params.id, (newId) => {
+  if (newId) fetchData();
+});
+
+import { circleTypeLabel, circleTypeBadge } from '../utils/circleHelpers';
 const roleBadge = (r) => ({ animator: 'badge-amber', member: 'badge-blue', observer: 'badge-gray' }[r] || 'badge-gray');
 const statusBadge = (s) => ({ draft: 'badge-gray', clarification: 'badge-blue', reaction: 'badge-blue', objection: 'badge-amber', adopted: 'badge-teal' }[s] || 'badge-gray');
 
@@ -147,6 +210,17 @@ const handleDelete = async () => {
 </script>
 
 <style scoped>
+.circles-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 1000px) {
+  .circles-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1400px) {
+  .circles-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.clickable-card { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+.clickable-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.pc-badge-wrap { margin-left: auto; z-index: 2; }
+
 .p-24 { padding: 24px; }
 .member-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--gray-100); }
 .member-row:last-child { border-bottom: none; }

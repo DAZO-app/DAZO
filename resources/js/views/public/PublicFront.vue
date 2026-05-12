@@ -110,7 +110,7 @@
                 <label>Cercle</label>
                 <select v-model="store.filters.circle" class="popin-select">
                   <option value="">Tous les cercles</option>
-                  <option v-for="c in store.meta.circles" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
+                  <option v-for="c in flattenedCircles" :key="c.id" :value="String(c.id)">{{ c.displayName }}</option>
                 </select>
               </div>
               <!-- Thématique -->
@@ -378,9 +378,12 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { usePublicFrontStore } from '../../stores/publicFront';
 import { useRouter } from 'vue-router';
+import { flattenCirclesWithHierarchy } from '../../utils/circleHelpers';
 
 const store = usePublicFrontStore();
 const router = useRouter();
+
+const flattenedCircles = computed(() => flattenCirclesWithHierarchy(store.meta.circles || []));
 
 // ── Gestion de la largeur pour forcer le mode tuile ──
 const windowWidth = ref(window.innerWidth);

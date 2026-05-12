@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Circle;
 use App\Models\User;
 use App\Models\Invitation;
+use App\Models\CircleInviteLink;
 use App\Enums\CircleMemberRole;
 use App\Services\CircleService;
 use App\Mail\CircleInvitationMail;
@@ -25,10 +26,24 @@ class CircleController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Circle::with(['members.user', 'invitations']);
+        $query = Circle::with(['members.user', 'invitations', 'inviteLink', 'activeChildren.members.user', 'archivedChildren.members.user'])
+            ->withCount(['children', 'members']);
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $searchTerm = '%' . strtolower($request->search) . '%';
+            $query->where(function($q) use ($searchTerm) {
+                $q->whereRaw('LOWER(name) LIKE ?', [$searchTerm])
+                  ->orWhereRaw('LOWER(description) LIKE ?', [$searchTerm]);
+            });
+        }
+
+        if ($request->filled('parent_id')) {
+            $query->where(function($q) use ($request) {
+                $q->where('id', $request->parent_id)
+                  ->orWhere('parent_id', $request->parent_id);
+            });
+        } elseif (!$request->filled('search')) {
+            $query->topLevel();
         }
 
         if ($request->filled('type')) {
@@ -49,19 +64,47 @@ class CircleController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|string|in:open,closed,observer_open',
+            'parent_id' => 'nullable|uuid|exists:circles,id',
         ]);
+
+        // Validate depth: parent must be a top-level circle
+        if (!empty($validated['parent_id'])) {
+            $parent = Circle::findOrFail($validated['parent_id']);
+            if ($parent->parent_id !== null) {
+                return response()->json([
+                    'message' => 'Un sous-cercle ne peut pas avoir de sous-cercle.'
+                ], 422);
+            }
+        }
 
         $circle = $this->circleService->createCircle($validated, $request->user());
 
+        // If sub-circle, copy members from parent
+        if (!empty($validated['parent_id'])) {
+            $parent = Circle::with('members')->findOrFail($validated['parent_id']);
+            foreach ($parent->members as $member) {
+                // Don't duplicate if already added (e.g. the creator)
+                if (!$circle->members()->where('user_id', $member->user_id)->exists()) {
+                    $circle->members()->create([
+                        'user_id' => $member->user_id,
+                        'role' => $member->role,
+                    ]);
+                }
+            }
+        }
+
         return response()->json([
             'message' => 'Cercle créé.',
-            'circle' => $circle->load('members.user')
+            'circle' => new CircleResource($circle->load(['members.user', 'activeChildren.members.user', 'archivedChildren.members.user']))
         ], 201);
     }
 
     public function show(Circle $circle): CircleResource
     {
-        return new CircleResource($circle->load(['members.user', 'invitations']));
+        return new CircleResource($circle->load([
+            'members.user', 'invitations', 'inviteLink',
+            'activeChildren.members.user', 'archivedChildren.members.user', 'parent'
+        ]));
     }
 
     public function update(Request $request, Circle $circle): JsonResponse
@@ -70,13 +113,29 @@ class CircleController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|string|in:open,closed,observer_open',
+            'parent_id' => 'nullable|uuid|exists:circles,id',
         ]);
+
+        // Prevent circular dependency or deep nesting
+        if (!empty($validated['parent_id'])) {
+            if ($validated['parent_id'] === $circle->id) {
+                return response()->json(['message' => 'Un cercle ne peut pas être son propre parent.'], 422);
+            }
+            $parent = Circle::findOrFail($validated['parent_id']);
+            if ($parent->parent_id !== null) {
+                return response()->json(['message' => 'Un sous-cercle ne peut pas avoir de sous-cercle.'], 422);
+            }
+            // If the circle already has children, it cannot become a sub-circle
+            if ($circle->children()->exists()) {
+                return response()->json(['message' => 'Ce cercle possède déjà des sous-cercles et ne peut donc pas devenir lui-même un sous-cercle.'], 422);
+            }
+        }
 
         $circle->update($validated);
 
         return response()->json([
             'message' => 'Cercle mis à jour.',
-            'circle' => $circle->fresh('members.user')
+            'circle' => new CircleResource($circle->fresh(['members.user', 'activeChildren.members', 'archivedChildren.members']))
         ]);
     }
 
@@ -89,6 +148,69 @@ class CircleController extends Controller
             return response()->json(['message' => 'Impossible de supprimer ce cercle (des données y sont liées).'], 403);
         }
     }
+
+    // ─── Archive / Unarchive ─────────────────────────────
+
+    public function archiveChild(Circle $circle): JsonResponse
+    {
+        if (!$circle->isSubCircle()) {
+            return response()->json(['message' => 'Seul un sous-cercle peut être archivé.'], 422);
+        }
+
+        $circle->update(['archived_at' => now()]);
+
+        return response()->json([
+            'message' => 'Sous-cercle archivé.',
+            'circle' => new CircleResource($circle->fresh('members.user'))
+        ]);
+    }
+
+    public function unarchiveChild(Circle $circle): JsonResponse
+    {
+        $circle->update(['archived_at' => null]);
+
+        return response()->json([
+            'message' => 'Sous-cercle restauré.',
+            'circle' => new CircleResource($circle->fresh('members.user'))
+        ]);
+    }
+
+    // ─── Invite Link ─────────────────────────────────────
+
+    public function createInviteLink(Request $request, Circle $circle): JsonResponse
+    {
+        // Delete existing link if any
+        $circle->inviteLink()?->delete();
+
+        $link = CircleInviteLink::create([
+            'circle_id' => $circle->id,
+            'token' => Str::random(64),
+            'created_by' => $request->user()->id,
+            'role' => 'member',
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        return response()->json([
+            'message' => 'Lien d\'invitation créé.',
+            'invite_link' => [
+                'id' => $link->id,
+                'token' => $link->token,
+                'url' => $link->generateUrl(),
+                'role' => $link->role,
+                'expires_at' => $link->expires_at,
+                'use_count' => $link->use_count,
+            ]
+        ]);
+    }
+
+    public function deleteInviteLink(Circle $circle): JsonResponse
+    {
+        CircleInviteLink::where('circle_id', $circle->id)->delete();
+
+        return response()->json(['message' => 'Lien d\'invitation révoqué.']);
+    }
+
+    // ─── Members ─────────────────────────────────────────
 
     public function addMember(Request $request, Circle $circle): JsonResponse
     {
@@ -151,7 +273,7 @@ class CircleController extends Controller
 
         return response()->json([
             'message' => "{$addedCount} membre(s) ajouté(s), {$invitedCount} invitation(s) envoyée(s).",
-            'circle' => $circle->fresh(['members.user', 'invitations'])
+            'circle' => new CircleResource($circle->fresh(['members.user', 'invitations']))
         ]);
     }
 
@@ -182,7 +304,7 @@ class CircleController extends Controller
 
         return response()->json([
             'message' => 'Membre retiré.',
-            'circle' => $circle->fresh('members.user')
+            'circle' => new CircleResource($circle->fresh('members.user'))
         ]);
     }
 
@@ -198,7 +320,7 @@ class CircleController extends Controller
 
         return response()->json([
             'message' => 'Rôle mis à jour.',
-            'circle' => $circle->fresh(['members.user', 'invitations'])
+            'circle' => new CircleResource($circle->fresh(['members.user', 'invitations']))
         ]);
     }
 }

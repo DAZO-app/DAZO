@@ -41,9 +41,9 @@
                 <span class="btn-text-mobile-hide ml-6">Tableau de bord</span>
               </router-link>
               <router-link v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'superadmin'" 
-                           to="/" class="btn btn-indigo btn-sm shadow-md btn-auth" title="Retour à l'administration">
+                           to="/admin" class="btn btn-indigo btn-sm shadow-md btn-auth" title="Accéder à l'administration">
                 <i class="fa-solid fa-gauge-high"></i>
-                <span class="btn-text-mobile-hide ml-6">Admin</span>
+                <span class="btn-text-mobile-hide ml-6">Administration</span>
               </router-link>
             </div>
           </template>
@@ -162,7 +162,8 @@ const resetAndGoHome = () => {
 }
 
 .header-inner {
-  height: 90px; /* Hauteur augmentée */
+  min-height: 90px;
+  padding: 12px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -237,8 +238,9 @@ const resetAndGoHome = () => {
 
 .auth-success-mini {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
 }
 
 .welcome-text {

@@ -16,6 +16,7 @@
 | `GET` | `/api/v1/auth/me` | Profil utilisateur courant |
 | `POST` | `/api/v1/auth/email/verify/{id}/{hash}` | Vérification email |
 | `POST` | `/api/v1/auth/email/resend` | Renvoyer l'email de vérification |
+| `POST` | `/api/v1/auth/me/delete` | Suppression définitive du compte (avec mdp) |
 | `GET` | `/api/v1/magic-login/{userId}` | Connexion via Magic Link (Public/Admin) |
 | `POST` | `/api/v1/admin/impersonate/{userId}` | Prendre le contrôle d'un utilisateur |
 | `POST` | `/api/v1/admin/stop-impersonation` | Arrêter l'impersonation |

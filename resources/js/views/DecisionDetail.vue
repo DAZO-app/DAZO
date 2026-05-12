@@ -239,9 +239,9 @@
 
               <div class="form-group">
                 <label class="label">Cercle *</label>
-                <select :key="circles.length + '-' + draftForm.circle_id" v-model="draftForm.circle_id" class="select" required>
+                <select :key="flattenedCircles.length + '-' + draftForm.circle_id" v-model="draftForm.circle_id" class="select" required>
                   <option value="" disabled>Choisir un cercle...</option>
-                  <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
+                  <option v-for="c in flattenedCircles" :key="c.id" :value="c.id">{{ c.displayName }}</option>
                 </select>
               </div>
 
@@ -466,6 +466,7 @@ import DecisionPrintModal from '../components/DecisionPrintModal.vue';
 import { useAuthStore } from '../stores/auth';
 import { useDecisionStore } from '../stores/decision';
 import { usePendingStore } from '../stores/pending';
+import { flattenCirclesWithHierarchy } from '../utils/circleHelpers';
 
 const route = useRoute();
 const router = useRouter();
@@ -584,6 +585,7 @@ const reminderModalType = ref('reminder');
 // Navigation Historique
 const allVersions = ref([]);
 const circles = ref([]);
+const flattenedCircles = computed(() => flattenCirclesWithHierarchy(circles.value));
 const categories = ref([]);
 const viewingVersionId = ref(null);
 const historicalVersionData = ref(null);

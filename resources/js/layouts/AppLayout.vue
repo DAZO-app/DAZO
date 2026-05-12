@@ -43,6 +43,7 @@
             <router-link :to="{ name: 'AdminDashboard' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gauge-high" style="margin-right: 8px;"></i> Dashboard Admin</router-link>
             <router-link :to="{ name: 'AdminUsers' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-users" style="margin-right: 8px;"></i> Utilisateurs</router-link>
             <router-link :to="{ name: 'AdminCircles' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-circle-nodes" style="margin-right: 8px;"></i> Cercles Admin</router-link>
+            <router-link :to="{ name: 'AdminShares' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-link" style="margin-right: 8px;"></i> Partages</router-link>
             <router-link :to="{ name: 'AdminCategories' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-tags" style="margin-right: 8px;"></i> Catégories</router-link>
             <router-link :to="{ name: 'AdminSiteConfig' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-sliders" style="margin-right: 8px;"></i> Configuration site</router-link>
             <router-link :to="{ name: 'AdminPublication' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-globe" style="margin-right: 8px;"></i> API</router-link>
@@ -71,7 +72,7 @@
         <router-link to="/" class="sidebar-logo">
           <img :src="configStore.defaultLogoUrl" alt="DAZO" class="sidebar-logo-img" />
           <div style="font-size: 8px; color: rgba(255,255,255,0.3); text-align: center; margin-top: 4px; font-family: monospace;">
-            BETA [12/05/2026 10:45:02]
+            BETA [12/05/2026 14:04:31]
           </div>
         </router-link>
 
@@ -155,6 +156,9 @@
               </router-link>
               <router-link :to="{ name: 'AdminCircles' }" class="sidebar-item" active-class="active">
                 <span><i class="fa-solid fa-circle-nodes"></i></span> Cercles Admin
+              </router-link>
+              <router-link :to="{ name: 'AdminShares' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-link"></i></span> Partages
               </router-link>
               <router-link :to="{ name: 'AdminCategories' }" class="sidebar-item" active-class="active">
                 <span><i class="fa-solid fa-tags"></i></span> Catégories

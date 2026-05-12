@@ -34,10 +34,11 @@ class CircleController extends Controller
             });
         }
 
-        $circles = $query->with(['members.user' => function($q) {
+        $circles = $query
+        ->with(['members.user' => function($q) {
             $q->limit(10); // Limite pour l'affichage de la pile d'avatars
-        }])
-        ->withCount('members')
+        }, 'activeChildren', 'parent'])
+        ->withCount(['members', 'children'])
         ->paginate($perPage);
 
         return CircleResource::collection($circles);
@@ -59,7 +60,12 @@ class CircleController extends Controller
             abort(403, "Vous n'avez pas accès à ce cercle.");
         }
 
-        return new CircleResource($circle->load('members.user'));
+        return new CircleResource($circle->load([
+            'members.user',
+            'activeChildren.members.user',
+            'archivedChildren.members.user',
+            'parent',
+        ]));
     }
 
     public function update(UpdateCircleRequest $request, Circle $circle): JsonResponse

@@ -14,11 +14,12 @@ L'objectif de DAZO est de transformer la manière dont les groupes collaborent e
 
 ## 🚀 Fonctionnalités Clés
 
-- **Gestion des Cercles** : Définition des rôles (Animateur, Membre, Observateur) et types de cercles (Ouvert/Fermé).
+- **Gouvernance partagée** : Structure en cercles imbriqués (Parents/Sous-cercles).
 - **Cycle de Décision** : Étapes claires (Brouillon, Clarification, Réaction, Objection, Adoption, Révision).
 - **Échéances & Relances** : Délais automatiques par phase et relances par mail pour garantir la fluidité des processus.
 - **Moteur de Feedback** : Système structuré d'objections, suggestions et clarifications intégré au thread de discussion.
-- **Accès Simplifié** : Connexion par **Magic Link** et prise de contrôle admin (**Impersonation**).
+- **Accès Simplifié** : Connexion par **Magic Link**, Authentification Sociale (Google, Microsoft...) et **Impersonation**.
+- **RGPD & Vie Privée** : Droit à l'oubli (anonymisation complète) et roadmap pour la portabilité des données.
 - **Identité Visuelle** : Personnalisation dynamique du logo et du nom de l'instance.
 - **Centre de Contrôle** : Dashboard d'administration avec monitoring serveur, gestion des sauvegardes SQL et lecture de logs.
 - **Temps Réel** : Notifications et compteurs d'actions en attente via **Laravel Reverb** (WebSockets).
