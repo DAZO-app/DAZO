@@ -53,7 +53,7 @@
               </div>
               <div class="pc-body p-16">
                  <div class="text-xs text-muted mb-4 uppercase">{{ page.category?.name || 'Général' }}</div>
-                 <div class="text-sm line-clamp-2" v-html="excerpt(page.content)"></div>
+                 <div class="text-sm line-clamp-2">{{ excerpt(page.content) }}</div>
               </div>
            </div>
            <EmptyState v-if="pages.length === 0" message="Désolé, nous n'avons aucun guide correspondant à cette recherche." />
@@ -90,7 +90,7 @@
                   </div>
                   <div class="wiki-card-content">
                     <div class="wiki-card-title">{{ page.title }}</div>
-                    <div class="wiki-card-desc line-clamp-1" v-html="excerpt(page.content, 60)"></div>
+                    <div class="wiki-card-desc line-clamp-1">{{ excerpt(page.content, 60) }}</div>
                   </div>
                   <i class="fa-solid fa-chevron-right wiki-card-arrow"></i>
                 </router-link>
@@ -113,7 +113,7 @@
                 </div>
                 <div class="wiki-card-content">
                   <div class="wiki-card-title">{{ page.title }}</div>
-                  <div class="wiki-card-desc line-clamp-1" v-html="excerpt(page.content, 60)"></div>
+                  <div class="wiki-card-desc line-clamp-1">{{ excerpt(page.content, 60) }}</div>
                 </div>
                 <i class="fa-solid fa-chevron-right wiki-card-arrow"></i>
               </router-link>
@@ -191,7 +191,8 @@ onMounted(fetchPages);
 
 const excerpt = (content, limit = 100) => {
   if (!content) return '';
-  const plainText = content.replace(/<[^>]*>?/gm, '');
+  // Robut tag stripping to prevent XSS and bypasses
+  const plainText = content.replace(/<[^>]*>?/gm, '').replace(/[<>]/g, '');
   if (plainText.length <= limit) return plainText;
   return plainText.substring(0, limit) + '...';
 };

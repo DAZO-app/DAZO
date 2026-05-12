@@ -339,7 +339,7 @@ const showSharePopin = ref(false);
 const jsonLd = computed(() => {
   if (!decision.value) return null;
   const abstractText = decision.value.current_version?.abstract || 
-                       (decision.value.current_version?.description ? decision.value.current_version.description.substring(0, 160).replace(/<[^>]*>?/gm, '') : '');
+                       (decision.value.current_version?.description ? decision.value.current_version.description.substring(0, 160).replace(/<[^>]*>?/gm, '').replace(/[<>]/g, '') : '');
   
   return {
     "@context": "https://schema.org",
