@@ -141,7 +141,7 @@
                           <i class="fa-solid fa-clock-rotate-left"></i>
                         </div>
                         <div class="header-text">
-                          <h3>Historique</h3>
+                          <h2>Historique</h2>
                           <span>Retrouvez toutes les révisions</span>
                         </div>
                         <button class="close-popin-btn" @click="activePopin = null">
@@ -206,10 +206,10 @@
           <!-- Échanges publics (clarifications / réactions / objections / suggestions) -->
           <section v-if="feedbacksByType.length > 0" class="exchanges-section mt-48 dazo-public-exchanges" aria-label="Échanges et retours">
             <div v-for="group in feedbacksByType" :key="group.type" class="exchange-group dazo-public-exchange-group">
-              <h3 class="exchange-title dazo-public-exchange-title">
+              <h2 class="exchange-title dazo-public-exchange-title">
                 <i :class="group.icon"></i> {{ group.label }}
                 <span class="exchange-count">{{ group.items.length }}</span>
-              </h3>
+              </h2>
               <div class="exchange-list">
                 <div v-for="fb in group.items" :key="fb.id" class="exchange-item dazo-public-exchange-item" :class="'exchange-' + group.type">
                   <div class="exchange-header">
@@ -226,9 +226,9 @@
 
           <!-- Pièces jointes -->
           <section class="attachments-section mt-48 dazo-public-attachments" v-if="decision.current_version?.attachments?.length > 0" aria-label="Pièces jointes">
-            <h3 class="attachments-title dazo-public-attachments-title">
+            <h2 class="attachments-title dazo-public-attachments-title">
               <i class="fa-solid fa-paperclip"></i> Pièces jointes ({{ decision.current_version.attachments.length }})
-            </h3>
+            </h2>
             <div class="attachments-list">
               <button
                 v-for="(att, idx) in decision.current_version.attachments"

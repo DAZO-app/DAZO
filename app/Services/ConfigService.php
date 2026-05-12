@@ -6,9 +6,14 @@ use App\Models\InstanceConfig;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
+use App\Services\AuditService;
 
 class ConfigService
 {
+    public function __construct(
+        private AuditService $auditService
+    ) {
+    }
     private const CACHE_KEY = 'instance_config';
 
     /**
@@ -146,6 +151,16 @@ class ConfigService
     </div>
   </div>
 </div>',
+            // Sauvegarde Auto
+            'auto_backup_enabled' => 'false',
+            'auto_backup_frequency' => 'daily',
+            'auto_backup_retention_days' => '7',
+            'auto_backup_time' => '03:00',
+            
+            'auto_backup_files_enabled' => 'false',
+            'auto_backup_files_frequency' => 'daily',
+            'auto_backup_files_retention_days' => '7',
+            'auto_backup_files_time' => '03:30',
         ];
     }
 
@@ -183,6 +198,7 @@ class ConfigService
             }
             $this->set($key, $val);
         }
+        $this->auditService->log('config_updated', null, null, $configs);
     }
 
     /**

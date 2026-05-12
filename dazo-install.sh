@@ -10,6 +10,19 @@ NC='\033[0m'
 
 echo -e "${YELLOW}🚀 Starting DAZO Installation...${NC}"
 
+# Check System Dependencies
+echo -e "${YELLOW}🔍 Checking system dependencies...${NC}"
+for cmd in docker zip; do
+    if ! command -v $cmd &> /dev/null; then
+        echo -e "${RED}❌ Error: $cmd is not installed. Please install it before proceeding.${NC}"
+        if [ "$cmd" == "zip" ]; then
+            echo -e "${YELLOW}💡 Tip: You can install zip using: sudo apt install zip${NC}"
+        fi
+        exit 1
+    fi
+done
+echo -e "${GREEN}✅ System dependencies ok${NC}"
+
 # Check .env
 if [ ! -f .env ]; then
     echo -e "${YELLOW}📝 .env not found, creating from .env.example...${NC}"
@@ -50,9 +63,11 @@ echo -e "${GREEN}✅ Database migrated and seeded${NC}"
 
 # Step 6: Storage Link
 echo -e "${YELLOW}🔗 Creating storage symbolic link...${NC}"
-docker compose exec app rm -rf public/storage
-docker compose exec app php artisan storage:link --force
-echo -e "${GREEN}✅ Storage link created${NC}"
+docker compose exec -T app rm -rf public/storage
+docker compose exec -T app php artisan storage:link --force
+# Initialize atomic storage (A/B slots)
+docker compose exec -T app sh /var/www/html/bash/DAZO-app-storage.sh init
+echo -e "${GREEN}✅ Storage link and atomic slots created${NC}"
 
 # Step 7: Permissions
 echo -e "${YELLOW}🔐 Setting storage permissions...${NC}"
@@ -65,6 +80,17 @@ docker compose exec app php artisan config:cache
 docker compose exec app php artisan route:cache
 docker compose exec app php artisan view:cache
 echo -e "${GREEN}✅ Cache warmed up${NC}"
+
+# Step 9: Background Scheduler
+echo -e "${YELLOW}⏰ Configuring Background Scheduler...${NC}"
+if crontab -l 2>/dev/null | grep -q "php artisan schedule:run"; then
+    echo -e "${GREEN}✅ Scheduler already configured in crontab${NC}"
+else
+    PROJECT_PATH=$(pwd)
+    CRON_JOB="* * * * * cd $PROJECT_PATH && docker compose exec -T app php artisan schedule:run >> /dev/null 2>&1"
+    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+    echo -e "${GREEN}✅ Scheduler added to crontab${NC}"
+fi
 
 echo -e "${GREEN}=====================================${NC}"
 echo -e "${GREEN}✨ DAZO INSTALLATION COMPLETE! ✨${NC}"

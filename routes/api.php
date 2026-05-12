@@ -56,6 +56,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/notifications', [ProfileController::class, 'getNotificationPreferences']);
         Route::put('/auth/notifications', [ProfileController::class, 'updateNotificationPreferences']);
         Route::post('/auth/me/delete', [ProfileController::class, 'deleteAccount']);
+        Route::post('/auth/me/export', [ProfileController::class, 'requestGdprExport']);
 
         Route::post('/auth/email/resend', [AuthController::class, 'resendEmailVerification']);
 
@@ -229,12 +230,21 @@ Route::prefix('v1')->group(function () {
             // Monitoring & Outils
             Route::prefix('tools')->group(function () {
                 Route::get('/database', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'databaseStats']);
+                Route::get('/backups', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'backupStats']);
                 Route::post('/database/backup', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'backup']);
                 Route::post('/database/restore', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'restore']);
+                Route::post('/database/restore-files', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'restoreFiles']);
+                Route::post('/database/rollback-files', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'rollbackFiles']);
+                Route::post('/database/upload', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'uploadBackupFile']);
                 Route::get('/database/backups/{filename}/url', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'getDownloadUrl']);
                 Route::delete('/database/backups/{filename}', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'deleteBackup']);
+
+                Route::post('/files/backup', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'backupFiles']);
+                Route::get('/files/backups/{filename}/url', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'getDownloadFileUrl']);
+                Route::delete('/files/backups/{filename}', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'deleteFileBackup']);
                 Route::get('/server', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'serverStats']);
                 Route::get('/logs', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'logs']);
+                Route::get('/audit', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'auditLogs']);
             });
         });
     });
@@ -243,4 +253,8 @@ Route::prefix('v1')->group(function () {
 // Route de téléchargement publique mais signée (pour contourner les limitations des SPAs lors des téléchargements directs)
 Route::get('/v1/admin/backups/{filename}/download', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'downloadBackup'])
     ->name('admin.backup.download')
+    ->middleware('signed');
+
+Route::get('/v1/admin/file-backups/{filename}/download', [\App\Http\Controllers\Api\V1\Admin\AdminToolController::class, 'downloadFileBackup'])
+    ->name('admin.file-backup.download')
     ->middleware('signed');

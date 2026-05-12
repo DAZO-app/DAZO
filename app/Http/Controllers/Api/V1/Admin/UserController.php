@@ -10,9 +10,14 @@ use Illuminate\Validation\Rule;
 use App\Enums\UserRole;
 use App\Http\Resources\V1\UserResource;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use App\Services\AuditService;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService
+    ) {
+    }
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = User::withCount(['circles', 'authoredDecisions as decisions_count']);
@@ -86,6 +91,8 @@ class UserController extends Controller
             'is_active' => $validated['is_active'],
         ]);
 
+        $this->auditService->log('user_created', $user, null, $user->toArray());
+
         return response()->json([
             'message' => 'Utilisateur créé.',
             'user' => $user
@@ -113,7 +120,9 @@ class UserController extends Controller
             // Simplified check, normally would check if other admins exist
         }
 
+        $oldValues = $user->getOriginal();
         $user->update($validated);
+        $this->auditService->log('user_updated', $user, $oldValues, $user->fresh()->toArray());
 
         return response()->json([
             'message' => 'Utilisateur mis à jour.',
@@ -131,7 +140,9 @@ class UserController extends Controller
         // For simplicity in V1, we soft delete or delete. User uses SoftDeletes? No, User model does not use SoftDeletes currently!
         // We will just delete it, DB cascade must be configured (it is in V1 for circle members, but not participants maybe).
         try {
+            $oldValues = $user->toArray();
             $user->delete();
+            $this->auditService->log('user_deleted', null, $oldValues, null);
             return response()->json(['message' => 'Utilisateur supprimé.']);
         } catch (\Exception $e) {
             // If constraint fails, disable the user instead

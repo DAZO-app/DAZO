@@ -19,11 +19,13 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use App\Mail\DecisionNotificationMail;
 use App\Services\ConfigService;
+use App\Services\AuditService;
 class DecisionService
 {
     public function __construct(
         private ConfigService $configService,
-        private DecisionParticipationService $participationService
+        private DecisionParticipationService $participationService,
+        private AuditService $auditService
     ) {
     }
 
@@ -67,6 +69,8 @@ class DecisionService
             }
 
             event(new \App\Events\DecisionCreated($decision));
+
+            $this->auditService->log('decision_created', $decision, null, $decision->toArray());
 
             return $decision;
         });
@@ -175,6 +179,8 @@ class DecisionService
         }
 
         $decision->save();
+
+        $this->auditService->log('decision_phase_changed', $decision, ['status' => $fromStatus], ['status' => $toStatus]);
 
         // ── Auto-abstention : enregistrer les participants silencieux ──
         // Quand on quitte une phase active, on marque d'abstention tous les

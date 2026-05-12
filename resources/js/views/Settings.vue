@@ -738,8 +738,13 @@ const deleteError = ref('');
 const showDeleteConfirm = ref(false);
 const deleteLoading = ref(false);
 
-const requestGdprExport = () => {
-  alert("Votre demande d'export RGPD a été enregistrée. Une équipe technique traitera votre demande sous 24h.");
+const requestGdprExport = async () => {
+  try {
+    const resp = await axios.post('/api/v1/auth/me/export');
+    alert(resp.data.message);
+  } catch (e) {
+    alert("Une erreur est survenue lors de la demande d'export.");
+  }
 };
 
 const initiateDelete = () => {

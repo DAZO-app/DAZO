@@ -19,9 +19,10 @@ L'objectif de DAZO est de transformer la manière dont les groupes collaborent e
 - **Échéances & Relances** : Délais automatiques par phase et relances par mail pour garantir la fluidité des processus.
 - **Moteur de Feedback** : Système structuré d'objections, suggestions et clarifications intégré au thread de discussion.
 - **Accès Simplifié** : Connexion par **Magic Link**, Authentification Sociale (Google, Microsoft...) et **Impersonation**.
-- **RGPD & Vie Privée** : Droit à l'oubli (anonymisation complète) et roadmap pour la portabilité des données.
+- **RGPD & Vie Privée** : Droit à l'oubli (anonymisation complète) et **Export de portabilité** (JSON par e-mail).
+- **Sitemap & SEO** : Architecture hybride SSR/SPA avec sitemaps dynamiques par cercles et JSON-LD (Schema.org).
 - **Identité Visuelle** : Personnalisation dynamique du logo et du nom de l'instance.
-- **Centre de Contrôle** : Dashboard d'administration avec monitoring serveur, gestion des sauvegardes SQL et lecture de logs.
+- **Centre de Contrôle** : Dashboard d'administration avec monitoring serveur, **Sauvegardes Auto** (SQL compressé) et lecture de logs.
 - **Temps Réel** : Notifications et compteurs d'actions en attente via **Laravel Reverb** (WebSockets).
 
 ## 🛠 Stack Technique
@@ -36,8 +37,9 @@ L'objectif de DAZO est de transformer la manière dont les groupes collaborent e
 Le projet utilise Docker pour garantir une parité parfaite entre le développement local et la production. Des scripts automatisés sont fournis pour simplifier toutes les opérations.
 
 ### Développement Local
-1. **Initialisation** : `./dazo-install.sh`
-2. **Lancer le développement** : `./dazo-dev.sh`
+1. **Pré-requis** : Docker, Docker Compose, **zip** (pour les sauvegardes).
+2. **Initialisation** : `./dazo-install.sh`
+3. **Lancer le développement** : `./dazo-dev.sh`
    * Accès : `http://localhost:3003`
    * Vite (HMR) : Actif sur le port 5173
 
@@ -82,9 +84,9 @@ php artisan reverb:start
 Pour activer les relances automatiques, les notifications et la gestion des échéances,
 configurez le **Scheduler**, le **Worker** et le **Serveur WebSocket** :
 
-**1. Scheduler (Cron)** :
+**1. Scheduler (Cron)** (Sur la machine hôte) :
 ```bash
-* * * * * cd /chemin/vers/votre/projet && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /chemin/vers/votre/projet && docker compose exec -T app php artisan schedule:run >> /dev/null 2>&1
 ```
 
 **2. File d'attente (Queues)** (emails asynchrones) :
@@ -111,7 +113,8 @@ L'ensemble de la documentation détaillée se trouve dans le dossier [`docs/`](d
 | [docs/state-machine.md](docs/state-machine.md) | Machine d'états & transitions |
 | [docs/enums.md](docs/enums.md) | Référence de tous les Enums PHP |
 | [docs/domain-model.md](docs/domain-model.md) | Modèle de données |
-| [docs/EMAILS.md](docs/EMAILS.md) | Stratégie & Répertoire des Emails |
+| [docs/SCRIPTS.md](docs/SCRIPTS.md) | Guide des scripts bash et automatisation |
+| [docs/ROADMAP_OPTIMIZATIONS.md](docs/ROADMAP_OPTIMIZATIONS.md) | Roadmap d'optimisations techniques & priorité |
 | [docs/TODO_TECHNIQUE.md](docs/TODO_TECHNIQUE.md) | Backlog technique détaillé |
 
 ## ⚖️ Licence

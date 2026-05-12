@@ -20,4 +20,5 @@ enum NotificationEventType: string
     case ANIMATOR_INVOKED = 'animator_invoked';
     case EMAIL_VALIDATION = 'email_validation';
     case INVITATION = 'invitation';
+    case GDPR_EXPORT_READY = 'gdpr_export_ready';
 }

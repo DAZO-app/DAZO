@@ -147,4 +147,13 @@ class ProfileController extends Controller
 
         return response()->json(['message' => 'Compte supprimé avec succès.']);
     }
+
+    public function requestGdprExport(Request $request): JsonResponse
+    {
+        \App\Jobs\ProcessGdprExport::dispatch($request->user());
+
+        return response()->json([
+            'message' => 'Votre demande d\'export RGPD a été enregistrée. Un e-mail avec vos données vous sera envoyé sous peu.'
+        ]);
+    }
 }

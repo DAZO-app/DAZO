@@ -73,6 +73,14 @@ echo -e "${YELLOW}♻️  Updating background workers...${NC}"
 docker compose up -d queue scheduler reverb
 echo -e "${GREEN}✅ Services updated and running${NC}"
 
+# Step 10: Ensure Scheduler in Crontab
+if ! crontab -l 2>/dev/null | grep -q "php artisan schedule:run"; then
+    PROJECT_PATH=$(pwd)
+    CRON_JOB="* * * * * cd $PROJECT_PATH && docker compose exec -T app php artisan schedule:run >> /dev/null 2>&1"
+    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+    echo -e "${GREEN}✅ Scheduler added to crontab${NC}"
+fi
+
 echo -e "${GREEN}=====================================${NC}"
 echo -e "${GREEN}✅ DAZO UPDATED SUCCESSFULLY! ✨${NC}"
 echo -e "${GREEN}=====================================${NC}"

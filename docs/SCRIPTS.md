@@ -137,8 +137,34 @@ Ce script permet de gérer l'espace disque occupé par les sauvegardes automatiq
 ./dazo-cleanDBbackup.sh
 ```
 
-## ⚙️ Configuration
-Tous les scripts sont situés à la racine du projet. Assurez-vous qu'ils possèdent les droits d'exécution :
 ```bash
 chmod +x dazo-*.sh
+```
+
+## 🛠️ Pré-requis système
+Pour le bon fonctionnement des scripts et des tâches automatisées, les éléments suivants doivent être installés sur la machine hôte :
+- **Docker & Docker Compose** : Pour l'orchestration des containers.
+- **zip** : Indispensable pour la génération des sauvegardes de fichiers (attachments).
+- **Crontab** : Pour l'exécution du planificateur Laravel.
+
+## 💾 Structure des Sauvegardes
+Les sauvegardes générées via l'interface d'administration ou les tâches planifiées sont stockées dans `storage/app/backups/` :
+- `database/` : Contient les dumps SQL compressés (`.sql.gz`).
+- `files/` : Contient les archives ZIP des pièces jointes (`.zip`).
+
+Vous pouvez gérer ces fichiers directement depuis le menu **Système > Backups** de l'application.
+
+## ⏰ Tâches Planifiées (Cron)
+
+Pour que les fonctionnalités automatiques de DAZO (relances par email, sauvegardes automatiques, changement de phase) fonctionnent, le **Scheduler Laravel** doit être actif.
+
+Bien que le projet inclue un container Docker `scheduler`, il est fortement recommandé d'activer une tâche Cron sur le système hôte pour garantir une exécution robuste.
+
+**Configuration automatique :**
+Les scripts `dazo-install.sh` et `dazo-update.sh` tentent d'ajouter automatiquement cette ligne à votre `crontab`.
+
+**Configuration manuelle :**
+Si vous souhaitez l'ajouter vous-même, exécutez `crontab -e` et ajoutez :
+```bash
+* * * * * cd /chemin/vers/votre/projet && docker compose exec -T app php artisan schedule:run >> /dev/null 2>&1
 ```

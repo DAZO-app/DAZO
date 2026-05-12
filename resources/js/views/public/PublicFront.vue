@@ -247,7 +247,7 @@
       <!-- ── Vide ── -->
       <div v-else-if="store.decisions.length === 0" class="empty-state dazo-public-empty">
         <div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div>
-        <h3>Aucune décision trouvée</h3>
+        <h2>Aucune décision trouvée</h2>
         <p class="text-muted">Il n'y a actuellement aucune décision publique correspondant à vos critères.</p>
         <button v-if="hasActiveFilters" class="btn btn-secondary mt-16 dazo-public-btn-reset" @click="resetFilters">Effacer les filtres</button>
       </div>
@@ -267,11 +267,11 @@
                 </button>
               </div>
 
-              <h3 class="decision-title dazo-public-card-title">
+              <h2 class="decision-title dazo-public-card-title">
                 <router-link :to="{ name: 'PublicDecision', params: { id: decision.id } }" class="stretched-link" :aria-label="'Voir le détail de la décision : ' + decision.title">
                   {{ decision.title }}
                 </router-link>
-              </h3>
+              </h2>
 
               <div class="decision-authors-line stacked">
                 <div class="author-row">
@@ -315,11 +315,11 @@
                 <span class="status-badge dazo-public-badge" :class="'status-' + decision.status">{{ getStatusLabel(decision.status) }}</span>
               </div>
 
-              <h3 class="list-title dazo-public-card-title">
+              <h2 class="list-title dazo-public-card-title">
                 <router-link :to="{ name: 'PublicDecision', params: { id: decision.id } }" class="stretched-link" :aria-label="'Voir le détail de la décision : ' + decision.title">
                   {{ decision.title }}
                 </router-link>
-              </h3>
+              </h2>
 
               <div class="decision-authors-line inline">
                 Proposé par : 

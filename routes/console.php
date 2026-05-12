@@ -10,4 +10,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::job(new \App\Jobs\CheckDecisionDeadlines)->hourly();
+Schedule::job(new \App\Jobs\BackupDatabase)->hourly();
+Schedule::job(new \App\Jobs\BackupFiles)->hourly();
 Schedule::command('app:purge-old-logs')->daily();

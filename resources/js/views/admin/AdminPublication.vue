@@ -106,12 +106,92 @@
                 <div class="pc-header-sub">Générez des extraits de code pour intégrer les décisions sur votre site</div>
               </div>
             </div>
-            <div class="pc-body p-48 text-center">
-              <i class="fa-solid fa-code fa-3x mb-16" style="color: var(--amber-600); opacity: 0.25;"></i>
-              <h3 class="text-lg font-bold text-gray-800 mb-8">Générateur de widgets</h3>
-              <p class="text-muted italic" style="max-width: 440px; margin: 0 auto;">
-                Prochainement : générateur de widgets et snippets HTML/JS pour l'affichage dynamique des décisions sur vos sites tiers.
-              </p>
+            <div class="pc-body p-24">
+                <div class="grid-layout">
+                    <!-- Config Form -->
+                    <div class="col-side" style="min-width: 350px;">
+                        <div class="form-group mb-20">
+                            <label class="label">Type de Widget</label>
+                            <div class="flex gap-12 mt-8">
+                                <button class="btn flex-1" :class="snippetConfig.type === 'single' ? 'btn-blue' : 'btn-outline'" @click="snippetConfig.type = 'single'">Décision Unique</button>
+                                <button class="btn flex-1" :class="snippetConfig.type === 'list' ? 'btn-blue' : 'btn-outline'" @click="snippetConfig.type = 'list'">Liste de Décisions</button>
+                            </div>
+                        </div>
+
+                        <div v-if="snippetConfig.type === 'single'" class="form-group mb-20">
+                            <label class="label">ID de la décision (Public)</label>
+                            <input type="text" v-model="snippetConfig.decision_id" class="input w-full" placeholder="Ex: 42">
+                            <p class="help-text">La décision doit être marquée comme publique.</p>
+                        </div>
+
+                        <div v-if="snippetConfig.type === 'list'" class="form-group mb-20">
+                            <label class="label">Filtrer par Cercle</label>
+                            <select v-model="snippetConfig.circle_id" class="input w-full">
+                                <option value="">Tous les cercles</option>
+                                <option v-for="c in circles" :key="c.id" :value="c.id">{{ c.name }}</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-20">
+                            <label class="label">Thème Visuel</label>
+                            <select v-model="snippetConfig.theme" class="input w-full">
+                                <option value="light">Clair (Standard)</option>
+                                <option value="dark">Sombre (Premium)</option>
+                                <option value="auto">Adaptatif (Système)</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-32 pt-24 border-top">
+                            <label class="label mb-12">Code à copier</label>
+                            <div class="snippet-code-box">
+                                <pre><code>&lt;script src="{{ baseUrl }}/widgets/loader.js"&gt;&lt;/script&gt;
+&lt;div class="dazo-widget" 
+     data-type="{{ snippetConfig.type }}"
+     data-id="{{ snippetConfig.decision_id }}"
+     data-theme="{{ snippetConfig.theme }}"&gt;
+&lt;/div&gt;</code></pre>
+                                <button class="btn btn-sm btn-white copy-btn" @click="copySnippet">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Area -->
+                    <div class="col-main">
+                        <div class="preview-container" :class="snippetConfig.theme">
+                            <div class="preview-header">
+                                <div class="preview-dot"></div>
+                                <div class="preview-dot"></div>
+                                <div class="preview-dot"></div>
+                                <span class="ml-12 text-xs opacity-50">Aperçu du Widget</span>
+                            </div>
+                            <div class="preview-content">
+                                <!-- Placeholder pour le rendu réel du widget -->
+                                <div class="widget-placeholder">
+                                    <div class="flex items-center gap-12 mb-16">
+                                        <div class="w-40 h-40 rounded bg-blue-100 flex items-center justify-center">
+                                            <i class="fa-solid fa-gavel text-blue-600"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="h-12 bg-gray-200 rounded w-3/4 mb-8"></div>
+                                            <div class="h-8 bg-gray-100 rounded w-1/2"></div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-8">
+                                        <div class="h-8 bg-gray-100 rounded w-full"></div>
+                                        <div class="h-8 bg-gray-100 rounded w-full"></div>
+                                        <div class="h-8 bg-gray-100 rounded w-2/3"></div>
+                                    </div>
+                                    <div class="mt-20 pt-16 border-top flex justify-between items-center">
+                                        <div class="h-16 bg-blue-50 rounded w-24"></div>
+                                        <div class="text-[10px] text-blue-600 font-bold uppercase">Voir sur DAZO</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
           </div>
 
@@ -138,6 +218,23 @@ const categories = ref([]);
 const loading = ref(true);
 const saving = ref(false);
 const activeSection = ref('api_key');
+const baseUrl = window.location.origin;
+
+const snippetConfig = ref({
+    type: 'single',
+    decision_id: '',
+    circle_id: '',
+    category_id: '',
+    limit: 5,
+    theme: 'light',
+    show_meta: true
+});
+
+const copySnippet = () => {
+    const code = document.querySelector('.snippet-code-box pre code').innerText;
+    navigator.clipboard.writeText(code);
+    alert('Code copié dans le presse-papier !');
+};
 
 const sections = [
   { id: 'api_key', label: 'Clé API', icon: 'fa-solid fa-key' },
@@ -259,4 +356,86 @@ const saveConfig = async () => {
 .btn-outline:hover { background: var(--gray-50); border-color: var(--blue-400); }
 .text-red-500 { color: #ef4444; }
 .alert-info { background: var(--blue-50); border: 1px solid var(--blue-100); color: var(--blue-800); }
+
+/* Snippet Generator Styles */
+.snippet-code-box {
+  background: var(--gray-900);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.1);
+  margin-top: 12px;
+}
+.snippet-code-box pre {
+  margin: 0;
+  color: #a5d6ff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+.snippet-code-box .copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.snippet-code-box .copy-btn:hover { opacity: 1; }
+
+.preview-container {
+  background: #f1f5f9;
+  border-radius: 16px;
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  height: 100%;
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+}
+.preview-container.dark { background: #0f172a; border-color: #1e293b; }
+
+.preview-header {
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+}
+.preview-container.dark .preview-header { background: #1e293b; border-color: #334155; color: rgba(255,255,255,0.5); }
+
+.preview-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  margin-right: 6px;
+}
+.preview-container.dark .preview-dot { background: #475569; }
+
+.preview-content {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.widget-placeholder {
+  width: 100%;
+  max-width: 350px;
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  border: 1px solid var(--gray-100);
+}
+.preview-container.dark .widget-placeholder { background: #1e293b; border-color: #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+.preview-container.dark .h-12 { background: #334155 !important; }
+.preview-container.dark .h-8 { background: #475569 !important; }
+.preview-container.dark .border-top { border-color: #334155; }
+.preview-container.dark .text-gray-800 { color: white !important; }
+.preview-container.dark .text-muted { color: rgba(255,255,255,0.4) !important; }
+
+.space-y-8 > * + * { margin-top: 8px; }
 </style>

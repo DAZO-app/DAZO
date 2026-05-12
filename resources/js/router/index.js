@@ -157,6 +157,12 @@ const routes = [
                 meta: { requiresSuperAdmin: true }
             },
             {
+                path: 'admin/backups',
+                name: 'AdminBackups',
+                component: () => import('../views/admin/AdminBackups.vue'),
+                meta: { requiresSuperAdmin: true }
+            },
+            {
                 path: 'admin/database',
                 name: 'AdminDatabase',
                 component: () => import('../views/admin/AdminDatabase.vue'),
@@ -166,6 +172,12 @@ const routes = [
                 path: 'admin/server',
                 name: 'AdminServer',
                 component: () => import('../views/admin/AdminServer.vue'),
+                meta: { requiresSuperAdmin: true }
+            },
+            {
+                path: 'admin/audit',
+                name: 'AdminAuditLogs',
+                component: () => import('../views/admin/AdminAuditLogs.vue'),
                 meta: { requiresSuperAdmin: true }
             },
 

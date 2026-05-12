@@ -53,7 +53,7 @@
               <div class="sidebar-section" style="padding-left:20px; color:rgba(255,255,255,0.4)">Système</div>
               <router-link :to="{ name: 'AdminSystemDashboard' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-microchip" style="margin-right: 8px;"></i> Dashboard Système</router-link>
               <router-link :to="{ name: 'AdminConfig' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-gears" style="margin-right: 8px;"></i> Configuration Système</router-link>
-              <router-link :to="{ name: 'AdminDatabase' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-database" style="margin-right: 8px;"></i> BDD</router-link>
+              <router-link :to="{ name: 'AdminBackups' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-floppy-disk" style="margin-right: 8px;"></i> Backups</router-link>
               <router-link :to="{ name: 'AdminServer' }" class="mobile-menu-item" active-class="active"><i class="fa-solid fa-server" style="margin-right: 8px;"></i> Serveur</router-link>
             </template>
           </template>
@@ -72,7 +72,7 @@
         <router-link to="/" class="sidebar-logo">
           <img :src="configStore.defaultLogoUrl" alt="DAZO" class="sidebar-logo-img" />
           <div style="font-size: 8px; color: rgba(255,255,255,0.3); text-align: center; margin-top: 4px; font-family: monospace;">
-            BETA [12/05/2026 15:16:07]
+            BETA [13/05/2026 01:32:25]
           </div>
         </router-link>
 
@@ -186,11 +186,17 @@
               <router-link :to="{ name: 'AdminConfig' }" class="sidebar-item" active-class="active">
                 <span><i class="fa-solid fa-gears"></i></span> Configuration Système
               </router-link>
+              <router-link :to="{ name: 'AdminBackups' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-floppy-disk"></i></span> Sauvegardes
+              </router-link>
               <router-link :to="{ name: 'AdminDatabase' }" class="sidebar-item" active-class="active">
-                <span><i class="fa-solid fa-database"></i></span> BDD
+                <span><i class="fa-solid fa-database"></i></span> Base de données
               </router-link>
               <router-link :to="{ name: 'AdminServer' }" class="sidebar-item" active-class="active">
                 <span><i class="fa-solid fa-server"></i></span> Serveur
+              </router-link>
+              <router-link :to="{ name: 'AdminAuditLogs' }" class="sidebar-item" active-class="active">
+                <span><i class="fa-solid fa-list-check"></i></span> Journal d'activité
               </router-link>
             </div>
           </transition>

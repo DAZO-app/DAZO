@@ -48,7 +48,7 @@ Toutes les briques fondamentales du moteur de décision sociocratique, de l'inte
 
 ## ✅ Bloc 12 — Administration & Monitoring
 - [x] **Dashboard de surveillance** : État CPU, RAM, Disque et Logs.
-- [x] **Gestion BDD** : Liste des tables et système de backups compressés.
+- [x] **Gestion BDD & Sauvegardes Auto** : Système de backups compressés avec planification (quotidienne/hebdomadaire) et rétention paramétrable.
 - [x] **Configuration Globale** : Gestion de l'identité (Instance Name, Logo) et des délais de phase.
 - [x] Répertoire utilisateurs & gestion des invitations.
 
@@ -89,7 +89,7 @@ Toutes les briques fondamentales du moteur de décision sociocratique, de l'inte
 ## ✅ Bloc 22 — Protection des Données & Vie Privée (RGPD)
 - [x] **Droit à l'oubli** : Processus de suppression de compte sécurisé en plusieurs étapes.
 - [x] **Anonymisation** : Remplacement automatique du nom par "Utilisateur supprimé" sur toutes les contributions passées.
-- [x] **Portabilité (Roadmap)** : Plan d'implémentation pour l'export JSON des données personnelles.
+- [x] **Portabilité (Export)** : Export JSON complet des données personnelles envoyé par e-mail de manière asynchrone.
 
 ## 🚀 Prochaines Étapes (V1.5 / V2)
 - [ ] **Snippet Generator** : Générateur d'extraits HTML/JS pour l'intégration web facilitée.
