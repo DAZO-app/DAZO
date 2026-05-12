@@ -1,17 +1,17 @@
 <template>
-  <div class="public-layout">
+  <div class="public-layout dazo-theme-public">
     <!-- En-tête public -->
-    <header class="public-header">
+    <header class="public-header dazo-public-header">
       <div class="public-container-wide header-inner">
-        <div class="header-brand" style="flex: 0 0 auto;">
-          <a href="#" class="brand-link" @click.prevent="resetAndGoHome">
+        <nav class="header-brand" style="flex: 0 0 auto;">
+          <a href="/" class="brand-link" @click.prevent="resetAndGoHome" aria-label="Retour à l'accueil">
             <div class="logo-side-by-side">
-              <img :src="configStore.defaultLogoUrl" alt="DAZO" class="brand-logo" />
+              <img :src="configStore.defaultLogoUrl" alt="Logo DAZO" class="brand-logo" />
               <div v-if="configStore.hasCustomLogo" class="logo-separator"></div>
-              <img v-if="configStore.hasCustomLogo" :src="configStore.customLogoUrl" alt="Logo" class="brand-logo custom-brand-logo" />
+              <img v-if="configStore.hasCustomLogo" :src="configStore.customLogoUrl" alt="Logo Organisation" class="brand-logo custom-brand-logo" />
             </div>
           </a>
-        </div>
+        </nav>
         
         <div class="header-center dazo-header-titles">
           <div class="header-main-title">{{ configStore.appName || 'Décisions Publiques' }}</div>
@@ -19,15 +19,15 @@
           <div class="header-sub-title" v-else>Consultez et suivez les décisions ouvertes de notre organisation.</div>
         </div>
         
-        <div class="header-actions">
+        <nav class="header-actions" aria-label="Menu utilisateur">
           <template v-if="!authStore.isAuthenticated">
             <div class="header-auth-buttons">
               <router-link v-if="(configStore.config.enable_registration === 'true' || configStore.config.enable_registration === true) && route.name !== 'Register'" 
-                           to="/register" class="btn btn-white-ghost btn-sm btn-auth" title="S'inscrire">
+                           to="/register" class="btn btn-white-ghost btn-sm btn-auth" title="S'inscrire" aria-label="S'inscrire">
                 <i class="fa-solid fa-user-plus"></i>
                 <span class="btn-text-mobile-hide ml-6">S'inscrire</span>
               </router-link>
-              <router-link v-if="route.name !== 'Login'" to="/login" class="btn btn-white btn-sm shadow-md btn-auth" title="Se connecter">
+              <router-link v-if="route.name !== 'Login'" to="/login" class="btn btn-white btn-sm shadow-md btn-auth" title="Se connecter" aria-label="Se connecter">
                 <i class="fa-solid fa-right-to-bracket"></i>
                 <span class="btn-text-mobile-hide ml-6">Se connecter</span>
               </router-link>
@@ -36,30 +36,30 @@
           <template v-else>
             <div class="auth-success-mini">
               <span class="welcome-text">Bonjour, <strong>{{ authStore.user?.name }}</strong></span>
-              <router-link to="/" class="btn btn-white btn-sm shadow-md btn-auth" title="Tableau de bord">
+              <router-link to="/" class="btn btn-white btn-sm shadow-md btn-auth" title="Tableau de bord" aria-label="Accéder au tableau de bord">
                 <i class="fa-solid fa-house"></i>
                 <span class="btn-text-mobile-hide ml-6">Tableau de bord</span>
               </router-link>
               <router-link v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'superadmin'" 
-                           to="/admin" class="btn btn-indigo btn-sm shadow-md btn-auth" title="Accéder à l'administration">
+                           to="/admin" class="btn btn-indigo btn-sm shadow-md btn-auth" title="Accéder à l'administration" aria-label="Accéder à l'administration">
                 <i class="fa-solid fa-gauge-high"></i>
                 <span class="btn-text-mobile-hide ml-6">Administration</span>
               </router-link>
             </div>
           </template>
-        </div>
+        </nav>
       </div>
     </header>
 
     <!-- Contenu principal -->
-    <main class="public-main">
+    <main class="public-main dazo-public-main">
       <slot>
         <router-view></router-view>
       </slot>
     </main>
 
     <!-- Pied de page public -->
-    <footer class="public-footer">
+    <footer class="public-footer dazo-public-footer">
       <div class="public-container-wide footer-inner">
         <div class="footer-left">
           <p class="footer-text">
@@ -69,8 +69,7 @@
           </p>
         </div>
         
-        <div class="footer-center footer-links">
-          <!-- Pages de contenu dynamiques -->
+        <nav class="footer-center footer-links" aria-label="Liens légaux">
           <template v-for="pageKey in ['legal', 'privacy', 'terms']">
             <router-link v-if="configStore.config['page_' + pageKey + '_enabled'] === 'true'" 
                          :key="pageKey"
@@ -78,7 +77,7 @@
               {{ configStore.config['page_' + pageKey + '_title'] }}
             </router-link>
           </template>
-        </div>
+        </nav>
 
         <div class="footer-right footer-links">
           <router-link to="/login">Espace Membre</router-link>
@@ -214,6 +213,7 @@ const resetAndGoHome = () => {
   color: white;
   letter-spacing: -0.02em;
   line-height: 1.2;
+  margin: 0;
 }
 
 .header-sub-title {

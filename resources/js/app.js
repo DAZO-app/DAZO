@@ -7,12 +7,15 @@ import router from './router';
 import App from './App.vue';
 
 import VueSocialSharing from 'vue-social-sharing';
+import { createHead } from '@unhead/vue/client';
 
 const app = createApp(App);
 const pinia = createPinia();
+const head = createHead();
 
 app.use(pinia);
 app.use(router);
 app.use(VueSocialSharing);
+app.use(head);
 
 app.mount('#app');

@@ -1,9 +1,9 @@
 <template>
-  <div class="public-front dazo-public-detail">
+  <div class="public-front dazo-theme-public dazo-public-detail">
     <div class="public-container-wide pb-48 pt-32" @touchstart="onTouchStart" @touchend="onTouchEnd">
 
       <!-- ── Barre de navigation sticky (sans phase) ── -->
-      <div class="filters-actions-bar dazo-public-detail-navbar">
+      <nav class="filters-actions-bar dazo-public-detail-navbar" aria-label="Actions sur la décision">
         
         <div class="popin-wrapper">
           <router-link to="/front" class="action-btn dazo-public-back-btn">
@@ -47,7 +47,7 @@
             </button>
           </div>
         </div>
-      </div>
+      </nav>
 
       <!-- ── Chargement ── -->
       <div v-if="loading" class="text-center py-48 text-muted dazo-public-loading">
@@ -64,26 +64,26 @@
       </div>
 
       <!-- ── Carte principale ── -->
-      <div v-else class="decision-detail-card dazo-public-card-detail">
+      <article v-else class="decision-detail-card dazo-public-card-detail">
 
         <!-- En-tête de la tuile -->
         <div class="card-header-bar detail-card-header">
           <div class="header-left">
-            <span
+            <button
               v-if="decision.circle"
               class="meta-item circle-tag clickable dazo-public-card-circle"
               @click="goFilter('circle', String(decision.circle.id))"
-              title="Filtrer par ce cercle"
-            ><i class="fa-solid fa-circle-nodes"></i> {{ decision.circle.name }}</span>
+              :aria-label="'Filtrer par cercle : ' + decision.circle.name"
+            ><i class="fa-solid fa-circle-nodes"></i> {{ decision.circle.name }}</button>
           </div>
 
           <div class="header-right">
-            <span
+            <button
               class="status-badge clickable dazo-public-badge"
               :class="'status-' + decision.status"
               @click="goFilter('status', decision.status)"
-              title="Filtrer par ce statut"
-            >{{ getStatusLabel(decision.status) }}</span>
+              :aria-label="'Filtrer par phase : ' + getStatusLabel(decision.status)"
+            >{{ getStatusLabel(decision.status) }}</button>
           </div>
         </div>
 
@@ -93,27 +93,27 @@
             <h1 class="article-title dazo-public-detail-title" style="flex: 1; min-width: 250px;">{{ decision.title }}</h1>
             
             <div class="category-tags dazo-public-detail-tags" v-if="decision.categories?.length > 0" style="margin-top: 6px;">
-              <span
+              <button
                 v-for="cat in decision.categories"
                 :key="cat.id"
                 class="hashtag-link dazo-public-detail-tag"
                 @click="goFilter('category', String(cat.id))"
-                title="Filtrer par cette catégorie"
-              >#{{ cat.name }}</span>
+                :aria-label="'Filtrer par thématique : ' + cat.name"
+              >#{{ cat.name }}</button>
             </div>
           </div>
 
           <!-- Auteurs -->
           <div class="decision-authors-line inline mt-16 dazo-public-card-authors" v-if="getAuthor(decision) || getAnimator(decision)">
             Proposé par : 
-            <span class="author-link" v-if="getAuthor(decision)" @click.prevent="goFilter('author', String(getAuthor(decision).id))">
+            <button class="author-link" v-if="getAuthor(decision)" @click.prevent="goFilter('author', String(getAuthor(decision).id))" :aria-label="'Filtrer par auteur : ' + getAuthor(decision).name">
               {{ getAuthor(decision).name }}
-            </span>
+            </button>
             <span v-else class="author-link">N/A</span>, 
             animé par : 
-            <span class="author-link" v-if="getAnimator(decision)" @click.prevent="goFilter('animator', String(getAnimator(decision).id))">
+            <button class="author-link" v-if="getAnimator(decision)" @click.prevent="goFilter('animator', String(getAnimator(decision).id))" :aria-label="'Filtrer par animateur : ' + getAnimator(decision).name">
               {{ getAnimator(decision).name }}
-            </span>
+            </button>
             <span v-else class="author-link">Non assigné</span>.
           </div>
 
@@ -121,14 +121,16 @@
           <div class="decision-metadata-row mt-16">
             <div class="decision-metadata-line" style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
               <div class="popin-container" v-click-outside="() => activePopin = null">
-                <span 
+                <button 
                   class="meta-item version-tag dazo-public-version-tag clickable"
                   :class="{ active: activePopin === 'versions' }"
                   @click.stop="togglePopin('versions')"
-                  title="Historique des versions"
+                  aria-label="Voir l'historique des versions"
+                  aria-haspopup="dialog"
+                  :aria-expanded="activePopin === 'versions'"
                 >
                   v{{ decision.current_version?.version_number || 1 }}
-                </span>
+                </button>
 
                 <!-- Popin Historique des versions (Premium Design) -->
                 <transition name="popin-wow">
@@ -176,14 +178,14 @@
               </div>
 
               <!-- Bouton Rollback (Retour à la version actuelle) -->
-              <span 
+              <button 
                 v-if="isOldVersion" 
                 class="meta-item rollback-tag clickable"
                 @click="resetToLatest"
-                title="Retourner à la version actuelle"
+                aria-label="Retourner à la version actuelle"
               >
                 <i class="fa-solid fa-rotate-left"></i>
-              </span>
+              </button>
 
               <span class="date dazo-public-date"><i class="fa-regular fa-calendar"></i> Créé le {{ formatDate(decision.created_at) }}</span>
               <span class="date dazo-public-date" v-if="decision.updated_at && decision.updated_at !== decision.created_at">
@@ -202,7 +204,7 @@
           <div class="article-html-content dazo-public-content" v-else-if="decision.current_version?.content" v-html="decision.current_version.content"></div>
 
           <!-- Échanges publics (clarifications / réactions / objections / suggestions) -->
-          <div v-if="feedbacksByType.length > 0" class="exchanges-section mt-48 dazo-public-exchanges">
+          <section v-if="feedbacksByType.length > 0" class="exchanges-section mt-48 dazo-public-exchanges" aria-label="Échanges et retours">
             <div v-for="group in feedbacksByType" :key="group.type" class="exchange-group dazo-public-exchange-group">
               <h3 class="exchange-title dazo-public-exchange-title">
                 <i :class="group.icon"></i> {{ group.label }}
@@ -220,20 +222,22 @@
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
           <!-- Pièces jointes -->
-          <div class="attachments-section mt-48 dazo-public-attachments" v-if="decision.current_version?.attachments?.length > 0">
+          <section class="attachments-section mt-48 dazo-public-attachments" v-if="decision.current_version?.attachments?.length > 0" aria-label="Pièces jointes">
             <h3 class="attachments-title dazo-public-attachments-title">
               <i class="fa-solid fa-paperclip"></i> Pièces jointes ({{ decision.current_version.attachments.length }})
             </h3>
             <div class="attachments-list">
-              <div
+              <button
                 v-for="(att, idx) in decision.current_version.attachments"
                 :key="att.id"
                 class="attachment-card dazo-public-attachment-card"
                 @click="!att.is_private ? openAttachment(idx) : null"
                 :style="att.is_private ? { opacity: 0.6, cursor: 'not-allowed' } : {}"
+                :aria-label="att.is_private ? 'Fichier privé : ' + att.filename : 'Ouvrir la pièce jointe : ' + att.filename"
+                :disabled="att.is_private"
               >
                 <div class="attachment-icon">
                   <i class="fa-solid fa-lock" v-if="att.is_private"></i>
@@ -250,30 +254,34 @@
                   <div class="attachment-size" v-if="!att.is_private">{{ formatSize(att.size_bytes) }}</div>
                 </div>
                 <div class="attachment-action" v-if="!att.is_private"><i class="fa-solid fa-expand"></i></div>
-              </div>
+              </button>
             </div>
-          </div>
+          </section>
         </div>
 
         <!-- Pied de tuile : navigation précédente / suivante -->
-        <div class="card-nav-footer dazo-public-detail-footer">
-          <span
+        <nav class="card-nav-footer dazo-public-detail-footer" aria-label="Navigation entre les décisions">
+          <button
             class="nav-footer-link dazo-public-footer-nav"
             :class="{ disabled: !nav.prev }"
             @click="nav.prev && navigate(nav.prev)"
-          ><i class="fa-solid fa-chevron-left"></i> Précédente</span>
+            aria-label="Décision précédente"
+            :disabled="!nav.prev"
+          ><i class="fa-solid fa-chevron-left"></i> Précédente</button>
 
           <span class="nav-footer-counter dazo-public-footer-counter" v-if="nav.index >= 0">{{ nav.index + 1 }} / {{ nav.total }}</span>
           <span v-else></span>
 
-          <span
+          <button
             class="nav-footer-link dazo-public-footer-nav"
             :class="{ disabled: !nav.next }"
             @click="nav.next && navigate(nav.next)"
-          >Suivante <i class="fa-solid fa-chevron-right"></i></span>
-        </div>
+            aria-label="Décision suivante"
+            :disabled="!nav.next"
+          >Suivante <i class="fa-solid fa-chevron-right"></i></button>
+        </nav>
 
-      </div>
+      </article>
     </div>
 
     <!-- Share Popin -->
@@ -297,6 +305,8 @@ import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
 import { usePublicFrontStore } from '../../stores/publicFront';
+import { useConfigStore } from '../../stores/config';
+import { useHead } from '@unhead/vue';
 import SharePopin from '../../components/public/SharePopin.vue';
 
 // Directive v-click-outside
@@ -317,12 +327,67 @@ const vClickOutside = {
 const route   = useRoute();
 const router  = useRouter();
 const store   = usePublicFrontStore();
+const configStore = useConfigStore();
 
 const decision = ref(null);
 const loading  = ref(true);
 const activePopin = ref(null);
 const originalVersionId = ref(null);
 const showSharePopin = ref(false);
+
+// ── SEO & Meta ──
+const jsonLd = computed(() => {
+  if (!decision.value) return null;
+  const abstractText = decision.value.current_version?.abstract || 
+                       (decision.value.current_version?.description ? decision.value.current_version.description.substring(0, 160).replace(/<[^>]*>?/gm, '') : '');
+  
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": decision.value.title,
+    "description": abstractText,
+    "datePublished": decision.value.created_at,
+    "dateModified": decision.value.updated_at,
+    "author": {
+      "@type": "Person",
+      "name": decision.value.author?.user?.name || "Organisation"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": configStore.appName,
+      "logo": {
+        "@type": "ImageObject",
+        "url": window.location.origin + "/images/dazo-logo.png"
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": window.location.href
+    }
+  };
+});
+
+useHead({
+  title: computed(() => decision.value ? `${decision.value.title} - ${configStore.appName}` : `Chargement... - ${configStore.appName}`),
+  meta: [
+    { name: 'description', content: computed(() => decision.value?.current_version?.abstract || 'Détails de la décision sur DAZO.') },
+    { property: 'og:title', content: computed(() => decision.value ? `${decision.value.title} - ${configStore.appName}` : configStore.appName) },
+    { property: 'og:description', content: computed(() => decision.value?.current_version?.abstract || 'Consultez cette décision sur la plateforme DAZO.') },
+    { property: 'og:image', content: '/images/dazo-logo.png' },
+    { property: 'og:type', content: 'article' },
+    { property: 'og:url', content: computed(() => window.location.href) },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: computed(() => decision.value?.title || configStore.appName) },
+    { name: 'twitter:description', content: computed(() => decision.value?.current_version?.abstract || 'Consultez cette décision sur la plateforme DAZO.') },
+    { name: 'twitter:image', content: '/images/dazo-logo.png' },
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: computed(() => jsonLd.value ? JSON.stringify(jsonLd.value) : null)
+    }
+  ]
+});
 
 const shareUrl = computed(() => window.location.href);
 

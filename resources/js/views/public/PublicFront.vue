@@ -1,5 +1,5 @@
 <template>
-  <div class="public-front dazo-public-listing">
+  <div class="public-front dazo-theme-public dazo-public-listing">
     <div class="public-container-wide pb-48 pt-32">
 
       <!-- Bouton flottant loupe (mobile, filtres fermés) -->
@@ -8,7 +8,8 @@
       </button>
 
       <!-- ── Barre d'actions (Popins) ── -->
-      <div class="filters-actions-bar dazo-public-actions-bar">
+      <h1 class="sr-only">Liste des décisions publiques</h1>
+      <section class="filters-actions-bar dazo-public-actions-bar" aria-label="Filtres et recherche">
         
         <!-- Bouton Rechercher -->
         <div class="popin-wrapper" v-click-outside="() => closePopin('search')">
@@ -16,6 +17,8 @@
             class="action-btn" 
             :class="{ active: activePopin === 'search' || store.filters.search }"
             @click="togglePopin('search')"
+            aria-label="Rechercher"
+            :aria-expanded="activePopin === 'search'"
           >
             <i class="fa-solid fa-magnifying-glass"></i>
             <span class="btn-label">Rechercher</span>
@@ -29,6 +32,7 @@
                 type="text" 
                 class="popin-input" 
                 placeholder="Titre, contenu, cercle, thématique..."
+                aria-label="Champ de recherche"
                 @input="onSearchInput"
                 @keyup.enter="applySearch"
               >
@@ -89,6 +93,8 @@
             class="action-btn" 
             :class="{ active: activePopin === 'filter' || hasActiveFiltersNoSearch }"
             @click="togglePopin('filter')"
+            aria-label="Filtrer les résultats"
+            :aria-expanded="activePopin === 'filter'"
           >
             <i class="fa-solid fa-filter"></i>
             <span class="btn-label">Filtrer</span>
@@ -99,32 +105,32 @@
             <div class="filter-grid">
               <!-- Phase -->
               <div class="filter-field">
-                <label>Phase</label>
-                <select v-model="store.filters.status" class="popin-select">
+                <label for="filter-status">Phase</label>
+                <select id="filter-status" v-model="store.filters.status" class="popin-select">
                   <option value="">Toutes les phases</option>
                   <option v-for="s in store.meta.statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
               </div>
               <!-- Cercle -->
               <div class="filter-field">
-                <label>Cercle</label>
-                <select v-model="store.filters.circle" class="popin-select">
+                <label for="filter-circle">Cercle</label>
+                <select id="filter-circle" v-model="store.filters.circle" class="popin-select">
                   <option value="">Tous les cercles</option>
                   <option v-for="c in flattenedCircles" :key="c.id" :value="String(c.id)">{{ c.displayName }}</option>
                 </select>
               </div>
               <!-- Thématique -->
               <div class="filter-field">
-                <label>Thématique</label>
-                <select v-model="store.filters.category" class="popin-select">
+                <label for="filter-category">Thématique</label>
+                <select id="filter-category" v-model="store.filters.category" class="popin-select">
                   <option value="">Toutes les thématiques</option>
                   <option v-for="c in store.meta.categories" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
                 </select>
               </div>
               <!-- Auteur -->
               <div class="filter-field">
-                <label>Auteur</label>
-                <select v-model="store.filters.author" class="popin-select">
+                <label for="filter-author">Auteur</label>
+                <select id="filter-author" v-model="store.filters.author" class="popin-select">
                   <option value="">Tous les auteurs</option>
                   <option v-for="a in store.meta.authors" :key="a.id" :value="String(a.id)">{{ a.name }}</option>
                 </select>
@@ -174,6 +180,8 @@
             class="action-btn" 
             :class="{ active: activePopin === 'sort' }"
             @click="togglePopin('sort')"
+            aria-label="Trier les résultats"
+            :aria-expanded="activePopin === 'sort'"
           >
             <i class="fa-solid fa-arrow-down-wide-short"></i>
             <span class="btn-label">Trier</span>
@@ -206,6 +214,7 @@
           <button 
             class="action-btn raz-btn" 
             @click="resetAll"
+            aria-label="Réinitialiser tous les filtres"
           >
             <i class="fa-solid fa-rotate-left"></i>
             <span class="btn-label">RAZ</span>
@@ -221,12 +230,13 @@
             class="action-btn view-btn" 
             @click="store.filters.viewMode = store.filters.viewMode === 'grid' ? 'list' : 'grid'"
             :title="store.filters.viewMode === 'grid' ? 'Passer en vue liste' : 'Passer en vue tuiles'"
+            aria-label="Changer le mode d'affichage"
           >
             <i :class="store.filters.viewMode === 'grid' ? 'fa-solid fa-list' : 'fa-solid fa-grip'"></i>
             <span class="btn-label">{{ store.filters.viewMode === 'grid' ? 'Liste' : 'Tuiles' }}</span>
           </button>
         </div>
-      </div>
+      </section>
 
       <!-- ── Chargement ── -->
       <div v-if="store.loading" class="text-center py-48 text-muted dazo-public-loading">
@@ -244,132 +254,115 @@
 
       <!-- ── Contenu (Grille ou Liste) ── -->
       <div v-else :class="store.filters.viewMode === 'grid' ? 'decisions-grid' : 'decisions-list'" class="dazo-public-content">
-        <router-link
-          v-for="decision in store.decisions"
-          :key="decision.id"
-          :to="{ name: 'PublicDecision', params: { id: decision.id } }"
-          class="decision-card dazo-public-item"
-          :class="{ 'is-list-mode': effectiveViewMode === 'list' }"
-        >
-          <!-- ── LAYOUT TUILE (GRID) ── -->
-          <template v-if="effectiveViewMode === 'grid'">
-            <!-- Barre de titre bleue -->
-            <div class="card-header-bar">
-              <span v-if="decision.circle" class="meta-item circle-tag clickable" @click.prevent="applyFilter('circle', String(decision.circle.id))">
-                <i class="fa-solid fa-circle-nodes"></i> {{ decision.circle.name }}
-              </span>
-              <span 
-                class="status-badge clickable dazo-public-badge"
-                :class="'status-' + decision.status"
-                @click.prevent="applyFilter('status', decision.status)"
-              >{{ getStatusLabel(decision.status) }}</span>
-            </div>
+        <article v-for="decision in store.decisions" :key="decision.id" class="decision-card-wrapper">
+          <div class="decision-card dazo-public-item" :class="{ 'is-list-mode': effectiveViewMode === 'list' }">
+            <!-- ── LAYOUT TUILE (GRID) ── -->
+            <template v-if="effectiveViewMode === 'grid'">
+              <div class="card-header-bar">
+                <button v-if="decision.circle" class="meta-item circle-tag clickable" @click.prevent="applyFilter('circle', String(decision.circle.id))" :aria-label="'Filtrer par cercle : ' + decision.circle.name">
+                  <i class="fa-solid fa-circle-nodes"></i> {{ decision.circle.name }}
+                </button>
+                <button class="status-badge clickable dazo-public-badge" :class="'status-' + decision.status" @click.prevent="applyFilter('status', decision.status)" :aria-label="'Filtrer par phase : ' + getStatusLabel(decision.status)">
+                  {{ getStatusLabel(decision.status) }}
+                </button>
+              </div>
 
-            <!-- Titre -->
-            <h3 class="decision-title dazo-public-card-title">{{ decision.title }}</h3>
+              <h3 class="decision-title dazo-public-card-title">
+                <router-link :to="{ name: 'PublicDecision', params: { id: decision.id } }" class="stretched-link" :aria-label="'Voir le détail de la décision : ' + decision.title">
+                  {{ decision.title }}
+                </router-link>
+              </h3>
 
-            <!-- Auteurs (Empilés) -->
-            <div class="decision-authors-line stacked">
-              <div class="author-row">
+              <div class="decision-authors-line stacked">
+                <div class="author-row">
+                  Proposé par : 
+                  <button class="author-link" @click.prevent="applyFilter('author', String(decision.author?.user_id))" :aria-label="'Filtrer par auteur : ' + (decision.author?.user?.name || 'Inconnu')">
+                    {{ decision.author?.user?.name || 'N/A' }}
+                  </button>
+                </div>
+                <div class="author-row">
+                  Animé par :
+                  <button class="author-link" @click.prevent="applyFilter('author', String(decision.current_animator?.user_id))" :aria-label="'Filtrer par animateur : ' + (decision.current_animator?.user?.name || 'Non assigné')">
+                    {{ decision.current_animator?.user?.name || 'Non assigné' }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="card-bottom-row">
+                <div class="decision-metadata-line">
+                  <span class="version-badge-square">v{{ decision.current_version?.version_number || 1 }}</span>
+                  <span class="dates-info">
+                    {{ formatDate(decision.created_at) }}
+                    <template v-if="decision.updated_at && decision.updated_at !== decision.created_at">
+                      - {{ formatDate(decision.updated_at) }}
+                    </template>
+                  </span>
+                </div>
+                <div class="category-tags dazo-public-card-tags" v-if="decision.categories?.length > 0">
+                  <button v-for="cat in decision.categories" :key="cat.id" class="hashtag-link dazo-public-card-tag" @click.prevent="applyFilter('category', String(cat.id))" :aria-label="'Filtrer par thématique : ' + cat.name">
+                    #{{ cat.name }}
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <!-- ── LAYOUT LISTE (DETAIL) ── -->
+            <template v-else-if="effectiveViewMode === 'list'">
+              <div class="card-header-bar">
+                <button v-if="decision.circle" class="meta-item circle-tag clickable" @click.prevent="applyFilter('circle', String(decision.circle.id))" :aria-label="'Filtrer par cercle : ' + decision.circle.name">
+                  <i class="fa-solid fa-circle-nodes"></i> {{ decision.circle.name }}
+                </button>
+                <span class="status-badge dazo-public-badge" :class="'status-' + decision.status">{{ getStatusLabel(decision.status) }}</span>
+              </div>
+
+              <h3 class="list-title dazo-public-card-title">
+                <router-link :to="{ name: 'PublicDecision', params: { id: decision.id } }" class="stretched-link" :aria-label="'Voir le détail de la décision : ' + decision.title">
+                  {{ decision.title }}
+                </router-link>
+              </h3>
+
+              <div class="decision-authors-line inline">
                 Proposé par : 
-                <span class="author-link" @click.prevent="applyFilter('author', String(decision.author?.user_id))">
+                <button class="author-link" @click.prevent="applyFilter('author', String(decision.author?.user_id))" :aria-label="'Filtrer par auteur : ' + (decision.author?.user?.name || 'Inconnu')">
                   {{ decision.author?.user?.name || 'N/A' }}
-                </span>
-              </div>
-              <div class="author-row">
-                Animé par :
-                <span class="author-link" @click.prevent="applyFilter('author', String(decision.current_animator?.user_id))">
+                </button>, 
+                animé par : 
+                <button class="author-link" @click.prevent="applyFilter('author', String(decision.current_animator?.user_id))" :aria-label="'Filtrer par animateur : ' + (decision.current_animator?.user?.name || 'Non assigné')">
                   {{ decision.current_animator?.user?.name || 'Non assigné' }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Métadonnées & Hashtags -->
-            <div class="card-bottom-row">
-              <div class="decision-metadata-line">
-                <span class="version-badge-square">v{{ decision.current_version?.version_number || 1 }}</span>
-                <span class="dates-info">
-                  {{ formatDate(decision.created_at) }}
-                  <template v-if="decision.updated_at && decision.updated_at !== decision.created_at">
-                    - {{ formatDate(decision.updated_at) }}
-                  </template>
-                </span>
-              </div>
-              <div class="category-tags dazo-public-card-tags" v-if="decision.categories?.length > 0">
-                <span
-                  v-for="cat in decision.categories"
-                  :key="cat.id"
-                  class="hashtag-link dazo-public-card-tag"
-                  @click.prevent="applyFilter('category', String(cat.id))"
-                >#{{ cat.name }}</span>
-              </div>
-            </div>
-          </template>
-
-          <!-- ── LAYOUT LISTE (DETAIL) ── -->
-          <template v-else-if="effectiveViewMode === 'list'">
-            <!-- Barre de titre bleue -->
-            <div class="card-header-bar">
-              <span v-if="decision.circle" class="meta-item circle-tag clickable" @click.prevent="applyFilter('circle', String(decision.circle.id))">
-                <i class="fa-solid fa-circle-nodes"></i> {{ decision.circle.name }}
-              </span>
-              <span 
-                class="status-badge clickable dazo-public-badge"
-                :class="'status-' + decision.status"
-                @click.prevent="applyFilter('status', decision.status)"
-              >{{ getStatusLabel(decision.status) }}</span>
-            </div>
-
-            <!-- Titre -->
-            <h3 class="decision-title dazo-public-card-title">{{ decision.title }}</h3>
-
-            <!-- Auteurs (Même ligne) -->
-            <div class="decision-authors-line inline">
-              Proposé par : 
-              <span class="author-link" @click.prevent="applyFilter('author', String(decision.author?.user_id))">
-                {{ decision.author?.user?.name || 'N/A' }}
-              </span>, 
-              animé par : 
-              <span class="author-link" @click.prevent="applyFilter('author', String(decision.current_animator?.user_id))">
-                {{ decision.current_animator?.user?.name || 'Non assigné' }}
-              </span>.
-            </div>
-
-            <!-- Métadonnées & Hashtags -->
-            <div class="card-bottom-row list-bottom">
-              <div class="decision-metadata-line">
-                <span class="version-badge-square">v{{ decision.current_version?.version_number || 1 }}</span>
-                <span class="dates-info">
-                  {{ formatDate(decision.created_at) }}
-                  <template v-if="decision.updated_at && decision.updated_at !== decision.created_at">
-                    - {{ formatDate(decision.updated_at) }}
-                  </template>
-                </span>
+                </button>.
               </div>
 
-              <div class="category-tags dazo-public-card-tags" v-if="decision.categories?.length > 0">
-                <span
-                  v-for="cat in decision.categories"
-                  :key="cat.id"
-                  class="hashtag-link dazo-public-card-tag"
-                  @click.prevent="applyFilter('category', String(cat.id))"
-                >#{{ cat.name }}</span>
+              <div class="card-bottom-row list-bottom">
+                <div class="decision-metadata-line">
+                  <span class="version-badge-square">v{{ decision.current_version?.version_number || 1 }}</span>
+                  <span class="dates-info">
+                    {{ formatDate(decision.created_at) }}
+                    <template v-if="decision.updated_at && decision.updated_at !== decision.created_at">
+                      - {{ formatDate(decision.updated_at) }}
+                    </template>
+                  </span>
+                </div>
+                <div class="category-tags dazo-public-card-tags" v-if="decision.categories?.length > 0">
+                  <button v-for="cat in decision.categories" :key="cat.id" class="hashtag-link dazo-public-card-tag" @click.prevent="applyFilter('category', String(cat.id))" :aria-label="'Filtrer par thématique : ' + cat.name">
+                    #{{ cat.name }}
+                  </button>
+                </div>
               </div>
-            </div>
-          </template>
-        </router-link>
+            </template>
+          </div>
+        </article>
       </div>
 
       <!-- ── Pagination ── -->
-      <div v-if="store.pagination.last_page > 1" class="pagination dazo-public-pagination">
-        <button class="btn btn-ghost dazo-public-page-btn" :disabled="store.pagination.current_page === 1" @click="store.fetchDecisions(store.pagination.current_page - 1)">
+      <nav v-if="store.pagination.last_page > 1" class="pagination dazo-public-pagination" aria-label="Pagination">
+        <button class="btn btn-ghost dazo-public-page-btn" :disabled="store.pagination.current_page === 1" @click="store.fetchDecisions(store.pagination.current_page - 1)" aria-label="Page précédente">
           <i class="fa-solid fa-chevron-left"></i> Précédent
         </button>
         <span class="page-info dazo-public-page-info">Page {{ store.pagination.current_page }} sur {{ store.pagination.last_page }}</span>
-        <button class="btn btn-ghost dazo-public-page-btn" :disabled="store.pagination.current_page === store.pagination.last_page" @click="store.fetchDecisions(store.pagination.current_page + 1)">
+        <button class="btn btn-ghost dazo-public-page-btn" :disabled="store.pagination.current_page === store.pagination.last_page" @click="store.fetchDecisions(store.pagination.current_page + 1)" aria-label="Page suivante">
           Suivant <i class="fa-solid fa-chevron-right"></i>
         </button>
-      </div>
+      </nav>
     </div>
   </div>
 </template>
@@ -377,11 +370,43 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { usePublicFrontStore } from '../../stores/publicFront';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { flattenCirclesWithHierarchy } from '../../utils/circleHelpers';
+import { useHead } from '@unhead/vue';
+import { useConfigStore } from '../../stores/config';
 
 const store = usePublicFrontStore();
+const configStore = useConfigStore();
 const router = useRouter();
+const route = useRoute();
+
+// ── Sync Filters with URL ──
+watch(() => store.filters, (newFilters) => {
+  const query = { ...route.query };
+  const keys = ['search', 'circle', 'category', 'status', 'author'];
+  keys.forEach(key => {
+    if (newFilters[key]) query[key] = newFilters[key];
+    else delete query[key];
+  });
+  router.replace({ query });
+}, { deep: true });
+
+// ── SEO & Meta ──
+useHead({
+  title: computed(() => `Décisions Publiques - ${configStore.appName}`),
+  meta: [
+    { name: 'description', content: 'Consultez et suivez les décisions ouvertes de notre organisation sur DAZO.' },
+    { property: 'og:title', content: computed(() => `Décisions Publiques - ${configStore.appName}`) },
+    { property: 'og:description', content: 'Consultez et suivez les décisions ouvertes de notre organisation sur DAZO.' },
+    { property: 'og:image', content: '/images/dazo-logo.png' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: window.location.href },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: computed(() => `Décisions Publiques - ${configStore.appName}`) },
+    { name: 'twitter:description', content: 'Consultez et suivez les décisions ouvertes de notre organisation sur DAZO.' },
+    { name: 'twitter:image', content: '/images/dazo-logo.png' },
+  ]
+});
 
 const flattenedCircles = computed(() => flattenCirclesWithHierarchy(store.meta.circles || []));
 
@@ -547,10 +572,16 @@ const getStatusLabel = (s) =>
 
 onMounted(async () => {
   window.addEventListener('resize', onResize);
+  
+  // Initialisation des filtres depuis l'URL
+  const keys = ['search', 'circle', 'category', 'status', 'author'];
+  keys.forEach(key => {
+    if (route.query[key]) store.filters[key] = route.query[key];
+  });
+  if (route.query.search) tempSearch.value = route.query.search;
+
   await store.fetchMeta();
-  if (store.decisions.length === 0) {
-    store.fetchDecisions();
-  }
+  store.fetchDecisions(1);
 });
 
 onUnmounted(() => {
@@ -987,6 +1018,15 @@ onUnmounted(() => {
   color: var(--gray-800);
   margin: 20px 24px 8px 24px;
   line-height: 1.4;
+}
+
+.stretched-link {
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+.decision-card:hover .decision-title {
+  color: var(--blue-700);
 }
 
 .decision-metadata-line {

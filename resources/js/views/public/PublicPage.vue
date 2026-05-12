@@ -36,12 +36,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useConfigStore } from '../../stores/config';
+import { useHead } from '@unhead/vue';
 
 const route = useRoute();
 const configStore = useConfigStore();
+
+// ── SEO & Meta ──
+useHead({
+  title: computed(() => pageTitle.value ? `${pageTitle.value} - ${configStore.appName}` : `Page - ${configStore.appName}`),
+  meta: [
+    { name: 'description', content: computed(() => pageTitle.value ? `Consultez la page ${pageTitle.value} sur DAZO.` : 'Page de contenu.') },
+    { property: 'og:title', content: computed(() => pageTitle.value ? `${pageTitle.value} - ${configStore.appName}` : configStore.appName) },
+    { property: 'og:image', content: '/images/dazo-logo.png' },
+    { property: 'og:url', content: computed(() => window.location.href) },
+  ]
+});
 const loading = ref(true);
 const pageTitle = ref('');
 const pageContent = ref('');
