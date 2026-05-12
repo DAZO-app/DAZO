@@ -238,6 +238,26 @@ Tests attendus :
 9. Lot 8 : gros composants Vue.
 10. Lots 9 et 10 en continu.
 
+## Optimisations supplémentaires
+
+1. **Refactorisation des scripts shell** :
+   - Centraliser la logique commune dans `dazo-tool.sh`.
+   - Ajouter des commentaires détaillés pour faciliter la maintenance.
+
+2. **Nettoyage des dépendances** :
+   - Vérifier l'utilisation des dépendances comme `laravel/reverb` et `laravel/socialite`.
+   - Mettre à jour les dépendances frontend si possible.
+
+3. **Gestion des sauvegardes** :
+   - Implémenter une rotation automatique des sauvegardes.
+   - Optimiser la fréquence des sauvegardes.
+
+4. **Documentation** :
+   - Mettre à jour `README.md` pour inclure des instructions claires sur la gestion des sauvegardes et des dépendances.
+
+5. **Optimisation Docker** :
+   - Analyser et optimiser les fichiers `Dockerfile` et `docker-compose.yml`.
+
 ## Commandes utiles
 
 ```bash
