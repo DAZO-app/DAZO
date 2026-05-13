@@ -29,6 +29,14 @@ class InitController extends Controller
             $data["page_{$key}_content"] = $this->configService->get("page_{$key}_content");
         }
 
+        // Add theme public & meeting config
+        $data['theme_public_palette_mode'] = $this->configService->get('theme_public_palette_mode');
+        $data['theme_meeting_palette_mode'] = $this->configService->get('theme_meeting_palette_mode');
+        foreach (['primary', 'secondary', 'accent', 'bg_main', 'bg_alt', 'text_main', 'text_muted', 'success', 'warning', 'error', 'info', 'border', 'link', 'header'] as $key) {
+            $data["theme_public_{$key}"] = $this->configService->get("theme_public_{$key}");
+            $data["theme_meeting_{$key}"] = $this->configService->get("theme_meeting_{$key}");
+        }
+
         return response()->json($data);
     }
 }

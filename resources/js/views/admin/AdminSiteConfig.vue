@@ -161,16 +161,63 @@
           <!-- SECTION THEME PUBLIC -->
           <div v-if="activeSection === 'theme_public'" class="premium-card animate-fade-in">
             <div class="pc-header pc-header-blue">
-              <div class="pc-header-icon"><i class="fa-solid fa-globe"></i></div>
+              <div class="pc-header-icon"><i class="fa-solid fa-palette"></i></div>
               <div class="pc-header-content">
                 <div class="pc-header-title">Thème Front Public</div>
                 <div class="pc-header-sub">Apparence de l'interface de consultation publique</div>
               </div>
             </div>
-            <div class="pc-body p-48 text-center">
-              <i class="fa-solid fa-palette fa-3x mb-16" style="color: var(--teal-500); opacity: 0.3;"></i>
-              <h3 class="text-lg font-bold text-gray-800 mb-8">Personnalisation du thème public</h3>
-              <p class="text-muted italic" style="max-width: 420px; margin: 0 auto;">Prochainement : gestion de la palette de couleurs, des polices et des styles personnalisés pour votre interface publique.</p>
+            <div class="pc-body p-24">
+              <p class="help-text mb-24">Sélectionnez une palette de couleurs prête à l'emploi, ou créez votre propre thème personnalisé.</p>
+              
+              <div class="palettes-grid">
+                <!-- 14 Palettes -->
+                <div v-for="palette in predefinedPalettes" :key="palette.id" 
+                     class="palette-card" 
+                     :class="{ 'active': config.theme_public_palette_mode === palette.id }"
+                     @click="config.theme_public_palette_mode = palette.id">
+                  <div class="palette-colors">
+                    <div v-for="c in palette.colors" :key="c" class="palette-swatch" :style="{ backgroundColor: c }"></div>
+                  </div>
+                  <div class="palette-label">{{ palette.label }}</div>
+                  <div class="palette-check" v-if="config.theme_public_palette_mode === palette.id">
+                    <i class="fa-solid fa-check-circle"></i>
+                  </div>
+                </div>
+
+                <!-- 15th Palette (Custom) -->
+                <div class="palette-card" 
+                     :class="{ 'active': config.theme_public_palette_mode === 'custom' }"
+                     @click="config.theme_public_palette_mode = 'custom'">
+                  <div class="palette-colors custom-palette-preview">
+                    <i class="fa-solid fa-sliders text-gray-400"></i>
+                  </div>
+                  <div class="palette-label">Palette Personnalisée</div>
+                  <div class="palette-check" v-if="config.theme_public_palette_mode === 'custom'">
+                    <i class="fa-solid fa-check-circle"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Detailed custom colors (only visible if custom is selected) -->
+              <div v-if="config.theme_public_palette_mode === 'custom'" class="custom-colors-panel mt-32 p-24 bg-gray-50 border rounded-xl animate-fade-in">
+                <h4 class="font-bold text-gray-800 mb-16"><i class="fa-solid fa-paint-roller mr-8 text-blue-500"></i> Éditeur de palette avancée</h4>
+                <div class="grid-3 gap-24">
+                  <div v-for="color in frontColors" :key="color.key" class="form-group mb-0">
+                    <label class="text-xs font-bold text-gray-500 mb-4 block">{{ color.label }}</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" v-model="config['theme_public_' + color.key]" class="color-input">
+                      <input type="text" v-model="config['theme_public_' + color.key]" class="input input-sm font-mono" placeholder="#000000">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer le Thème
+              </button>
             </div>
           </div>
 
@@ -183,10 +230,57 @@
                 <div class="pc-header-sub">Apparence de l'interface de prise de décision en réunion</div>
               </div>
             </div>
-            <div class="pc-body p-48 text-center">
-              <i class="fa-solid fa-display fa-3x mb-16" style="color: #845ef7; opacity: 0.3;"></i>
-              <h3 class="text-lg font-bold text-gray-800 mb-8">Personnalisation du thème Meeting</h3>
-              <p class="text-muted italic" style="max-width: 420px; margin: 0 auto;">Prochainement : thèmes sombres/clairs, ajustements de contraste et personnalisation visuelle du mode réunion.</p>
+            <div class="pc-body p-24">
+              <p class="help-text mb-24">Sélectionnez une palette de couleurs pour le mode réunion (plein écran), ou personnalisez-la.</p>
+              
+              <div class="palettes-grid">
+                <!-- 14 Palettes -->
+                <div v-for="palette in predefinedPalettes" :key="palette.id" 
+                     class="palette-card" 
+                     :class="{ 'active': config.theme_meeting_palette_mode === palette.id }"
+                     @click="config.theme_meeting_palette_mode = palette.id">
+                  <div class="palette-colors">
+                    <div v-for="c in palette.colors" :key="c" class="palette-swatch" :style="{ backgroundColor: c }"></div>
+                  </div>
+                  <div class="palette-label">{{ palette.label }}</div>
+                  <div class="palette-check" v-if="config.theme_meeting_palette_mode === palette.id">
+                    <i class="fa-solid fa-check-circle"></i>
+                  </div>
+                </div>
+
+                <!-- 15th Palette (Custom) -->
+                <div class="palette-card" 
+                     :class="{ 'active': config.theme_meeting_palette_mode === 'custom' }"
+                     @click="config.theme_meeting_palette_mode = 'custom'">
+                  <div class="palette-colors custom-palette-preview">
+                    <i class="fa-solid fa-sliders text-gray-400"></i>
+                  </div>
+                  <div class="palette-label">Palette Personnalisée</div>
+                  <div class="palette-check" v-if="config.theme_meeting_palette_mode === 'custom'">
+                    <i class="fa-solid fa-check-circle"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Detailed custom colors (only visible if custom is selected) -->
+              <div v-if="config.theme_meeting_palette_mode === 'custom'" class="custom-colors-panel mt-32 p-24 bg-gray-50 border rounded-xl animate-fade-in">
+                <h4 class="font-bold text-gray-800 mb-16"><i class="fa-solid fa-paint-roller mr-8 text-blue-500"></i> Éditeur de palette avancée (Meeting)</h4>
+                <div class="grid-3 gap-24">
+                  <div v-for="color in frontColors" :key="color.key" class="form-group mb-0">
+                    <label class="text-xs font-bold text-gray-500 mb-4 block">{{ color.label }}</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" v-model="config['theme_meeting_' + color.key]" class="color-input">
+                      <input type="text" v-model="config['theme_meeting_' + color.key]" class="input input-sm font-mono" placeholder="#000000">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer le Thème Meeting
+              </button>
             </div>
           </div>
 
@@ -725,6 +819,40 @@ const emailList = [
   { key: 'invitation', label: 'Invitation au cercle', icon: 'fa-solid fa-envelope-open-text', help: 'Variables : {inviter}, {circle}, {description}, {url}' },
 ];
 
+const predefinedPalettes = [
+  { id: 'default', label: 'Défaut (Bleu)', colors: ['#3b82f6', '#f8fafc', '#1e293b', '#e2e8f0'] },
+  { id: 'red', label: 'Rouge Rubis', colors: ['#e11d48', '#fff1f2', '#881337', '#fecdd3'] },
+  { id: 'yellow', label: 'Jaune Solaire', colors: ['#eab308', '#fefce8', '#713f12', '#fef08a'] },
+  { id: 'green', label: 'Vert Forêt', colors: ['#16a34a', '#f0fdf4', '#14532d', '#bbf7d0'] },
+  { id: 'purple', label: 'Violet Améthyste', colors: ['#9333ea', '#faf5ff', '#581c87', '#e9d5ff'] },
+  { id: 'orange', label: 'Orange Corail', colors: ['#f97316', '#fff7ed', '#7c2d12', '#fed7aa'] },
+  { id: 'teal', label: 'Bleu Canard', colors: ['#0d9488', '#f0fdfa', '#134e4a', '#99f6e4'] },
+  { id: 'rose', label: 'Rose Poudré', colors: ['#f43f5e', '#fff1f2', '#881337', '#fecdd3'] },
+  { id: 'indigo', label: 'Indigo Profond', colors: ['#4f46e5', '#eef2ff', '#312e81', '#c7d2fe'] },
+  { id: 'gray', label: 'Monochrome Gris', colors: ['#4b5563', '#f9fafb', '#111827', '#e5e7eb'] },
+  { id: 'dark', label: 'Mode Sombre', colors: ['#1f2937', '#111827', '#f3f4f6', '#374151'] },
+  { id: 'midnight', label: 'Nuit Bleue', colors: ['#1e3a8a', '#0f172a', '#e2e8f0', '#1e293b'] },
+  { id: 'forest_dark', label: 'Forêt Sombre', colors: ['#064e3b', '#022c22', '#d1fae5', '#065f46'] },
+  { id: 'high_contrast', label: 'Contraste Élevé', colors: ['#000000', '#ffffff', '#000000', '#000000'] }
+];
+
+const frontColors = [
+  { key: 'primary', label: 'Couleur Primaire', default: '#3b82f6' },
+  { key: 'secondary', label: 'Couleur Secondaire', default: '#f1f5f9' },
+  { key: 'accent', label: 'Couleur Accentuation', default: '#2563eb' },
+  { key: 'bg_main', label: 'Fond Principal', default: '#f8fafc' },
+  { key: 'bg_alt', label: 'Fond Alternatif', default: '#ffffff' },
+  { key: 'text_main', label: 'Texte Principal', default: '#1e293b' },
+  { key: 'text_muted', label: 'Texte Secondaire', default: '#64748b' },
+  { key: 'success', label: 'Succès', default: '#10b981' },
+  { key: 'warning', label: 'Avertissement', default: '#f59e0b' },
+  { key: 'error', label: 'Erreur', default: '#ef4444' },
+  { key: 'info', label: 'Information', default: '#3b82f6' },
+  { key: 'border', label: 'Bordure', default: '#e2e8f0' },
+  { key: 'link', label: 'Liens', default: '#2563eb' },
+  { key: 'header', label: 'En-tête', default: '#ffffff' }
+];
+
 const publicRegistrationBool = computed({
   get: () => config.value.public_registration === 'true',
   set: (val) => config.value.public_registration = val ? 'true' : 'false'
@@ -764,6 +892,23 @@ onMounted(async () => {
       }
       if (!config.value['phase_' + s.value + '_secondary']) {
         config.value['phase_' + s.value + '_secondary'] = s.defaultSecondary;
+      }
+    });
+
+    if (!config.value.theme_public_palette_mode) {
+      config.value.theme_public_palette_mode = 'default';
+    }
+
+    if (!config.value.theme_meeting_palette_mode) {
+      config.value.theme_meeting_palette_mode = 'dark'; // Meeting is often better in dark mode by default
+    }
+
+    frontColors.forEach(c => {
+      if (!config.value['theme_public_' + c.key]) {
+        config.value['theme_public_' + c.key] = c.default;
+      }
+      if (!config.value['theme_meeting_' + c.key]) {
+        config.value['theme_meeting_' + c.key] = c.default;
       }
     });
 
@@ -955,5 +1100,64 @@ const handleLogoUpload = async (event) => {
 .input-sm {
   padding: 4px 8px;
   font-size: 12px;
+}
+
+.palettes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.palette-card {
+  border: 2px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  background: white;
+}
+.palette-card:hover {
+  border-color: var(--blue-300);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.palette-card.active {
+  border-color: var(--blue-500);
+  background: var(--blue-50);
+}
+.palette-colors {
+  display: flex;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+.palette-swatch {
+  flex: 1;
+  height: 100%;
+}
+.palette-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--gray-700);
+  text-align: center;
+}
+.palette-check {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  color: var(--blue-500);
+  background: white;
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.custom-palette-preview {
+  background: var(--gray-100);
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
 }
 </style>

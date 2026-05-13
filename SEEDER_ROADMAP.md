@@ -2,6 +2,9 @@
 
 ## Modifications selon vos spécifications
 
+### Utilisateurs
+- une 50 aine avec différents statu, répartis aléatoirement dans les cercles
+
 ### Visibilité des décisions
 - 90% publiques
 - 10% privées

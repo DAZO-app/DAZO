@@ -72,7 +72,7 @@
         <router-link to="/" class="sidebar-logo">
           <img :src="configStore.defaultLogoUrl" alt="DAZO" class="sidebar-logo-img" />
           <div style="font-size: 8px; color: rgba(255,255,255,0.3); text-align: center; margin-top: 4px; font-family: monospace;">
-            BETA [13/05/2026 02:14:29]
+            BETA [13/05/2026 11:47:59]
           </div>
         </router-link>
 

@@ -24,318 +24,322 @@
 
       
       <!-- MODULAR DASHBOARD CONTENT -->      <!-- MODULAR DASHBOARD CONTENT -->
-      <div class="dashboard-rows" style="display: flex; flex-direction: column; gap: 16px;">
-        <div v-for="(row, rowIdx) in dashboardRows" :key="rowIdx" class="dashboard-grid">
-          <div v-for="widget in row" :key="widget.id" :class="getWidgetClass(widget.width)">
+      <!-- MODULAR DASHBOARD CONTENT -->
+      <draggable 
+        v-model="userWidgets" 
+        item-key="id" 
+        class="dashboard-grid"
+        handle=".drag-handle"
+        :filter="'.clickable, .widget-resize-handle'"
+        :preventOnFilter="false"
+        ghost-class="widget-ghost"
+        drag-class="widget-dragging"
+        @end="saveDashboardLayout"
+      >
+        <template #item="{ element: widget }">
+          <div :class="getWidgetClass(widget.width)" class="widget-container">
           
             <!-- STATS BLOCK -->
-            <div v-if="widget.id === 'stats'" class="widget-stats">
-              <div class="stats-row" v-if="dashboard.stats">
-                <div class="stat-card v-total clickable" @click="$router.push('/decisions')">
-                  <div class="stat-icon-part">
-                    <div class="stat-icon-wrap"><i class="fa-solid fa-chart-pie"></i></div>
-                  </div>
-                  <div class="stat-info-part">
-                    <div class="ring-wrap">
-                      <svg width="72" height="72" viewBox="0 0 72 72">
-                        <circle class="ring-bg" cx="36" cy="36" r="28"/>
-                        <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" stroke-dashoffset="0" style="stroke: rgba(255,255,255,0.35);"/>
-                      </svg>
-                      <div class="ring-center">{{ dashboard.stats.total }}</div>
+            <div v-if="widget.id === 'stats'" class="premium-card widget-stats h-full">
+              <div class="pc-body drag-handle" style="cursor: grab;">
+                <div class="stats-row" v-if="dashboard.stats">
+                  <div class="stat-card v-total clickable" @click="$router.push('/decisions')">
+                    <div class="stat-icon-part">
+                      <div class="stat-icon-wrap"><i class="fa-solid fa-chart-pie"></i></div>
                     </div>
-                    <div class="stat-label">Décisions</div>
-                  </div>
-                </div>
-
-                <div class="stat-card v-proposals clickable" @click="$router.push({ path: '/decisions', query: { role: 'author' } })">
-                  <div class="stat-icon-part">
-                    <div class="stat-icon-wrap"><i class="fa-solid fa-bullhorn"></i></div>
-                  </div>
-                  <div class="stat-info-part">
-                    <div class="stat-number-simple">{{ dashboard.stats.as_author }}</div>
-                    <div class="stat-label">Proposées</div>
-                  </div>
-                </div>
-
-                <div class="stat-card v-anime clickable" @click="$router.push({ path: '/decisions', query: { role: 'animator' } })">
-                  <div class="stat-icon-part">
-                    <div class="stat-icon-wrap"><i class="fa-solid fa-user-tie"></i></div>
-                  </div>
-                  <div class="stat-info-part">
-                    <div class="stat-number-simple">{{ dashboard.stats.as_animator }}</div>
-                    <div class="stat-label">J'Anime</div>
-                  </div>
-                </div>
-
-                <div class="stat-card v-active clickable" @click="$router.push({ path: '/decisions', query: { state: 'active' } })">
-                  <div class="stat-icon-part">
-                    <div class="stat-icon-wrap"><i class="fa-solid fa-spinner fa-spin"></i></div>
-                  </div>
-                  <div class="stat-info-part">
-                    <div class="stat-number-simple">{{ dashboard.stats.in_progress }}</div>
-                    <div class="stat-label">En Cours</div>
-                  </div>
-                </div>
-
-                <div class="stat-card v-adopted clickable" @click="$router.push({ path: '/decisions', query: { state: 'adopted' } })">
-                  <div class="stat-icon-part">
-                    <div class="stat-icon-wrap"><i class="fa-solid fa-check"></i></div>
-                  </div>
-                  <div class="stat-info-part">
-                    <div class="ring-wrap">
-                      <svg width="72" height="72" viewBox="0 0 72 72">
-                        <circle class="ring-bg" cx="36" cy="36" r="28"/>
-                        <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.adopted, dashboard.stats.total)"/>
-                      </svg>
-                      <div class="ring-center">{{ dashboard.stats.adopted }}</div>
+                    <div class="stat-info-part">
+                      <div class="ring-wrap">
+                        <svg width="72" height="72" viewBox="0 0 72 72">
+                          <circle class="ring-bg" cx="36" cy="36" r="28"/>
+                          <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" stroke-dashoffset="0" style="stroke: rgba(255,255,255,0.35);"/>
+                        </svg>
+                        <div class="ring-center">{{ dashboard.stats.total }}</div>
+                      </div>
+                      <div class="stat-label">Décisions</div>
                     </div>
-                    <div class="stat-label">Adoptées</div>
+                  </div>
+
+                  <div class="stat-card v-proposals clickable" @click="$router.push({ path: '/decisions', query: { role: 'author' } })">
+                    <div class="stat-icon-part">
+                      <div class="stat-icon-wrap"><i class="fa-solid fa-bullhorn"></i></div>
+                    </div>
+                    <div class="stat-info-part">
+                      <div class="stat-number-simple">{{ dashboard.stats.as_author }}</div>
+                      <div class="stat-label">Proposées</div>
+                    </div>
+                  </div>
+
+                  <div class="stat-card v-anime clickable" @click="$router.push({ path: '/decisions', query: { role: 'animator' } })">
+                    <div class="stat-icon-part">
+                      <div class="stat-icon-wrap"><i class="fa-solid fa-user-tie"></i></div>
+                    </div>
+                    <div class="stat-info-part">
+                      <div class="stat-number-simple">{{ dashboard.stats.as_animator }}</div>
+                      <div class="stat-label">J'Anime</div>
+                    </div>
+                  </div>
+
+                  <div class="stat-card v-active clickable" @click="$router.push({ path: '/decisions', query: { state: 'active' } })">
+                    <div class="stat-icon-part">
+                      <div class="stat-icon-wrap"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                    </div>
+                    <div class="stat-info-part">
+                      <div class="stat-number-simple">{{ dashboard.stats.in_progress }}</div>
+                      <div class="stat-label">En Cours</div>
+                    </div>
+                  </div>
+
+                  <div class="stat-card v-adopted clickable" @click="$router.push({ path: '/decisions', query: { state: 'adopted' } })">
+                    <div class="stat-icon-part">
+                      <div class="stat-icon-wrap"><i class="fa-solid fa-check"></i></div>
+                    </div>
+                    <div class="stat-info-part">
+                      <div class="ring-wrap">
+                        <svg width="72" height="72" viewBox="0 0 72 72">
+                          <circle class="ring-bg" cx="36" cy="36" r="28"/>
+                          <circle class="ring-fg" cx="36" cy="36" r="28" :stroke-dasharray="175.9" :stroke-dashoffset="ringOffset(dashboard.stats.adopted, dashboard.stats.total)"/>
+                        </svg>
+                        <div class="ring-center">{{ dashboard.stats.adopted }}</div>
+                      </div>
+                      <div class="stat-label">Adoptées</div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- URGENCY WIDGET -->
-            <div v-if="widget.id === 'urgencies'">
-              <div class="premium-card border-red h-full">
-                <div class="pc-header pc-header-red">
-                  <div class="pc-header-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                  <div class="pc-header-content">
-                    <div class="pc-header-title">Urgences & Échéances</div>
-                    <div class="pc-header-sub">{{ urgentDecisions.length }} décision(s) nécessite(nt) votre attention immédiate</div>
-                  </div>
+            <div v-if="widget.id === 'urgencies'" class="premium-card border-red h-full">
+              <div class="pc-header pc-header-red drag-handle">
+                <div class="pc-header-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">Urgences & Échéances</div>
+                  <div class="pc-header-sub">{{ urgentDecisions.length }} décision(s) nécessite(nt) votre attention immédiate</div>
                 </div>
-                <div class="pc-body" :class="{ 'grid-3-no-gap': widget.width === 'full' || widget.width === '1/1' }">
-                  <EmptyState v-if="urgentDecisions.length === 0" message="Aucune urgence à signaler." />
-                  <DecisionListItem
-                      v-for="d in urgentDecisions" :key="d.id" :decision="d"
-                      @click="goToDecision"
-                      @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
-                      @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
-                  />
-                </div>
+              </div>
+              <div class="pc-body" :class="{ 'grid-3-no-gap': widget.width === 'full' }">
+                <EmptyState v-if="urgentDecisions.length === 0" message="Aucune urgence à signaler." />
+                <DecisionListItem
+                    v-for="d in urgentDecisions" :key="d.id" :decision="d"
+                    @click="goToDecision"
+                    @filter-circle="$router.push({ name: 'DecisionList', query: { circle: $event } })"
+                    @filter-category="$router.push({ name: 'DecisionList', query: { category: $event } })"
+                />
               </div>
             </div>
 
             <!-- CLARIFICATIONS WIDGET -->
-            <div v-if="widget.id === 'clarifications'">
-              <div class="premium-card h-full">
-                <div class="pc-header pc-header-amber">
-                  <div class="pc-header-icon"><i class="fa-solid fa-comments"></i></div>
-                  <div class="pc-header-content">
-                    <div class="pc-header-title">Clarifications actives</div>
-                    <div class="pc-header-sub">Tickets en attente de réponse</div>
-                  </div>
+            <div v-if="widget.id === 'clarifications'" class="premium-card h-full">
+              <div class="pc-header pc-header-amber drag-handle">
+                <div class="pc-header-icon"><i class="fa-solid fa-comments"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">Clarifications actives</div>
+                  <div class="pc-header-sub">Tickets en attente de réponse</div>
                 </div>
-                <div class="pc-body">
-                  <EmptyState v-if="!dashboard.my_clarifications?.length" message="Aucune clarification." :small="widget.width !== 'full' && widget.width !== '1/1'" />
-                  <div v-for="fb in dashboard.my_clarifications" :key="fb.id"
-                        class="decision-item" @click="goToDecision(fb.version?.decision_id)">
-                    <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
-                      <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+              </div>
+              <div class="pc-body">
+                <EmptyState v-if="!dashboard.my_clarifications?.length" message="Aucune clarification." :small="widget.width !== 'full'" />
+                <div v-for="fb in dashboard.my_clarifications" :key="fb.id"
+                      class="decision-item" @click="goToDecision(fb.version?.decision_id)">
+                  <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
+                    <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+                  </div>
+                  <div class="decision-item-main">
+                    <div class="decision-title">
+                      <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
+                      {{ fb.version?.decision?.title }}
                     </div>
-                    <div class="decision-item-main">
-                      <div class="decision-title">
-                        <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
-                        {{ fb.version?.decision?.title }}
-                      </div>
-                      <div class="decision-people">
-                        <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
-                      </div>
-                      <div class="ticket-msg" v-if="getLastMessageContent(fb)">
-                        <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>: "{{ getLastMessageContent(fb) }}"
-                      </div>
+                    <div class="decision-people">
+                      <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
                     </div>
-                    <div class="decision-end-actions">
-                      <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
-                        {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
-                      </span>
+                    <div class="ticket-msg" v-if="getLastMessageContent(fb)">
+                      <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>: "{{ getLastMessageContent(fb) }}"
                     </div>
+                  </div>
+                  <div class="decision-end-actions">
+                    <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
+                      {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- SUGGESTIONS WIDGET -->
-            <div v-if="widget.id === 'suggestions'">
-              <div class="premium-card h-full">
-                <div class="pc-header pc-header-blue" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);">
-                  <div class="pc-header-icon"><i class="fa-solid fa-lightbulb"></i></div>
-                  <div class="pc-header-content">
-                    <div class="pc-header-title">Suggestions actives</div>
-                    <div class="pc-header-sub">Tickets en attente de réponse</div>
-                  </div>
+            <div v-if="widget.id === 'suggestions'" class="premium-card h-full">
+              <div class="pc-header pc-header-blue drag-handle" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);">
+                <div class="pc-header-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">Suggestions actives</div>
+                  <div class="pc-header-sub">Tickets en attente de réponse</div>
                 </div>
-                <div class="pc-body">
-                  <EmptyState v-if="!dashboard.my_suggestions?.length" message="Aucune suggestion." :small="widget.width !== 'full' && widget.width !== '1/1'" />
-                  <div v-for="fb in dashboard.my_suggestions" :key="fb.id"
-                        class="decision-item" @click="goToDecision(fb.version?.decision_id)">
-                    <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
-                      <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+              </div>
+              <div class="pc-body">
+                <EmptyState v-if="!dashboard.my_suggestions?.length" message="Aucune suggestion." :small="widget.width !== 'full'" />
+                <div v-for="fb in dashboard.my_suggestions" :key="fb.id"
+                      class="decision-item" @click="goToDecision(fb.version?.decision_id)">
+                  <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
+                    <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+                  </div>
+                  <div class="decision-item-main">
+                    <div class="decision-title">
+                      <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
+                      {{ fb.version?.decision?.title }}
                     </div>
-                    <div class="decision-item-main">
-                      <div class="decision-title">
-                        <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
-                        {{ fb.version?.decision?.title }}
-                      </div>
-                      <div class="decision-people">
-                        <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
-                      </div>
-                      <div class="ticket-msg" v-if="getLastMessageContent(fb)">
-                        <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>: "{{ getLastMessageContent(fb) }}"
-                      </div>
+                    <div class="decision-people">
+                      <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
                     </div>
-                    <div class="decision-end-actions">
-                      <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
-                        {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
-                      </span>
+                    <div class="ticket-msg" v-if="getLastMessageContent(fb)">
+                      <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>: "{{ getLastMessageContent(fb) }}"
                     </div>
+                  </div>
+                  <div class="decision-end-actions">
+                    <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
+                      {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- OBJECTIONS WIDGET -->
-            <div v-if="widget.id === 'objections'">
-              <div class="premium-card h-full">
-                <div class="pc-header pc-header-red">
-                  <div class="pc-header-icon"><i class="fa-solid fa-scale-balanced"></i></div>
-                  <div class="pc-header-content">
-                    <div class="pc-header-title">Objections actives</div>
-                    <div class="pc-header-sub">Tickets en attente de réponse</div>
-                  </div>
+            <div v-if="widget.id === 'objections'" class="premium-card h-full">
+              <div class="pc-header pc-header-red drag-handle">
+                <div class="pc-header-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">Objections actives</div>
+                  <div class="pc-header-sub">Tickets en attente de réponse</div>
                 </div>
-                <div class="pc-body">
-                  <EmptyState v-if="!dashboard.my_objections?.length" message="Aucune objection." :small="widget.width !== 'full' && widget.width !== '1/1'" />
-                  <div v-for="fb in dashboard.my_objections" :key="fb.id"
-                        class="decision-item" @click="goToDecision(fb.version?.decision_id)">
-                    <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
-                      <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+              </div>
+              <div class="pc-body">
+                <EmptyState v-if="!dashboard.my_objections?.length" message="Aucune objection." :small="widget.width !== 'full'" />
+                <div v-for="fb in dashboard.my_objections" :key="fb.id"
+                      class="decision-item" @click="goToDecision(fb.version?.decision_id)">
+                  <div :class="'role-bg-mini role-' + getMyRole(fb.version?.decision)">
+                    <i :class="getRoleIcon(getMyRole(fb.version?.decision))"></i>
+                  </div>
+                  <div class="decision-item-main">
+                    <div class="decision-title">
+                      <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
+                      {{ fb.version?.decision?.title }}
                     </div>
-                    <div class="decision-item-main">
-                      <div class="decision-title">
-                        <span class="version-pill">v{{ fb.version?.version_number || 1 }}</span>
-                        {{ fb.version?.decision?.title }}
-                      </div>
-                      <div class="decision-people">
-                        <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
-                      </div>
-                      <div class="ticket-msg" v-if="getLastMessageContent(fb)">
-                        <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>: "{{ getLastMessageContent(fb) }}"
-                      </div>
+                    <div class="decision-people">
+                      <span class="text-author">{{ fb.version?.decision?.circle?.name }}</span>
                     </div>
-                    <div class="decision-end-actions">
-                      <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
-                        {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
-                      </span>
+                    <div class="ticket-msg" v-if="getLastMessageContent(fb)">
+                      <span class="ticket-msg-author">{{ getLastMessageAuthor(fb) }}</span>: "{{ getLastMessageContent(fb) }}"
                     </div>
+                  </div>
+                  <div class="decision-end-actions">
+                    <span :class="needsMyAttention(fb) ? 'badge badge-red' : 'badge badge-teal'">
+                      {{ needsMyAttention(fb) ? 'À vous' : 'En attente' }}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- PROPOSALS WIDGET -->
-            <div v-if="widget.id === 'my_proposals'">
-              <div class="premium-card h-full">
-                <div class="pc-header pc-header-blue">
-                  <div class="pc-header-icon"><i class="fa-solid fa-bullhorn"></i></div>
-                  <div class="pc-header-content">
-                    <div class="pc-header-title">Mes propositions</div>
-                  </div>
+            <div v-if="widget.id === 'my_proposals'" class="premium-card h-full">
+              <div class="pc-header pc-header-blue drag-handle">
+                <div class="pc-header-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">Mes propositions</div>
                 </div>
-                <div class="pc-body">
-                  <EmptyState v-if="Object.keys(dashboard.my_decisions).length === 0" message="Aucune proposition." :small="widget.width !== 'full' && widget.width !== '1/1'" />
-                  <template v-for="(decisions, circleName) in dashboard.my_decisions" :key="circleName">
-                    <DecisionListItem v-for="d in decisions" :key="d.id" :decision="d" @click="goToDecision" />
-                  </template>
-                </div>
+              </div>
+              <div class="pc-body">
+                <EmptyState v-if="Object.keys(dashboard.my_decisions).length === 0" message="Aucune proposition." :small="widget.width !== 'full'" />
+                <template v-for="(decisions, circleName) in dashboard.my_decisions" :key="circleName">
+                  <DecisionListItem v-for="d in decisions" :key="d.id" :decision="d" @click="goToDecision" />
+                </template>
               </div>
             </div>
 
             <!-- ANIMATED WIDGET -->
-            <div v-if="widget.id === 'my_animated'">
-              <div class="premium-card h-full">
-                <div class="pc-header pc-header-amber">
-                  <div class="pc-header-icon"><i class="fa-solid fa-user-tie"></i></div>
-                  <div class="pc-header-content">
-                    <div class="pc-header-title">Mes animations</div>
-                  </div>
+            <div v-if="widget.id === 'my_animated'" class="premium-card h-full">
+              <div class="pc-header pc-header-amber drag-handle">
+                <div class="pc-header-icon"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">Mes animations</div>
                 </div>
-                <div class="pc-body">
-                  <EmptyState v-if="Object.keys(dashboard.my_animated || {}).length === 0" message="Aucune animation." :small="widget.width !== 'full' && widget.width !== '1/1'" />
-                  <template v-for="(decisions, circleName) in dashboard.my_animated" :key="circleName">
-                    <DecisionListItem v-for="d in decisions" :key="d.id" :decision="d" @click="goToDecision" />
-                  </template>
-                </div>
+              </div>
+              <div class="pc-body">
+                <EmptyState v-if="Object.keys(dashboard.my_animated || {}).length === 0" message="Aucune animation." :small="widget.width !== 'full'" />
+                <template v-for="(decisions, circleName) in dashboard.my_animated" :key="circleName">
+                  <DecisionListItem v-for="d in decisions" :key="d.id" :decision="d" @click="goToDecision" />
+                </template>
               </div>
             </div>
 
             <!-- WATCH WIDGET -->
-            <div v-if="widget.id === 'circles_watch'">
-              <div class="premium-card h-full">
-                <div class="pc-header pc-header-blue">
-                  <div class="pc-header-icon"><i class="fa-solid fa-user-group"></i></div>
-                  <div class="pc-header-content">
-                    <div class="pc-header-title">À surveiller</div>
-                  </div>
+            <div v-if="widget.id === 'circles_watch'" class="premium-card h-full">
+              <div class="pc-header pc-header-blue drag-handle">
+                <div class="pc-header-icon"><i class="fa-solid fa-user-group"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">À surveiller</div>
                 </div>
-                <div class="pc-body">
-                  <EmptyState v-if="Object.keys(dashboard.circle_decisions).length === 0" message="Rien à signaler." :small="widget.width !== 'full' && widget.width !== '1/1'" />
-                  <template v-for="(decisions, circleName) in dashboard.circle_decisions" :key="circleName">
-                    <DecisionListItem v-for="d in decisions" :key="d.id" :decision="d" @click="goToDecision" />
-                  </template>
-                </div>
+              </div>
+              <div class="pc-body">
+                <EmptyState v-if="Object.keys(dashboard.circle_decisions).length === 0" message="Rien à signaler." :small="widget.width !== 'full'" />
+                <template v-for="(decisions, circleName) in dashboard.circle_decisions" :key="circleName">
+                  <DecisionListItem v-for="d in decisions" :key="d.id" :decision="d" @click="goToDecision" />
+                </template>
               </div>
             </div>
 
             <!-- MY CIRCLES WIDGET -->
-            <div v-if="widget.id === 'my_circles'">
-              <div class="premium-card h-full">
-                <div class="pc-header pc-header-blue">
-                  <div class="pc-header-icon"><i class="fa-solid fa-circle-nodes"></i></div>
-                  <div class="pc-header-content">
-                    <div class="pc-header-title">Mes cercles</div>
-                    <div class="pc-header-sub">{{ circleStore.circles.length }} cercle(s) rejoint(s)</div>
-                  </div>
+            <div v-if="widget.id === 'my_circles'" class="premium-card h-full">
+              <div class="pc-header pc-header-blue drag-handle">
+                <div class="pc-header-icon"><i class="fa-solid fa-circle-nodes"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">Mes cercles</div>
+                  <div class="pc-header-sub">{{ circleStore.circles.length }} cercle(s) rejoint(s)</div>
                 </div>
-                <div class="pc-body pc-chips">
-                  <EmptyState v-if="circleStore.circles.length === 0" message="Aucun cercle rejoint." :small="widget.width !== 'full' && widget.width !== '1/1'" />
-                  <button v-for="c in circleStore.circles" :key="c.id" class="chip chip-blue" @click="$router.push({ name: 'CircleDetail', params: { id: c.id } })">
-                    <i class="fa-solid fa-circle-nodes" style="margin-right: 4px;"></i> {{ c.name }}
-                  </button>
-                </div>
+              </div>
+              <div class="pc-body pc-chips">
+                <EmptyState v-if="circleStore.circles.length === 0" message="Aucun cercle rejoint." :small="widget.width !== 'full' && widget.width !== '1/1'" />
+                <button v-for="c in circleStore.circles" :key="c.id" class="chip chip-blue" @click="$router.push({ name: 'CircleDetail', params: { id: c.id } })">
+                  <i class="fa-solid fa-circle-nodes" style="margin-right: 4px;"></i> {{ c.name }}
+                </button>
               </div>
             </div>
 
             <!-- CATEGORIES WIDGET -->
-            <div v-if="widget.id === 'categories'">
-              <div class="premium-card h-full">
-                <div class="pc-header pc-header-blue">
-                  <div class="pc-header-icon"><i class="fa-solid fa-folder-tree"></i></div>
-                  <div class="pc-header-content">
-                    <div class="pc-header-title">Catégories</div>
-                    <div class="pc-header-sub">{{ (dashboard.categories || []).length }} catégorie(s) disponible(s)</div>
-                  </div>
+            <div v-if="widget.id === 'categories'" class="premium-card h-full">
+              <div class="pc-header pc-header-blue drag-handle">
+                <div class="pc-header-icon"><i class="fa-solid fa-folder-tree"></i></div>
+                <div class="pc-header-content">
+                  <div class="pc-header-title">Catégories</div>
+                  <div class="pc-header-sub">{{ (dashboard.categories || []).length }} catégorie(s) disponible(s)</div>
                 </div>
-                <div class="pc-body pc-chips">
-                  <EmptyState v-if="(dashboard.categories || []).length === 0" message="Aucune catégorie." :small="widget.width !== 'full' && widget.width !== '1/1'" />
-                  <button v-for="cat in (dashboard.categories || [])" :key="cat.id" class="chip chip-blue" @click="$router.push({ name: 'DecisionList', query: { category: cat.id } })">
-                    <i :class="cat.icon || 'fa-solid fa-tag'" :style="{ color: cat.color_hex }" style="margin-right: 6px;"></i>
-                    {{ cat.name }}
-                  </button>
-                </div>
+              </div>
+              <div class="pc-body pc-chips">
+                <EmptyState v-if="(dashboard.categories || []).length === 0" message="Aucune catégorie." :small="widget.width !== 'full' && widget.width !== '1/1'" />
+                <button v-for="cat in (dashboard.categories || [])" :key="cat.id" class="chip chip-blue" @click="$router.push({ name: 'DecisionList', query: { category: cat.id } })">
+                  <i :class="cat.icon || 'fa-solid fa-tag'" :style="{ color: cat.color_hex }" style="margin-right: 6px;"></i>
+                  {{ cat.name }}
+                </button>
               </div>
             </div>
 
+            <!-- RESIZE HANDLE -->
+            <button class="widget-resize-handle nodrag" 
+                 type="button"
+                 @mousedown.stop.prevent="startResize($event, widget)" 
+                 title="Glissez pour redimensionner">
+              <i class="fa-solid fa-arrows-left-right" style="pointer-events: none;"></i>
+            </button>
+
           </div>
-        </div>
-      </div>
+        </template>
+      </draggable>
     </div>
   </main>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import draggable from 'vuedraggable';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useCircleStore } from '../stores/circle';
@@ -352,33 +356,135 @@ const configStore = useConfigStore();
 const loading = ref(true);
 const dashboard = ref({ my_decisions: {}, my_animated: {}, circle_decisions: {}, my_clarifications: [], my_objections: [], stats: null, categories: [] });
 
-const enabledWidgets = computed(() => {
-  let widgets = authStore.user?.dashboard_widgets;
-  
-  // Si c'est une chaîne (JSON), on parse
-  if (typeof widgets === 'string') {
-    try {
-      widgets = JSON.parse(widgets);
-    } catch (e) {
-      widgets = [];
-    }
+const userWidgets = ref([]);
+
+const AVAILABLE_WIDGETS = [
+  { id: 'stats', label: 'Statistiques', defaultEnabled: true, defaultWidth: 'full' },
+  { id: 'clarifications', label: 'Clarifications actives', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'suggestions', label: 'Suggestions actives', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'objections', label: 'Objections actives', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'urgencies', label: 'Urgences', defaultEnabled: true, defaultWidth: 'full' },
+  { id: 'my_proposals', label: 'Mes propositions', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'my_animated', label: 'Mes animations', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'circles_watch', label: 'À surveiller', defaultEnabled: true, defaultWidth: '1/3' },
+  { id: 'my_circles', label: 'Mes cercles', defaultEnabled: true, defaultWidth: '1/2' },
+  { id: 'categories', label: 'Catégories', defaultEnabled: true, defaultWidth: '1/2' }
+];
+
+const initializeWidgets = (savedWidgets) => {
+  let saved = savedWidgets || [];
+  if (typeof saved === 'string') {
+    try { saved = JSON.parse(saved); } catch (e) { saved = []; }
   }
 
-  // Si c'est vide ou pas un tableau, on met les défauts
-  if (!Array.isArray(widgets) || widgets.length === 0) {
-    widgets = [
-      { id: 'stats', enabled: true, width: 'full' },
-      { id: 'urgencies', enabled: true, width: 'full' },
-      { id: 'tickets', enabled: true, width: 'full' },
-      { id: 'my_proposals', enabled: true, width: '1/3' },
-      { id: 'my_animated', enabled: true, width: '1/3' },
-      { id: 'circles_watch', enabled: true, width: '1/3' },
-      { id: 'my_circles', enabled: true, width: '1/2' },
-      { id: 'categories', enabled: true, width: '1/2' }
-    ];
+  const merged = AVAILABLE_WIDGETS.map(w => {
+    const existing = saved.find(s => s.id === w.id);
+    return {
+      id: w.id,
+      label: w.label,
+      enabled: existing ? (existing.enabled !== undefined ? existing.enabled : w.defaultEnabled) : w.defaultEnabled,
+      width: existing ? (existing.width || w.defaultWidth) : w.defaultWidth
+    };
+  });
+
+  // On garde l'ordre des widgets existants, et on ajoute les nouveaux à la fin
+  const ordered = [];
+  saved.forEach(s => {
+    const m = merged.find(item => item.id === s.id);
+    if (m) ordered.push(m);
+  });
+  merged.forEach(m => {
+    if (!ordered.find(o => o.id === m.id)) ordered.push(m);
+  });
+
+  return ordered;
+};
+
+// On synchronise avec l'authStore quand il change
+watch(() => authStore.user?.dashboard_widgets, (newVal) => {
+  if (newVal) userWidgets.value = initializeWidgets(newVal).filter(w => w.enabled);
+}, { immediate: true });
+
+const saveDashboardLayout = async () => {
+  // On récupère la liste complète (incluant les désactivés) pour ne pas les perdre
+  let fullList = initializeWidgets(authStore.user?.dashboard_widgets);
+  
+  // On met à jour l'ordre des activés
+  const activeIds = userWidgets.value.map(w => w.id);
+  const others = fullList.filter(w => !activeIds.includes(w.id));
+  
+  // La nouvelle liste complète est : les activés dans leur nouvel ordre + les désactivés
+  const newList = [...userWidgets.value, ...others];
+  
+  try {
+    await axios.put('/api/v1/auth/me', { dashboard_widgets: newList });
+    authStore.user.dashboard_widgets = newList;
+  } catch (e) {
+    console.error("Save layout error", e);
   }
-  return widgets.filter(w => w.enabled);
-});
+};
+
+// RESIZE LOGIC (Drag to resize)
+const isResizing = ref(false);
+const resizingWidget = ref(null);
+const resizeStartX = ref(0);
+const resizeStartWidthIdx = ref(0);
+const widthsOrder = ['quarter', 'third', 'half', 'full'];
+
+const startResize = (event, widget) => {
+  const index = userWidgets.value.findIndex(w => w.id === widget.id);
+  if (index === -1) return;
+
+  isResizing.value = true;
+  resizingWidget.value = widget;
+  resizeStartX.value = event.clientX;
+  
+  const map = { 'quarter': 'quarter', 'third': 'third', 'half': 'half', 'full': 'full', '1/4': 'quarter', '1/3': 'third', '1/2': 'half', '1/1': 'full' };
+  let currentWidth = map[userWidgets.value[index].width] || userWidgets.value[index].width;
+  let currentIdx = widthsOrder.indexOf(currentWidth);
+  if (currentIdx === -1) currentIdx = 1;
+  
+  resizeStartWidthIdx.value = currentIdx;
+
+  // Add global event listeners to track drag outside the button
+  window.addEventListener('mousemove', handleResizeMove);
+  window.addEventListener('mouseup', stopResize);
+  
+  // Prevent text selection during drag
+  document.body.style.userSelect = 'none';
+};
+
+const handleResizeMove = (event) => {
+  if (!isResizing.value || !resizingWidget.value) return;
+
+  const deltaX = event.clientX - resizeStartX.value;
+  // 100 pixels of horizontal drag = 1 step of size
+  const stepPixels = 100; 
+  let stepsToMove = Math.round(deltaX / stepPixels);
+  
+  let newIdx = resizeStartWidthIdx.value + stepsToMove;
+  
+  // Clamp values
+  if (newIdx < 0) newIdx = 0;
+  if (newIdx >= widthsOrder.length) newIdx = widthsOrder.length - 1;
+  
+  const index = userWidgets.value.findIndex(w => w.id === resizingWidget.value.id);
+  if (index !== -1 && userWidgets.value[index].width !== widthsOrder[newIdx]) {
+    userWidgets.value[index].width = widthsOrder[newIdx];
+  }
+};
+
+const stopResize = () => {
+  if (isResizing.value) {
+    isResizing.value = false;
+    resizingWidget.value = null;
+    document.body.style.userSelect = ''; // Restore text selection
+    saveDashboardLayout();
+    
+    window.removeEventListener('mousemove', handleResizeMove);
+    window.removeEventListener('mouseup', stopResize);
+  }
+};
 
 const dashboardRows = computed(() => {
   const rows = [];
@@ -414,17 +520,13 @@ const dashboardRows = computed(() => {
 });
 
 const getWidgetClass = (width) => {
-  switch (width) {
-    case 'quarter':
-    case '1/4': return 'widget-w-1-4';
-    case 'third':
-    case '1/3': return 'widget-w-1-3';
-    case 'half':
-    case '1/2': return 'widget-w-1-2';
-    case 'full':
-    case '1/1': return 'widget-w-full';
-    default: return 'widget-w-1-3';
-  }
+  const classes = {
+    'quarter': 'widget-w-1-4',
+    'third': 'widget-w-1-3',
+    'half': 'widget-w-1-2',
+    'full': 'widget-w-full'
+  };
+  return classes[width] || 'widget-w-1-3';
 };
 
 const urgentDecisions = computed(() => {
@@ -574,34 +676,77 @@ const getMyRoleLabel = (decision) => {
 };
 </script>
 
-<style scoped>
+<style>
 /* Modular Grid */
 .dashboard-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
   width: 100%;
-  justify-content: center;
 }
-.widget-w-1-4 { width: 100%; }
-.widget-w-1-3 { width: 100%; }
-.widget-w-1-2 { width: 100%; }
-.widget-w-full { width: 100%; }
+
+.widget-w-1-4 { width: 100% !important; }
+.widget-w-1-3 { width: 100% !important; }
+.widget-w-1-2 { width: 100% !important; }
+.widget-w-full { width: 100% !important; }
 
 @media(min-width: 900px) {
-  .widget-w-1-4 { width: calc(25% - 12px); }
-  .widget-w-1-3 { width: calc(33.33% - 11px); }
-  .widget-w-1-2 { width: calc(50% - 8px); }
-  .widget-w-full { width: 100%; }
+  .widget-w-1-4 { width: calc(25% - 12px) !important; }
+  .widget-w-1-3 { width: calc(33.33% - 11px) !important; }
+  .widget-w-1-2 { width: calc(50% - 8px) !important; }
+  .widget-w-full { width: 100% !important; }
 }
 
-.grid-2-internal {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
+.widget-container {
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
-@media(min-width: 700px) {
-  .grid-2-internal { grid-template-columns: 1fr 1fr; }
+
+.widget-ghost {
+  opacity: 0.4;
+  background: var(--blue-50);
+  border: 2px dashed var(--blue-300);
+}
+
+.widget-dragging {
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  transform: scale(1.02);
+  z-index: 100;
+}
+
+.widget-resize-handle {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  background: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--blue-600);
+  cursor: ew-resize !important;
+  pointer-events: auto !important;
+  opacity: 0.8;
+  transition: all 0.2s;
+  border: 2px solid var(--blue-500);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  z-index: 9999 !important;
+}
+
+.widget-resize-handle:hover, .widget-resize-handle:active {
+  opacity: 1;
+  transform: scale(1.1);
+  background: var(--blue-50);
+}
+
+.widget-resize-handle:hover {
+  background: var(--blue-500);
+  color: white;
+  border-color: var(--blue-600);
+  transform: scale(1.1);
 }
 
 .widget-stats {
