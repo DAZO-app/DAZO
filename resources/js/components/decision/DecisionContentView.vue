@@ -2,7 +2,7 @@
   <div>
     <!-- Vue standard (Clarification, Réaction, Objection, Adoptée) -->
     <div v-if="!isRevision && !isDraft" class="premium-card mb-16">
-      <div class="pc-header pc-header-blue">
+      <div class="pc-header pc-header-blue drag-handle">
         <div class="pc-header-icon"><i :class="viewingVersionId ? 'fa-solid fa-clock-rotate-left' : 'fa-solid fa-file-lines'"></i></div>
         <div class="pc-header-content">
           <div class="pc-header-title">{{ viewingVersionId ? 'Version ' + historicalVersionNumber : 'Contenu de la décision' }}</div>
@@ -17,7 +17,7 @@
 
     <!-- Vue contextuelle pendant une révision -->
     <div v-if="isRevision && !isDraft" class="premium-card mb-16">
-      <div class="pc-header pc-header-blue" style="opacity: 0.9;">
+      <div class="pc-header pc-header-blue drag-handle" style="opacity: 0.9;">
         <div class="pc-header-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
         <div class="pc-header-content">
           <div class="pc-header-title">{{ isAuthorOrAnimator ? 'Proposition à réviser' : 'Proposition actuelle' }}</div>

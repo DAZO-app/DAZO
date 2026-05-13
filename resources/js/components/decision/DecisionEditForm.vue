@@ -2,7 +2,7 @@
   <div>
     <!-- DRAFT MODE -->
     <div v-if="isDraft" class="premium-card mb-16">
-      <div class="pc-header pc-header-amber">
+      <div class="pc-header pc-header-amber drag-handle">
         <div class="pc-header-icon"><i class="fa-solid fa-file-pen"></i></div>
         <div class="pc-header-content">
           <div class="pc-header-title">Mode brouillon</div>
@@ -51,7 +51,7 @@
 
     <!-- REVISION MODE -->
     <div v-if="isRevision && isAuthorOrAnimator" class="premium-card mb-16">
-      <div class="pc-header pc-header-light-blue">
+      <div class="pc-header pc-header-light-blue drag-handle">
         <div class="pc-header-icon"><i class="fa-solid fa-pen-to-square"></i></div>
         <div class="pc-header-content">
           <div class="pc-header-title">Révision de la proposition</div>

@@ -1,6 +1,6 @@
 <template>
   <div class="premium-card">
-    <div class="pc-header pc-header-indigo">
+    <div class="pc-header pc-header-indigo drag-handle">
       <div class="pc-header-icon"><i class="fa-solid fa-user-group"></i></div>
       <div class="pc-header-content">
         <div class="pc-header-title">Utilisateurs concernés</div>

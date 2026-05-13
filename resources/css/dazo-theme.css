@@ -435,6 +435,19 @@ body {
   color: white;
 }
 
+.pc-header.drag-handle {
+  cursor: grab;
+  user-select: none;
+}
+
+.pc-header.drag-handle:active {
+  cursor: grabbing;
+}
+
+.pc-header.drag-handle:hover {
+  filter: brightness(1.05);
+}
+
 .pc-header::after {
   content: '';
   position: absolute;

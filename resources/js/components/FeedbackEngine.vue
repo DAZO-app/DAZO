@@ -1,6 +1,6 @@
 <template>
   <div class="premium-card">
-    <div class="pc-header" :class="headerClass">
+    <div class="pc-header drag-handle" :class="headerClass">
       <div class="pc-header-icon"><i :class="headerIcon"></i></div>
       <div class="pc-header-content">
         <div class="pc-header-title">Échanges</div>

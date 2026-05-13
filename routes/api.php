@@ -77,6 +77,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/users/admins', [\App\Http\Controllers\Api\V1\UserController::class, 'admins']);
         Route::get('/users/search', [\App\Http\Controllers\Api\V1\UserController::class, 'search']);
 
+        // Préférences d'interface
+        Route::get('/user/layout/{view_name}', [\App\Http\Controllers\Api\V1\User\LayoutController::class, 'show']);
+        Route::post('/user/layout', [\App\Http\Controllers\Api\V1\User\LayoutController::class, 'store']);
+
         // Contact
         Route::post('/contact/admin', [\App\Http\Controllers\Api\V1\ContactController::class, 'sendToAdmin']);
 

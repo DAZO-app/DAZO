@@ -62,272 +62,591 @@
         :step-actions="stepActions"
         :disabled="transitioning || publishing || savingDraft"
       />
+      
       <div class="grid-layout">
-        <div class="col-main">
-          <DecisionEditForm
-            v-if="isDraft || (isRevision && isAuthorOrAnimator)"
-            :is-draft="isDraft"
-            :is-revision="isRevision"
-            :is-author-or-animator="isAuthorOrAnimator"
-            :form="draftForm"
-            :current-version="currentVersion"
-            :saving-draft="savingDraft"
-            :deleting-draft="deletingDraft"
-            :publishing="publishing"
-            :reused-attachment-ids="reusedAttachmentIds"
-            :revision-attachments="revisionAttachments"
-            @save-draft="saveDraft"
-            @delete-draft="deleteDraft"
-            @refresh="refreshDecision"
-            @toggle-all-attachments="toggleAllPreviousAttachments"
-            @toggle-attachment="toggleAttachmentReuse"
-            @upload-revision-file="handleRevisionFileUpload"
-            @remove-revision-file="handleRevisionFileRemove"
-            @save-revision="saveRevision"
-            @publish-revision="publishRevision"
-          />
-
-          <DecisionContentView
-            :is-draft="isDraft"
-            :is-revision="isRevision"
-            :is-author-or-animator="isAuthorOrAnimator"
-            :viewing-version-id="viewingVersionId"
-            :historical-version-number="historicalVersionData?.version_number"
-            :current-version-number="currentVersion?.version_number"
-            :current-version-id="currentVersion?.id"
-            :display-content="displayContent"
-            :current-content="currentVersion?.content"
-            :display-attachments="displayAttachments"
-            :can-reload-attachments="isAuthorOrAnimator"
-          />
-
-          <div v-if="showParticipationCard" class="premium-card mb-16 border-2" :class="hasAlreadyParticipated ? 'border-teal-500' : 'border-red-500'">
-            <div class="pc-header" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-light-blue'">
-              <div class="pc-header-icon"><i class="fa-solid fa-comment"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title">{{ participationCardTitle }}</div>
-                <div class="pc-header-sub">{{ hasAlreadyParticipated ? 'Participation enregistrée' : 'Action requise de votre part' }}</div>
-              </div>
-            </div>
-
-            <div class="card-body">
-              <div v-if="hasAlreadyParticipated" class="consent-done-block">
-                <div class="consent-done-icon"><i :class="consentIcon(myConsent?.signal)"></i></div>
-                <div class="consent-done-label">{{ consentLabel(myConsent?.signal) }}</div>
-                <p class="text-xs text-muted mt-8">Votre participation est déjà enregistrée pour cette phase.</p>
+        <!-- COL MAIN -->
+        <draggable 
+          v-model="mainBlocks" 
+          item-key="id" 
+          class="col-main"
+          :class="{ 'is-empty': mainBlocks.length === 0 }"
+          handle=".drag-handle"
+          ghost-class="ghost-card"
+          :group="{ name: 'blocks' }"
+          @end="saveLayout"
+        >
+          <template #item="{ element }">
+            <div :key="element.id">
+              <!-- EDIT FORM -->
+              <div v-if="element.id === 'edit-form' && (isDraft || (isRevision && isAuthorOrAnimator))" class="relative">
+                <DecisionEditForm
+                  :is-draft="isDraft"
+                  :is-revision="isRevision"
+                  :is-author-or-animator="isAuthorOrAnimator"
+                  :form="draftForm"
+                  :current-version="currentVersion"
+                  :saving-draft="savingDraft"
+                  :deleting-draft="deletingDraft"
+                  :publishing="publishing"
+                  :reused-attachment-ids="reusedAttachmentIds"
+                  :revision-attachments="revisionAttachments"
+                  @save-draft="saveDraft"
+                  @delete-draft="deleteDraft"
+                  @refresh="refreshDecision"
+                  @toggle-all-attachments="toggleAllPreviousAttachments"
+                  @toggle-attachment="toggleAttachmentReuse"
+                  @upload-revision-file="handleRevisionFileUpload"
+                  @remove-revision-file="handleRevisionFileRemove"
+                  @save-revision="saveRevision"
+                  @publish-revision="publishRevision"
+                />
               </div>
 
-              <template v-else>
-                <div :style="{ display: 'grid', gridTemplateColumns: decision.status === 'objection' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '12px' }">
-                  <button class="btn btn-secondary" @click="openReactionModal" style="padding: 12px 8px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 100%;">
-                    <span class="text-xl"><i class="fa-solid fa-comment"></i></span>
-                    <span>{{ modalActionLabelShort }}</span>
-                  </button>
-
-                  <button v-if="decision.status === 'clarification'" class="vote-btn vote-ok" @click="submitConsent('no_questions')" style="width: 100%; height: 100%;">
-                    <span class="vote-icon"><i class="fa-solid fa-circle-check"></i></span>
-                    <span style="font-size: 13px; font-weight: 600;">C'est clair</span>
-                  </button>
-
-                  <button v-if="decision.status === 'reaction'" class="vote-btn vote-ok" @click="submitConsent('no_reaction')" style="width: 100%; height: 100%;">
-                    <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
-                    <span style="font-size: 13px; font-weight: 600;">RAS</span>
-                  </button>
-
-                  <template v-if="decision.status === 'objection'">
-                    <button class="vote-btn vote-ok" @click="submitConsent('no_objection')" style="width: 100%; height: 100%;">
-                      <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
-                      <span style="font-size: 13px; font-weight: 600;">Sans objection</span>
-                    </button>
-                    <button class="vote-btn vote-abs" @click="submitConsent('abstention')" style="width: 100%; height: 100%;">
-                      <span class="vote-icon"><i class="fa-solid fa-eye"></i></span>
-                      <span style="font-size: 13px; font-weight: 600;">Abstention</span>
-                    </button>
-                  </template>
-                </div>
-              </template>
-            </div>
-          </div>
-
-          <div
-            v-if="isFeedbackEngineVisible"
-            class="mb-16"
-          >
-            <FeedbackEngine 
-                 :key="feedbackKey"
-                 :decision="viewingVersionId ? historicalVersionDecision : decision" 
-                 :historical-data="viewingVersionId ? historicalVersionData : null"
-                 @refresh="refreshDecision" 
-            />
-          </div>
-        </div>
-
-        <div class="col-side">
-          <!-- Cartes de Rôle / Participation -->
-          <div v-if="myRole === 'author' || isAuthor" class="premium-card mb-16">
-            <div class="pc-header pc-header-blue" style="padding: 12px;">
-              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-bullhorn"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title" style="font-size: 14px;">Porteur</div>
-                <div class="pc-header-sub" style="font-size: 12px;">Vous pilotez cette décision.</div>
-              </div>
-              <button v-if="isAuthorOrAnimator" class="btn btn-icon btn-sm" style="color: white; background: rgba(255,255,255,0.15); border: none; position: relative; z-index: 10;" title="Actions rapides" @click="showActionsModal = true">
-                <i class="fa-solid fa-gear"></i>
-              </button>
-            </div>
-          </div>
-          <div v-else-if="myRole === 'animator' || isAnimator" class="premium-card mb-16">
-            <div class="pc-header pc-header-amber" style="padding: 12px;">
-              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-user-tie"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title" style="font-size: 14px;">Animateur</div>
-                <div class="pc-header-sub" style="font-size: 12px;">Vous facilitez ce processus.</div>
-              </div>
-              <button v-if="isAuthorOrAnimator" class="btn btn-icon btn-sm" style="color: white; background: rgba(255,255,255,0.15); border: none; position: relative; z-index: 10;" title="Actions rapides" @click="showActionsModal = true">
-                <i class="fa-solid fa-gear"></i>
-              </button>
-            </div>
-          </div>
-          <div v-else-if="myRole === 'participant'" class="premium-card mb-16">
-            <div class="pc-header pc-header-teal" style="padding: 12px;">
-              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-user-group"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title" style="font-size: 14px;">Participant</div>
-                <div class="pc-header-sub" style="font-size: 12px;">
-                  {{ hasAlreadyParticipated ? 'Participation validée pour cette phase.' : 'Vous participez à cette décision.' }}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div v-else-if="hasAlreadyParticipated" class="premium-card mb-16">
-            <div class="pc-header pc-header-teal" style="padding: 12px;">
-              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-check"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title" style="font-size: 14px;">Participation validée</div>
-                <div class="pc-header-sub" style="font-size: 12px;">Vous avez agi pour cette phase.</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Paramètres de la décision -->
-          <div v-if="isDraft && isAuthorOrAnimator" class="premium-card mb-16">
-            <div class="pc-header pc-header-light-blue">
-              <div class="pc-header-icon"><i class="fa-solid fa-sliders"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title">Paramètres de la décision</div>
-                <div class="pc-header-sub">Configuration du processus</div>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="form-group mb-24">
-                <label class="label">Visibilité</label>
-                <div class="visibility-toggles" style="display: flex; gap: 16px;">
-                  <label class="visibility-option" :class="{ active: draftForm.visibility === 'public' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="draftForm.visibility === 'public' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
-                    <input type="radio" v-model="draftForm.visibility" value="public" class="hidden" style="display:none;">
-                    <i class="fa-solid fa-globe mb-8 text-xl"></i>
-                    <span class="font-bold">Publique</span>
-                    <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Visible par tous les membres</span>
-                  </label>
-                  <label class="visibility-option" :class="{ active: draftForm.visibility === 'private' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="draftForm.visibility === 'private' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
-                    <input type="radio" v-model="draftForm.visibility" value="private" class="hidden" style="display:none;">
-                    <i class="fa-solid fa-lock mb-8 text-xl"></i>
-                    <span class="font-bold">Privée</span>
-                    <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Restreint aux participants</span>
-                  </label>
-                </div>
+              <!-- CONTENT VIEW -->
+              <div v-if="element.id === 'content-view'" class="relative">
+                <DecisionContentView
+                  :is-draft="isDraft"
+                  :is-revision="isRevision"
+                  :is-author-or-animator="isAuthorOrAnimator"
+                  :viewing-version-id="viewingVersionId"
+                  :historical-version-number="historicalVersionData?.version_number"
+                  :current-version-number="currentVersion?.version_number"
+                  :current-version-id="currentVersion?.id"
+                  :display-content="displayContent"
+                  :current-content="currentVersion?.content"
+                  :display-attachments="displayAttachments"
+                  :can-reload-attachments="isAuthorOrAnimator"
+                />
               </div>
 
-              <div class="form-group">
-                <label class="label">Cercle *</label>
-                <select :key="flattenedCircles.length + '-' + draftForm.circle_id" v-model="draftForm.circle_id" class="select" required>
-                  <option value="" disabled>Choisir un cercle...</option>
-                  <option v-for="c in flattenedCircles" :key="c.id" :value="c.id">{{ c.displayName }}</option>
-                </select>
-              </div>
+              <!-- PARTICIPATION CARD -->
+              <div v-if="element.id === 'participation-card' && showParticipationCard" class="relative">
+                <div class="premium-card mb-16 border-2" :class="hasAlreadyParticipated ? 'border-teal-500' : 'border-red-500'">
+                  <div class="pc-header drag-handle" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-light-blue'">
+                    <div class="pc-header-icon"><i class="fa-solid fa-comment"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title">{{ participationCardTitle }}</div>
+                      <div class="pc-header-sub">{{ hasAlreadyParticipated ? 'Participation enregistrée' : 'Action requise de votre part' }}</div>
+                    </div>
+                  </div>
 
-              <div class="form-group">
-                <label class="label">Catégories</label>
-                <div class="categories-selector mt-8">
-                   <div class="category-chips">
-                      <div 
-                        v-for="cat in categories" 
-                        :key="cat.id"
-                        class="category-chip"
-                        :class="{ active: draftForm.category_ids.includes(cat.id) }"
-                        @click="toggleCategory(cat.id)"
-                        :style="draftForm.category_ids.includes(cat.id) ? { borderColor: cat.color_hex, background: cat.color_hex + '15', color: cat.color_hex } : {}"
-                      >
-                         <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
-                         {{ cat.name }}
+                  <div class="card-body">
+                    <div v-if="hasAlreadyParticipated" class="consent-done-block">
+                      <div class="consent-done-icon"><i :class="consentIcon(myConsent?.signal)"></i></div>
+                      <div class="consent-done-label">{{ consentLabel(myConsent?.signal) }}</div>
+                      <p class="text-xs text-muted mt-8">Votre participation est déjà enregistrée pour cette phase.</p>
+                    </div>
+
+                    <template v-else>
+                      <div :style="{ display: 'grid', gridTemplateColumns: decision.status === 'objection' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '12px' }">
+                        <button class="btn btn-secondary" @click="openReactionModal" style="padding: 12px 8px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 100%;">
+                          <span class="text-xl"><i class="fa-solid fa-comment"></i></span>
+                          <span>{{ modalActionLabelShort }}</span>
+                        </button>
+
+                        <button v-if="decision.status === 'clarification'" class="vote-btn vote-ok" @click="submitConsent('no_questions')" style="width: 100%; height: 100%;">
+                          <span class="vote-icon"><i class="fa-solid fa-circle-check"></i></span>
+                          <span style="font-size: 13px; font-weight: 600;">C'est clair</span>
+                        </button>
+
+                        <button v-if="decision.status === 'reaction'" class="vote-btn vote-ok" @click="submitConsent('no_reaction')" style="width: 100%; height: 100%;">
+                          <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
+                          <span style="font-size: 13px; font-weight: 600;">RAS</span>
+                        </button>
+
+                        <template v-if="decision.status === 'objection'">
+                          <button class="vote-btn vote-ok" @click="submitConsent('no_objection')" style="width: 100%; height: 100%;">
+                            <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
+                            <span style="font-size: 13px; font-weight: 600;">Sans objection</span>
+                          </button>
+                          <button class="vote-btn vote-abs" @click="submitConsent('abstention')" style="width: 100%; height: 100%;">
+                            <span class="vote-icon"><i class="fa-solid fa-eye"></i></span>
+                            <span style="font-size: 13px; font-weight: 600;">Abstention</span>
+                          </button>
+                        </template>
                       </div>
-                   </div>
+                    </template>
+                  </div>
                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="label">Animateur désigné</label>
-                <select v-model="draftForm.animator_id" class="select">
-                  <option value="">Auteur (par défaut)</option>
-                  <option
-                    v-for="member in selectableMembers"
-                    :key="member.user_id"
-                    :value="member.user_id"
-                  >
-                    {{ member.user?.name }} ({{ member.role }})
-                  </option>
-                </select>
+              <!-- FEEDBACK ENGINE -->
+              <div v-if="element.id === 'feedback-engine' && isFeedbackEngineVisible" class="relative mb-16">
+                <FeedbackEngine 
+                     :key="feedbackKey"
+                     :decision="viewingVersionId ? historicalVersionDecision : decision" 
+                     :historical-data="viewingVersionId ? historicalVersionData : null"
+                     @refresh="refreshDecision" 
+                />
               </div>
 
-              <div class="form-group mt-16">
-                <label class="label">Membres à exclure</label>
-                <div class="checkbox-panel max-h-200 overflow-y-auto border p-8 rounded bg-gray-50">
-                  <label
-                    v-for="member in excludableMembers"
-                    :key="member.user_id"
-                    class="checkbox-row"
-                  >
-                    <input v-model="draftForm.excluded_members" type="checkbox" :value="member.user_id">
-                    <span class="text-xs">{{ member.user?.name }}</span>
-                  </label>
-                  <div v-if="!excludableMembers.length" class="text-xs text-muted">Aucun membre à exclure</div>
+              <!-- ROLE CARD -->
+              <div v-if="element.id === 'role-card'" class="relative">
+                <div v-if="myRole === 'author' || isAuthor" class="premium-card mb-16">
+                  <div class="pc-header pc-header-blue drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-bullhorn"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Porteur</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">Vous pilotez cette décision.</div>
+                    </div>
+                    <button v-if="isAuthorOrAnimator" class="btn btn-icon btn-sm" style="color: white; background: rgba(255,255,255,0.15); border: none; position: relative; z-index: 10;" title="Actions rapides" @click="showActionsModal = true">
+                      <i class="fa-solid fa-gear"></i>
+                    </button>
+                  </div>
+                </div>
+                <div v-else-if="myRole === 'animator' || isAnimator" class="premium-card mb-16">
+                  <div class="pc-header pc-header-amber drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-user-tie"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Animateur</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">Vous facilitez ce processus.</div>
+                    </div>
+                    <button v-if="isAuthorOrAnimator" class="btn btn-icon btn-sm" style="color: white; background: rgba(255,255,255,0.15); border: none; position: relative; z-index: 10;" title="Actions rapides" @click="showActionsModal = true">
+                      <i class="fa-solid fa-gear"></i>
+                    </button>
+                  </div>
+                </div>
+                <div v-else-if="myRole === 'participant'" class="premium-card mb-16">
+                  <div class="pc-header pc-header-teal drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-user-group"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Participant</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">
+                        {{ hasAlreadyParticipated ? 'Participation validée pour cette phase.' : 'Vous participez à cette décision.' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else-if="hasAlreadyParticipated" class="premium-card mb-16">
+                  <div class="pc-header pc-header-teal drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-check"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Participation validée</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">Vous avez agi pour cette phase.</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Navigation entre versions -->
-          <div v-if="allVersions.length > 1" class="premium-card mb-16">
-            <div class="pc-header pc-header-light-blue" style="padding: 12px;">
-              <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-clock-rotate-left"></i></div>
-              <div class="pc-header-content">
-                <div class="pc-header-title" style="font-size: 14px;">Versions précédentes</div>
-                <div class="pc-header-sub" style="font-size: 12px;">Consulter l'historique</div>
+              <!-- DECISION PARAMS -->
+              <div v-if="element.id === 'decision-params' && isDraft && isAuthorOrAnimator" class="relative">
+                <div class="premium-card mb-16">
+                  <div class="pc-header pc-header-light-blue drag-handle">
+                    <div class="pc-header-icon"><i class="fa-solid fa-sliders"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title">Paramètres de la décision</div>
+                      <div class="pc-header-sub">Configuration du processus</div>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-group mb-24">
+                      <label class="label">Visibilité</label>
+                      <div class="visibility-toggles" style="display: flex; gap: 16px;">
+                        <label class="visibility-option" :class="{ active: draftForm.visibility === 'public' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="draftForm.visibility === 'public' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
+                          <input type="radio" v-model="draftForm.visibility" value="public" class="hidden" style="display:none;">
+                          <i class="fa-solid fa-globe mb-8 text-xl"></i>
+                          <span class="font-bold">Publique</span>
+                          <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Visible par tous les membres</span>
+                        </label>
+                        <label class="visibility-option" :class="{ active: draftForm.visibility === 'private' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="draftForm.visibility === 'private' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
+                          <input type="radio" v-model="draftForm.visibility" value="private" class="hidden" style="display:none;">
+                          <i class="fa-solid fa-lock mb-8 text-xl"></i>
+                          <span class="font-bold">Privée</span>
+                          <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Restreint aux participants</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="label">Cercle *</label>
+                      <select :key="flattenedCircles.length + '-' + draftForm.circle_id" v-model="draftForm.circle_id" class="select" required>
+                        <option value="" disabled>Choisir un cercle...</option>
+                        <option v-for="c in flattenedCircles" :key="c.id" :value="c.id">{{ c.displayName }}</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="label">Catégories</label>
+                      <div class="categories-selector mt-8">
+                         <div class="category-chips">
+                            <div 
+                              v-for="cat in categories" 
+                              :key="cat.id"
+                              class="category-chip"
+                              :class="{ active: draftForm.category_ids.includes(cat.id) }"
+                              @click="toggleCategory(cat.id)"
+                              :style="draftForm.category_ids.includes(cat.id) ? { borderColor: cat.color_hex, background: cat.color_hex + '15', color: cat.color_hex } : {}"
+                            >
+                               <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
+                               {{ cat.name }}
+                            </div>
+                         </div>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="label">Animateur désigné</label>
+                      <select v-model="draftForm.animator_id" class="select">
+                        <option value="">Auteur (par défaut)</option>
+                        <option
+                          v-for="member in selectableMembers"
+                          :key="member.user_id"
+                          :value="member.user_id"
+                        >
+                          {{ member.user?.name }} ({{ member.role }})
+                        </option>
+                      </select>
+                    </div>
+
+                    <div class="form-group mt-16">
+                      <label class="label">Membres à exclure</label>
+                      <div class="checkbox-panel max-h-200 overflow-y-auto border p-8 rounded bg-gray-50">
+                        <label
+                          v-for="member in excludableMembers"
+                          :key="member.user_id"
+                          class="checkbox-row"
+                        >
+                          <input v-model="draftForm.excluded_members" type="checkbox" :value="member.user_id">
+                          <span class="text-xs">{{ member.user?.name }}</span>
+                        </label>
+                        <div v-if="!excludableMembers.length" class="text-xs text-muted">Aucun membre à exclure</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- VERSION NAV -->
+              <div v-if="element.id === 'version-nav' && allVersions.length > 1" class="relative">
+                <div class="premium-card mb-16">
+                  <div class="pc-header pc-header-light-blue drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Versions précédentes</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">Consulter l'historique</div>
+                    </div>
+                  </div>
+                  <div class="card-body" style="padding: 12px;">
+                    <div class="form-group mb-8">
+                      <select v-model="selectedVersionNavId" class="select select-sm" @change="handleVersionChange">
+                        <option v-for="v in allVersions" :key="v.id" :value="v.id">
+                          Version {{ v.version_number }} ({{ formatDateOnly(v.created_at) }})
+                        </option>
+                      </select>
+                    </div>
+                    <button 
+                      v-if="viewingVersionId" 
+                      class="btn btn-secondary btn-sm w-full" 
+                      @click="resetToCurrentVersion"
+                    >
+                      <i class="fa-solid fa-arrow-left"></i> Retour à la version en cours
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PARTICIPATION PANEL -->
+              <div v-if="element.id === 'participation-panel' && !isDraft" class="relative">
+                <ParticipantPhasePanel
+                  :decision="viewingVersionId ? historicalVersionDecision : decision"
+                  :phase-participation-map="viewingVersionId ? historicalPhaseParticipationMap : phaseParticipationMap"
+                />
               </div>
             </div>
-            <div class="card-body" style="padding: 12px;">
-              <div class="form-group mb-8">
-                <select v-model="selectedVersionNavId" class="select select-sm" @change="handleVersionChange">
-                  <option v-for="v in allVersions" :key="v.id" :value="v.id">
-                    Version {{ v.version_number }} ({{ formatDateOnly(v.created_at) }})
-                  </option>
-                </select>
-              </div>
-              <button 
-                v-if="viewingVersionId" 
-                class="btn btn-secondary btn-sm w-full" 
-                @click="resetToCurrentVersion"
-              >
-                <i class="fa-solid fa-arrow-left"></i> Retour à la version en cours
-              </button>
-            </div>
-          </div>
+          </template>
+        </draggable>
 
-          <ParticipantPhasePanel
-            v-if="!isDraft"
-            :decision="viewingVersionId ? historicalVersionDecision : decision"
-            :phase-participation-map="viewingVersionId ? historicalPhaseParticipationMap : phaseParticipationMap"
-          />
-        </div>
+
+        <draggable 
+          v-model="sideBlocks" 
+          item-key="id" 
+          class="col-side"
+          :class="{ 'is-empty': sideBlocks.length === 0 }"
+          handle=".drag-handle"
+          ghost-class="ghost-card"
+          :group="{ name: 'blocks' }"
+          @end="saveLayout"
+        >
+          <template #item="{ element }">
+            <div :key="element.id">
+              <!-- EDIT FORM -->
+              <div v-if="element.id === 'edit-form' && (isDraft || (isRevision && isAuthorOrAnimator))" class="relative">
+                <DecisionEditForm
+                  :is-draft="isDraft"
+                  :is-revision="isRevision"
+                  :is-author-or-animator="isAuthorOrAnimator"
+                  :form="draftForm"
+                  :current-version="currentVersion"
+                  :saving-draft="savingDraft"
+                  :deleting-draft="deletingDraft"
+                  :publishing="publishing"
+                  :reused-attachment-ids="reusedAttachmentIds"
+                  :revision-attachments="revisionAttachments"
+                  @save-draft="saveDraft"
+                  @delete-draft="deleteDraft"
+                  @refresh="refreshDecision"
+                  @toggle-all-attachments="toggleAllPreviousAttachments"
+                  @toggle-attachment="toggleAttachmentReuse"
+                  @upload-revision-file="handleRevisionFileUpload"
+                  @remove-revision-file="handleRevisionFileRemove"
+                  @save-revision="saveRevision"
+                  @publish-revision="publishRevision"
+                />
+              </div>
+
+              <!-- CONTENT VIEW -->
+              <div v-if="element.id === 'content-view'" class="relative">
+                <DecisionContentView
+                  :is-draft="isDraft"
+                  :is-revision="isRevision"
+                  :is-author-or-animator="isAuthorOrAnimator"
+                  :viewing-version-id="viewingVersionId"
+                  :historical-version-number="historicalVersionData?.version_number"
+                  :current-version-number="currentVersion?.version_number"
+                  :current-version-id="currentVersion?.id"
+                  :display-content="displayContent"
+                  :current-content="currentVersion?.content"
+                  :display-attachments="displayAttachments"
+                  :can-reload-attachments="isAuthorOrAnimator"
+                />
+              </div>
+
+              <!-- PARTICIPATION CARD -->
+              <div v-if="element.id === 'participation-card' && showParticipationCard" class="relative">
+                <div class="premium-card mb-16 border-2" :class="hasAlreadyParticipated ? 'border-teal-500' : 'border-red-500'">
+                  <div class="pc-header drag-handle" :class="hasAlreadyParticipated ? 'pc-header-teal' : 'pc-header-light-blue'">
+                    <div class="pc-header-icon"><i class="fa-solid fa-comment"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title">{{ participationCardTitle }}</div>
+                      <div class="pc-header-sub">{{ hasAlreadyParticipated ? 'Participation enregistrée' : 'Action requise de votre part' }}</div>
+                    </div>
+                  </div>
+
+                  <div class="card-body">
+                    <div v-if="hasAlreadyParticipated" class="consent-done-block">
+                      <div class="consent-done-icon"><i :class="consentIcon(myConsent?.signal)"></i></div>
+                      <div class="consent-done-label">{{ consentLabel(myConsent?.signal) }}</div>
+                      <p class="text-xs text-muted mt-8">Votre participation est déjà enregistrée pour cette phase.</p>
+                    </div>
+
+                    <template v-else>
+                      <div :style="{ display: 'grid', gridTemplateColumns: decision.status === 'objection' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '12px' }">
+                        <button class="btn btn-secondary" @click="openReactionModal" style="padding: 12px 8px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 100%;">
+                          <span class="text-xl"><i class="fa-solid fa-comment"></i></span>
+                          <span>{{ modalActionLabelShort }}</span>
+                        </button>
+
+                        <button v-if="decision.status === 'clarification'" class="vote-btn vote-ok" @click="submitConsent('no_questions')" style="width: 100%; height: 100%;">
+                          <span class="vote-icon"><i class="fa-solid fa-circle-check"></i></span>
+                          <span style="font-size: 13px; font-weight: 600;">C'est clair</span>
+                        </button>
+
+                        <button v-if="decision.status === 'reaction'" class="vote-btn vote-ok" @click="submitConsent('no_reaction')" style="width: 100%; height: 100%;">
+                          <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
+                          <span style="font-size: 13px; font-weight: 600;">RAS</span>
+                        </button>
+
+                        <template v-if="decision.status === 'objection'">
+                          <button class="vote-btn vote-ok" @click="submitConsent('no_objection')" style="width: 100%; height: 100%;">
+                            <span class="vote-icon"><i class="fa-solid fa-thumbs-up"></i></span>
+                            <span style="font-size: 13px; font-weight: 600;">Sans objection</span>
+                          </button>
+                          <button class="vote-btn vote-abs" @click="submitConsent('abstention')" style="width: 100%; height: 100%;">
+                            <span class="vote-icon"><i class="fa-solid fa-eye"></i></span>
+                            <span style="font-size: 13px; font-weight: 600;">Abstention</span>
+                          </button>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FEEDBACK ENGINE -->
+              <div v-if="element.id === 'feedback-engine' && isFeedbackEngineVisible" class="relative mb-16">
+                <FeedbackEngine 
+                     :key="feedbackKey"
+                     :decision="viewingVersionId ? historicalVersionDecision : decision" 
+                     :historical-data="viewingVersionId ? historicalVersionData : null"
+                     @refresh="refreshDecision" 
+                />
+              </div>
+
+              <!-- ROLE CARD -->
+              <div v-if="element.id === 'role-card'" class="relative">
+                <div v-if="myRole === 'author' || isAuthor" class="premium-card mb-16">
+                  <div class="pc-header pc-header-blue drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-bullhorn"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Porteur</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">Vous pilotez cette décision.</div>
+                    </div>
+                    <button v-if="isAuthorOrAnimator" class="btn btn-icon btn-sm" style="color: white; background: rgba(255,255,255,0.15); border: none; position: relative; z-index: 10;" title="Actions rapides" @click="showActionsModal = true">
+                      <i class="fa-solid fa-gear"></i>
+                    </button>
+                  </div>
+                </div>
+                <div v-else-if="myRole === 'animator' || isAnimator" class="premium-card mb-16">
+                  <div class="pc-header pc-header-amber drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-user-tie"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Animateur</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">Vous facilitez ce processus.</div>
+                    </div>
+                    <button v-if="isAuthorOrAnimator" class="btn btn-icon btn-sm" style="color: white; background: rgba(255,255,255,0.15); border: none; position: relative; z-index: 10;" title="Actions rapides" @click="showActionsModal = true">
+                      <i class="fa-solid fa-gear"></i>
+                    </button>
+                  </div>
+                </div>
+                <div v-else-if="myRole === 'participant'" class="premium-card mb-16">
+                  <div class="pc-header pc-header-teal drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-user-group"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Participant</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">
+                        {{ hasAlreadyParticipated ? 'Participation validée pour cette phase.' : 'Vous participez à cette décision.' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else-if="hasAlreadyParticipated" class="premium-card mb-16">
+                  <div class="pc-header pc-header-teal drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-check"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Participation validée</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">Vous avez agi pour cette phase.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- DECISION PARAMS -->
+              <div v-if="element.id === 'decision-params' && isDraft && isAuthorOrAnimator" class="relative">
+                <div class="premium-card mb-16">
+                  <div class="pc-header pc-header-light-blue drag-handle">
+                    <div class="pc-header-icon"><i class="fa-solid fa-sliders"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title">Paramètres de la décision</div>
+                      <div class="pc-header-sub">Configuration du processus</div>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-group mb-24">
+                      <label class="label">Visibilité</label>
+                      <div class="visibility-toggles" style="display: flex; gap: 16px;">
+                        <label class="visibility-option" :class="{ active: draftForm.visibility === 'public' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="draftForm.visibility === 'public' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
+                          <input type="radio" v-model="draftForm.visibility" value="public" class="hidden" style="display:none;">
+                          <i class="fa-solid fa-globe mb-8 text-xl"></i>
+                          <span class="font-bold">Publique</span>
+                          <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Visible par tous les membres</span>
+                        </label>
+                        <label class="visibility-option" :class="{ active: draftForm.visibility === 'private' }" style="flex: 1; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: all 0.2s;" :style="draftForm.visibility === 'private' ? 'border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); color: var(--primary);' : ''">
+                          <input type="radio" v-model="draftForm.visibility" value="private" class="hidden" style="display:none;">
+                          <i class="fa-solid fa-lock mb-8 text-xl"></i>
+                          <span class="font-bold">Privée</span>
+                          <span class="text-xs text-muted mt-4 text-center" style="color:var(--gray-500)">Restreint aux participants</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="label">Cercle *</label>
+                      <select :key="flattenedCircles.length + '-' + draftForm.circle_id" v-model="draftForm.circle_id" class="select" required>
+                        <option value="" disabled>Choisir un cercle...</option>
+                        <option v-for="c in flattenedCircles" :key="c.id" :value="c.id">{{ c.displayName }}</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="label">Catégories</label>
+                      <div class="categories-selector mt-8">
+                         <div class="category-chips">
+                            <div 
+                              v-for="cat in categories" 
+                              :key="cat.id"
+                              class="category-chip"
+                              :class="{ active: draftForm.category_ids.includes(cat.id) }"
+                              @click="toggleCategory(cat.id)"
+                              :style="draftForm.category_ids.includes(cat.id) ? { borderColor: cat.color_hex, background: cat.color_hex + '15', color: cat.color_hex } : {}"
+                            >
+                               <i :class="cat.icon || 'fa-solid fa-tag'" class="mr-6"></i>
+                               {{ cat.name }}
+                            </div>
+                         </div>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="label">Animateur désigné</label>
+                      <select v-model="draftForm.animator_id" class="select">
+                        <option value="">Auteur (par défaut)</option>
+                        <option
+                          v-for="member in selectableMembers"
+                          :key="member.user_id"
+                          :value="member.user_id"
+                        >
+                          {{ member.user?.name }} ({{ member.role }})
+                        </option>
+                      </select>
+                    </div>
+
+                    <div class="form-group mt-16">
+                      <label class="label">Membres à exclure</label>
+                      <div class="checkbox-panel max-h-200 overflow-y-auto border p-8 rounded bg-gray-50">
+                        <label
+                          v-for="member in excludableMembers"
+                          :key="member.user_id"
+                          class="checkbox-row"
+                        >
+                          <input v-model="draftForm.excluded_members" type="checkbox" :value="member.user_id">
+                          <span class="text-xs">{{ member.user?.name }}</span>
+                        </label>
+                        <div v-if="!excludableMembers.length" class="text-xs text-muted">Aucun membre à exclure</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- VERSION NAV -->
+              <div v-if="element.id === 'version-nav' && allVersions.length > 1" class="relative">
+                <div class="premium-card mb-16">
+                  <div class="pc-header pc-header-light-blue drag-handle" style="padding: 12px;">
+                    <div class="pc-header-icon" style="font-size: 1.2rem;"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <div class="pc-header-content">
+                      <div class="pc-header-title" style="font-size: 14px;">Versions précédentes</div>
+                      <div class="pc-header-sub" style="font-size: 12px;">Consulter l'historique</div>
+                    </div>
+                  </div>
+                  <div class="card-body" style="padding: 12px;">
+                    <div class="form-group mb-8">
+                      <select v-model="selectedVersionNavId" class="select select-sm" @change="handleVersionChange">
+                        <option v-for="v in allVersions" :key="v.id" :value="v.id">
+                          Version {{ v.version_number }} ({{ formatDateOnly(v.created_at) }})
+                        </option>
+                      </select>
+                    </div>
+                    <button 
+                      v-if="viewingVersionId" 
+                      class="btn btn-secondary btn-sm w-full" 
+                      @click="resetToCurrentVersion"
+                    >
+                      <i class="fa-solid fa-arrow-left"></i> Retour à la version en cours
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PARTICIPATION PANEL -->
+              <div v-if="element.id === 'participation-panel' && !isDraft" class="relative">
+                <ParticipantPhasePanel
+                  :decision="viewingVersionId ? historicalVersionDecision : decision"
+                  :phase-participation-map="viewingVersionId ? historicalPhaseParticipationMap : phaseParticipationMap"
+                />
+              </div>
+            </div>
+          </template>
+        </draggable>
       </div>
     </div>
 
@@ -463,6 +782,7 @@ import RevisionPathModal from '../components/RevisionPathModal.vue';
 import NotificationLevelModal from '../components/NotificationLevelModal.vue';
 import MeetingModeOverlay from '../components/MeetingModeOverlay.vue';
 import DecisionPrintModal from '../components/DecisionPrintModal.vue';
+import draggable from 'vuedraggable';
 import { useAuthStore } from '../stores/auth';
 import { useDecisionStore } from '../stores/decision';
 import { usePendingStore } from '../stores/pending';
@@ -615,6 +935,100 @@ const toggleCategory = (id) => {
 
 const reactionText = ref('');
 const reactionType = ref('objection');
+
+// --- LAYOUT DRAGGABLE ---
+const allPossibleBlocks = [
+    { id: 'edit-form', label: 'Édition' },
+    { id: 'content-view', label: 'Contenu' },
+    { id: 'participation-card', label: 'Action requise' },
+    { id: 'feedback-engine', label: 'Commentaires' },
+    { id: 'role-card', label: 'Mon Rôle' },
+    { id: 'decision-params', label: 'Paramètres' },
+    { id: 'version-nav', label: 'Historique' },
+    { id: 'participation-panel', label: 'Participation' }
+];
+
+const mainBlocks = ref([
+    { id: 'edit-form', label: 'Édition' },
+    { id: 'content-view', label: 'Contenu' },
+    { id: 'participation-card', label: 'Action requise' },
+    { id: 'feedback-engine', label: 'Commentaires' }
+]);
+
+const sideBlocks = ref([
+    { id: 'role-card', label: 'Mon Rôle' },
+    { id: 'decision-params', label: 'Paramètres' },
+    { id: 'version-nav', label: 'Historique' },
+    { id: 'participation-panel', label: 'Participation' }
+]);
+const layoutLoaded = ref(false);
+
+const layoutKey = computed(() => {
+    const status = decision.value?.status;
+    const statusStr = (typeof status === 'object' && status !== null) ? status.value : status;
+    return `decision_detail_${statusStr || 'default'}`;
+});
+
+const fetchLayout = async () => {
+    if (!decision.value) return;
+    try {
+        const { data } = await axios.get(`/api/v1/user/layout/${layoutKey.value}`);
+        if (data.layout) {
+            const newMain = [];
+            const newSide = [];
+            const savedMainIds = data.layout.main || [];
+            const savedSideIds = data.layout.side || [];
+
+            // Place saved blocks
+            savedMainIds.forEach(id => {
+                const block = allPossibleBlocks.find(b => b.id === id);
+                if (block) newMain.push(block);
+            });
+            savedSideIds.forEach(id => {
+                const block = allPossibleBlocks.find(b => b.id === id);
+                if (block) newSide.push(block);
+            });
+
+            // Add missing blocks to default columns
+            allPossibleBlocks.forEach(block => {
+                if (!savedMainIds.includes(block.id) && !savedSideIds.includes(block.id)) {
+                    if (['role-card', 'decision-params', 'version-nav', 'participation-panel'].includes(block.id)) {
+                        newSide.push(block);
+                    } else {
+                        newMain.push(block);
+                    }
+                }
+            });
+
+            mainBlocks.value = newMain;
+            sideBlocks.value = newSide;
+        }
+    } catch (e) {
+        console.error('Failed to fetch layout', e);
+    }
+};
+
+const saveLayout = async () => {
+    try {
+        await axios.post('/api/v1/user/layout', {
+            view_name: layoutKey.value,
+            layout_data: {
+                main: mainBlocks.value.map(b => b.id),
+                side: sideBlocks.value.map(b => b.id)
+            }
+        });
+    } catch (e) {
+        console.error('Failed to save layout', e);
+    }
+};
+
+// Auto-load layout when decision or its status is ready
+watch(layoutKey, (newVal, oldVal) => {
+    if (decision.value && newVal !== oldVal) {
+        fetchLayout();
+    }
+}, { immediate: true });
+// --- END LAYOUT DRAGGABLE ---
 
 const roleMeta = {
   author: { label: 'Porteur', icon: 'fa-solid fa-bullhorn', className: 'role-author' },
@@ -1626,10 +2040,37 @@ const handleManualAction = async (type) => {
   gap: 16px;
 }
 
+.col-main, .col-side {
+  min-height: 200px;
+  padding-bottom: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 2px dashed transparent;
+  border-radius: var(--radius-lg);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+/* On montre une zone en pointillé quand la colonne est vide pour aider le drag & drop */
+.is-empty {
+  border-color: var(--gray-300) !important;
+  background-color: rgba(0, 0, 0, 0.02) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.is-empty::after {
+  content: 'Glissez un bloc ici';
+  color: var(--gray-400);
+  font-size: 13px;
+  font-style: italic;
+}
+
 @media (min-width: 960px) {
   .grid-layout {
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch; /* Les colonnes prennent la même hauteur */
   }
 
   .col-main { flex: 2; min-width: 0; }
@@ -1931,5 +2372,46 @@ const handleManualAction = async (type) => {
 .hero-footer-meta span {
   display: flex;
   align-items: center;
+}
+
+/* Draggable UI */
+.drag-handle-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  cursor: grab;
+  opacity: 0;
+  transition: all 0.2s;
+}
+.premium-card:hover .drag-handle-container,
+.relative:hover .drag-handle-container {
+  opacity: 0.6;
+}
+.drag-handle-container:hover {
+  opacity: 1 !important;
+  background: rgba(255,255,255,0.2);
+}
+.drag-handle-container:active { cursor: grabbing; }
+
+.side-handle {
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+}
+
+.ghost-card {
+  opacity: 0.4;
+  border: 2px dashed var(--blue-400) !important;
+  transform: scale(0.98);
 }
 </style>
