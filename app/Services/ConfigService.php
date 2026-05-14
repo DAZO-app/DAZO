@@ -37,7 +37,7 @@ class ConfigService
         }
 
         // Decode JSON arrays for specific keys so the frontend gets arrays
-        $jsonKeys = ['public_circles', 'public_categories', 'public_statuses', 'public_filters', 'api_circles', 'api_categories', 'api_statuses', 'api_filters'];
+        $jsonKeys = ['public_circles', 'public_categories', 'public_statuses', 'public_filters', 'api_circles', 'api_categories', 'api_statuses', 'api_filters', 'saved_snippets'];
         foreach ($jsonKeys as $key) {
             if (isset($merged[$key]) && is_string($merged[$key])) {
                 $decoded = json_decode($merged[$key], true);
@@ -80,6 +80,7 @@ class ConfigService
             'api_categories'        => '[]',
             'api_statuses'          => '[]',
             'api_filters'           => '[]',
+            'saved_snippets'        => '[]',
             
             // Pages de contenu (Content stored as HTML)
             'page_legal_content'    => '<h1>Mentions Légales</h1><p>Contenu par défaut à personnaliser...</p>',
@@ -106,6 +107,14 @@ class ConfigService
             'mail_decision_rejected_enabled' => 'true',
             'mail_decision_rejected_subject' => 'Une décision n\'a pas été adoptée',
             'mail_decision_rejected_body'    => '<h1>Décision refusée</h1><p>Bonjour {name},</p><p>La proposition "{title}" n\'a pas recueilli le consensus nécessaire.</p><p><a href="{url}">Voir les détails</a></p>',
+
+            'mail_feedback_enabled'     => 'true',
+            'mail_feedback_subject'     => 'Nouveau feedback ou mention sur "{title}"',
+            'mail_feedback_body'        => '<h1>Nouveau message</h1><p>Bonjour {name},</p><p>Vous avez reçu un nouveau feedback ou une mention sur la proposition "{title}".</p><p><em>"{message}"</em></p><p><a href="{url}">Répondre au feedback</a></p>',
+
+            'mail_new_version_enabled'  => 'true',
+            'mail_new_version_subject'  => 'Nouvelle version publiée : "{title}"',
+            'mail_new_version_body'     => '<h1>Nouvelle version</h1><p>Bonjour {name},</p><p>Le porteur a publié une nouvelle version de la proposition "{title}" suite aux retours.</p><p><a href="{url}">Consulter la nouvelle version</a></p>',
 
             'mail_invitation_enabled'   => 'true',
             'mail_invitation_subject'   => "📩 Invitation à rejoindre le cercle '{circle}'",

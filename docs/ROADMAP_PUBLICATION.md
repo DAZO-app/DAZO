@@ -9,26 +9,26 @@ Ce document détaille l'implémentation du **Snippet Generator** et l'ouverture 
 L'objectif est de permettre l'intégration dynamique des décisions publiques sur n'importe quel site tiers via un script léger.
 
 ### Phase 8.1 : API Public Widgets
-- [ ] Création d'un contrôleur dédié `Api/V1/Public/WidgetController.php`.
-- [ ] Endpoint `/api/v1/public/widgets/decisions` : retourne une liste filtrée formatée pour le widget.
-- [ ] Endpoint `/api/v1/public/widgets/decision/{id}` : retourne le détail d'une décision spécifique.
-- [ ] Gestion des paramètres de filtrage : `circle_id`, `category_id`, `limit`, `sort`.
-- [ ] Sécurisation : Uniquement les décisions ayant `is_public = true`.
+- [x] Création d'un contrôleur dédié `Api/V1/PublicDecisionController.php`.
+- [x] Endpoint `/api/v1/public/decisions` : retourne une liste filtrée formatée pour le widget.
+- [x] Endpoint `/api/v1/public/decisions/{id}` : retourne le détail d'une décision spécifique.
+- [x] Gestion des paramètres de filtrage : `circle_id`, `category_id`, `status`.
+- [x] Sécurisation : Uniquement les décisions ayant `visibility = public` et validation de la `X-API-Key`.
 
-### Phase 8.2 : Le Widget Frontend (DAZO-Loader.js)
-- [ ] Création d'un script Vanilla JS minimaliste (sans dépendances lourdes).
-- [ ] Système de rendu via Web Components ou injection de DOM.
-- [ ] Styles isolés (Shadow DOM) pour éviter les conflits CSS avec le site hôte.
-- [ ] Support des thèmes (Light/Dark) via attributs data (ex: `data-theme="dark"`).
+### Phase 8.2 : Le Widget Frontend (loader.js)
+- [x] Création d'un script Vanilla JS autonome (`/public/widgets/loader.js`).
+- [x] Système de rendu dynamique sans dépendances (DOM Injection).
+- [x] Support complet des **15 thèmes visuels** prédéfinis.
+- [x] Rendu conditionnel des détails (clarifications, réactions, objections).
 
 ### Phase 8.3 : Interface Admin "Snippet Generator"
-- [ ] Développement de l'onglet "Snippet Generator" dans `AdminPublication.vue`.
-- [ ] **Formulaire de configuration** :
+- [x] Développement de l'onglet "Mes Snippets" et du générateur dans `AdminPublication.vue`.
+- [x] **Formulaire de configuration** :
     - Type de widget (Décision unique vs Liste).
-    - Filtres dynamiques.
-    - Options visuelles (couleurs, bordures, ombre).
-- [ ] **Live Preview** : Zone d'aperçu affichant le widget tel qu'il apparaîtra.
-- [ ] **Code Exporter** : Bouton pour copier le bloc de code `<script>` prêt à l'emploi.
+    - Filtres dynamiques unifiés.
+    - Sélection du thème avec prévisualisation en temps réel.
+- [x] **Live Preview** : Zone d'aperçu dynamique (mockup) et rendu réel via popin.
+- [x] **Code Exporter** : Bouton pour copier le script et le bloc `div` avec attributs `data-*`.
 
 ### Phase 8.4 : Analytique & Tracking
 - [ ] Enregistrement des "Vues" de widgets (compteur de consultations externes).
@@ -40,7 +40,7 @@ L'objectif est de permettre l'intégration dynamique des décisions publiques su
 
 | Composant | Technologie | Statut |
 | :--- | :--- | :--- |
-| **API Widget** | Laravel API | ⏳ En attente |
-| **JS Loader** | Vanilla JS / Vite | ⏳ En attente |
-| **Admin UI** | Vue 3 | ⏳ En attente |
-| **Shadow DOM CSS** | Scoped CSS | ⏳ En attente |
+| **API Widget** | Laravel API | ✅ Terminé |
+| **JS Loader** | Vanilla JS | ✅ Terminé |
+| **Admin UI** | Vue 3 | ✅ Terminé |
+| **Thématisation** | CSS Dynamique | ✅ Terminé |

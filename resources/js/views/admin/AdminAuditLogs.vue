@@ -39,6 +39,17 @@
         <button class="btn btn-secondary" @click="resetFilters">
           <i class="fa-solid fa-rotate-left mr-8"></i> Reset
         </button>
+
+        <div class="ml-auto flex items-center gap-12">
+          <label class="text-xs text-muted font-bold whitespace-nowrap">Afficher :</label>
+          <select v-model="filters.per_page" class="select select-sm w-80" @change="fetchLogs(1)">
+            <option :value="10">10</option>
+            <option :value="20">20</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+            <option :value="200">200</option>
+          </select>
+        </div>
       </div>
 
       <div class="premium-card mt-32 animate-fade-in">
@@ -95,12 +106,28 @@
             </table>
           </div>
         </div>
-        <div v-if="pagination.last_page > 1" class="pc-footer bg-gray-50 flex justify-center p-16">
-           <div class="pagination">
-              <button :disabled="pagination.current_page === 1" @click="fetchLogs(pagination.current_page - 1)" class="btn btn-xs">Précédent</button>
-              <span class="px-16 text-sm">Page {{ pagination.current_page }} sur {{ pagination.last_page }}</span>
-              <button :disabled="pagination.current_page === pagination.last_page" @click="fetchLogs(pagination.current_page + 1)" class="btn btn-xs">Suivant</button>
-           </div>
+        <div v-if="pagination.total > 0" class="pc-footer bg-gray-50 flex items-center justify-between p-16">
+            <div class="text-xs text-muted">
+                Affichage de <strong>{{ logs.length }}</strong> sur <strong>{{ pagination.total }}</strong> entrées
+            </div>
+            <div class="pagination flex items-center gap-8">
+               <button :disabled="pagination.current_page === 1" @click="fetchLogs(pagination.current_page - 1)" class="btn btn-sm btn-secondary">
+                 <i class="fa-solid fa-chevron-left"></i>
+               </button>
+               
+               <div class="flex gap-4">
+                  <button v-for="page in getVisiblePages()" :key="page" 
+                          class="btn btn-sm" 
+                          :class="page === pagination.current_page ? 'btn-primary' : 'btn-secondary'"
+                          @click="page !== '...' && fetchLogs(page)">
+                    {{ page }}
+                  </button>
+               </div>
+
+               <button :disabled="pagination.current_page === pagination.last_page" @click="fetchLogs(pagination.current_page + 1)" class="btn btn-sm btn-secondary">
+                 <i class="fa-solid fa-chevron-right"></i>
+               </button>
+            </div>
         </div>
       </div>
     </div>
@@ -166,7 +193,8 @@ const selectedLog = ref(null);
 const filters = ref({
   user_id: null,
   event_type: null,
-  resource_type: null
+  resource_type: null,
+  per_page: 50
 });
 
 const eventTypes = [
@@ -202,8 +230,39 @@ const fetchUsers = async () => {
 };
 
 const resetFilters = () => {
-  filters.value = { user_id: null, event_type: null, resource_type: null };
+  filters.value = { user_id: null, event_type: null, resource_type: null, per_page: 50 };
   fetchLogs(1);
+};
+
+const getVisiblePages = () => {
+  const current = pagination.value.current_page;
+  const last = pagination.value.last_page;
+  const delta = 2;
+  const range = [];
+  const rangeWithDots = [];
+  let l;
+
+  range.push(1);
+  for (let i = current - delta; i <= current + delta; i++) {
+    if (i < last && i > 1) {
+      range.push(i);
+    }
+  }
+  if (last > 1) range.push(last);
+
+  for (let i of range) {
+    if (l) {
+      if (i - l === 2) {
+        rangeWithDots.push(l + 1);
+      } else if (i - l !== 1) {
+        rangeWithDots.push('...');
+      }
+    }
+    rangeWithDots.push(i);
+    l = i;
+  }
+
+  return rangeWithDots;
 };
 
 const formatDate = (date, full = false) => {
@@ -325,4 +384,41 @@ onMounted(() => {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.table-responsive { width: 100%; overflow-x: auto; }
+.table {
+  width: 100% !important;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.table th {
+  background: var(--gray-50);
+  padding: 16px 20px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-500);
+  border-bottom: 1px solid var(--gray-100);
+  text-align: left;
+}
+.table td {
+  padding: 16px 20px;
+  font-size: 13px;
+  color: var(--gray-700);
+  border-bottom: 1px solid var(--gray-50);
+  vertical-align: middle;
+}
+.table tr:hover td {
+  background: var(--blue-50);
+  color: var(--blue-900);
+}
+.table tr:last-child td {
+  border-bottom: none;
+}
+.select-sm {
+  height: 32px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.w-80 { width: 80px; }
 </style>

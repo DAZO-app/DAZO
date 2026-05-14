@@ -40,7 +40,16 @@ echo -e " 11) [Git Pull]     ./dazo-gitpull.sh        - Récupérer le code sans
 echo -e " 12) [Update Dev]   ./dazo-updateDev.sh      - Build local + Cache (sans Git Pull)"
 
 echo ""
-echo -en "${GREEN}Action souhaitée [1-12 / q] (défaut: q) : ${NC}"
+echo -e "${YELLOW}--- DONNÉES DE TEST ---${NC}"
+echo -e " 13) [Seed Full]    ./dazo-seed-full.sh --full              - Générer les données full simulation"
+echo -e " 14) [Fresh+Seed]   ./dazo-seed-full.sh --fresh --full      - Reset DB puis données full simulation"
+echo -e " 15) [Seed Summary] ./dazo-seed-full.sh --summary           - Afficher les volumes seedés"
+echo -e " 16) [Seed Menu]    ./dazo-seed-full.sh                     - Menu avancé du seeder"
+echo -e " 17) [Fake PJ]      ./dazo-generate-fake-attachments.sh     - Générer le pool de pièces jointes texte"
+echo -e " 18) [PJ+FreshSeed] ./dazo-seed-full.sh --attachments --fresh --full - PJ + reset + seed"
+
+echo ""
+echo -en "${GREEN}Action souhaitée [1-18 / q] (défaut: q) : ${NC}"
 read choice
 
 # Default to 'q' if empty
@@ -61,6 +70,12 @@ case $choice in
     10) ./dazo-dev.sh ;;
     11) ./dazo-gitpull.sh ;;
     12) ./dazo-updateDev.sh ;;
+    13) ./dazo-seed-full.sh --full ;;
+    14) ./dazo-seed-full.sh --fresh --full ;;
+    15) ./dazo-seed-full.sh --summary ;;
+    16) ./dazo-seed-full.sh ;;
+    17) ./dazo-generate-fake-attachments.sh ;;
+    18) ./dazo-seed-full.sh --attachments --fresh --full ;;
     q|Q) exit 0 ;;
     *) echo -e "${RED}Choix invalide.${NC}" ; sleep 1 ; exec ./dazo-tool.sh ;;
 esac

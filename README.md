@@ -24,6 +24,7 @@ L'objectif de DAZO est de transformer la manière dont les groupes collaborent e
 - **Identité Visuelle** : Personnalisation dynamique du logo et du nom de l'instance.
 - **Centre de Contrôle** : Dashboard d'administration avec monitoring serveur, **Sauvegardes Auto** (SQL compressé) et lecture de logs.
 - **Temps Réel** : Notifications et compteurs d'actions en attente via **Laravel Reverb** (WebSockets).
+- **Widgets & Snippets** : Intégration dynamique des décisions sur des sites tiers via un **Loader JS** léger et personnalisable (15 thèmes).
 
 ## 🛠 Stack Technique
 
@@ -116,6 +117,7 @@ L'ensemble de la documentation détaillée se trouve dans le dossier [`docs/`](d
 | [docs/SCRIPTS.md](docs/SCRIPTS.md) | Guide des scripts bash et automatisation |
 | [docs/ROADMAP_OPTIMIZATIONS.md](docs/ROADMAP_OPTIMIZATIONS.md) | Roadmap d'optimisations techniques & priorité |
 | [docs/TODO_TECHNIQUE.md](docs/TODO_TECHNIQUE.md) | Backlog technique détaillé |
+| [docs/WIKI_HELP_STRUCTURE.md](docs/WIKI_HELP_STRUCTURE.md) | Structure du Wiki d'aide initial |
 
 ## ⚖️ Licence
 

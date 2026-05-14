@@ -80,7 +80,7 @@ class ProcessGdprExport implements ShouldQueue
 
         $fileName = 'gdpr/export-' . $this->user->id . '-' . time() . '.json';
         Storage::disk('local')->put($fileName, $json);
-        $filePath = storage_path('app/' . $fileName);
+        $filePath = Storage::disk('local')->path($fileName);
 
         try {
             Mail::to($this->user->email)->send(new GdprExportMail($this->user, $filePath));

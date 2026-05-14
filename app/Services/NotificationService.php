@@ -86,11 +86,12 @@ class NotificationService
             NotificationEventType::NEW_VERSION => NotificationCategory::REVISION,
             
             NotificationEventType::PHASE_CHANGE,
-            NotificationEventType::DECISION_ADOPTED,
             NotificationEventType::DECISION_ADOPTED_OVERRIDE,
-            NotificationEventType::DECISION_ABANDONED,
             NotificationEventType::DECISION_LAPSED,
             NotificationEventType::DECISION_DESERTED => NotificationCategory::PHASE_CHANGE,
+
+            NotificationEventType::DECISION_ADOPTED => NotificationCategory::ADOPTED,
+            NotificationEventType::DECISION_ABANDONED => NotificationCategory::REJECTED,
 
             NotificationEventType::OBJECTION_SUBMITTED,
             NotificationEventType::SUGGESTION_SUBMITTED,

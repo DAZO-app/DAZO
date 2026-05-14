@@ -315,8 +315,12 @@
               </div>
               <div class="pc-body pc-chips">
                 <EmptyState v-if="(dashboard.categories || []).length === 0" message="Aucune catégorie." :small="widget.width !== 'full' && widget.width !== '1/1'" />
-                <button v-for="cat in (dashboard.categories || [])" :key="cat.id" class="chip chip-blue" @click="$router.push({ name: 'DecisionList', query: { category: cat.id } })">
-                  <i :class="cat.icon || 'fa-solid fa-tag'" :style="{ color: cat.color_hex }" style="margin-right: 6px;"></i>
+                <button v-for="cat in (dashboard.categories || [])" 
+                        :key="cat.id" 
+                        class="chip chip-custom" 
+                        :style="getCategoryStyle(cat)"
+                        @click="$router.push({ name: 'DecisionList', query: { category: cat.id } })">
+                  <i :class="cat.icon || 'fa-solid fa-tag'" style="margin-right: 6px;"></i>
                   {{ cat.name }}
                 </button>
               </div>
@@ -674,6 +678,20 @@ const getMyRoleLabel = (decision) => {
     const labels = { author: 'Porteur', animator: 'Animateur', participant: 'Participant', observer: 'Observateur' };
     return labels[role] || 'Participant';
 };
+
+const getCategoryStyle = (cat) => {
+    const color = cat.color_hex || '#3b82f6';
+    // On génère une version très claire pour le fond (transparence 10%)
+    const bg = `${color}15`; 
+    // On génère une version un peu plus foncée pour la bordure (transparence 30%)
+    const border = `${color}40`;
+    
+    return {
+        backgroundColor: bg,
+        color: color,
+        borderColor: border
+    };
+};
 </script>
 
 <style>
@@ -863,8 +881,17 @@ const getMyRoleLabel = (decision) => {
 .pc-chips {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: flex-start;
+  align-content: flex-start;
   gap: 10px;
   padding: 20px;
+}
+
+.chip-custom {
+    border: 1.5px solid transparent;
+}
+.chip-custom:hover {
+    filter: brightness(0.95);
 }
 </style>

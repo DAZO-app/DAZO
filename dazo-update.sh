@@ -45,10 +45,12 @@ docker compose exec app npm install
 docker compose exec app npm run build
 echo -e "${GREEN}✅ Frontend built${NC}"
 
-# Step 5: Database Migrations
+# Step 5: Database Migrations & Seeds
 echo -e "${YELLOW}🗄️  Running database migrations...${NC}"
 docker compose exec app php artisan migrate --force
-echo -e "${GREEN}✅ Database migrated${NC}"
+echo -e "${YELLOW}📚 Updating Wiki Help Center...${NC}"
+docker compose exec app php artisan db:seed --class=WikiPageSeeder --force
+echo -e "${GREEN}✅ Database updated${NC}"
 
 # Step 6: Permissions
 echo -e "${YELLOW}🔐 Setting storage permissions...${NC}"

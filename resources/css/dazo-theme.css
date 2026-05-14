@@ -289,6 +289,9 @@ body {
 .gap-8 { gap: 8px; }
 .gap-12 { gap: 12px; }
 .gap-16 { gap: 16px; }
+.gap-20 { gap: 20px; }
+.gap-24 { gap: 24px; }
+.gap-32 { gap: 32px; }
 .mt-4 { margin-top: 4px; }
 .mt-16 { margin-top: 16px; }
 .mt-24 { margin-top: 24px; }

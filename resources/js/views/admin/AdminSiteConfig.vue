@@ -812,7 +812,9 @@ const pagesList = [
 
 const emailList = [
   { key: 'new_decision', label: 'Nouvelle proposition', icon: 'fa-solid fa-plus-circle', help: 'Variables : {name}, {title}, {phase}, {url}' },
+  { key: 'new_version', label: 'Nouvelle version (Révision)', icon: 'fa-solid fa-code-revision', help: 'Variables : {name}, {title}, {url}' },
   { key: 'phase_change', label: 'Changement de phase', icon: 'fa-solid fa-sync', help: 'Variables : {name}, {title}, {phase}, {url}' },
+  { key: 'feedback', label: 'Nouveau feedback / Mention', icon: 'fa-solid fa-at', help: 'Variables : {name}, {title}, {message}, {url}' },
   { key: 'reminder', label: 'Rappel d\'échéance', icon: 'fa-solid fa-clock', help: 'Variables : {name}, {title}, {phase}, {deadline}, {url}' },
   { key: 'decision_adopted', label: 'Décision adoptée', icon: 'fa-solid fa-check-circle', help: 'Variables : {name}, {title}, {url}' },
   { key: 'decision_rejected', label: 'Décision rejetée', icon: 'fa-solid fa-times-circle', help: 'Variables : {name}, {title}, {url}' },

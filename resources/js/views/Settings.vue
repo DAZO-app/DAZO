@@ -373,9 +373,23 @@
               </div>
             </div>
             <div class="pc-body p-24">
-              <div class="alert alert-info mb-32">
-                <i class="fa-solid fa-lightbulb mr-12"></i>
-                <span><strong>Conseil :</strong> Les notifications <strong>Web (Push)</strong> sont recommandées pour une meilleure réactivité.</span>
+              <div class="alert alert-info mb-32 flex items-center justify-between">
+                <div class="flex items-center">
+                  <i class="fa-solid fa-lightbulb mr-12 text-xl"></i>
+                  <div>
+                    <div class="font-bold">Conseil : Notifications Push</div>
+                    <div class="text-sm opacity-90">Activez les notifications pour être alerté en temps réel même sans ouvrir vos emails.</div>
+                  </div>
+                </div>
+                <div class="flex gap-12">
+                  <button @click="requestPushPermission" class="btn btn-sm btn-white" :disabled="pushPermission === 'granted'">
+                    <i class="fa-solid" :class="pushPermission === 'granted' ? 'fa-check text-teal-500' : 'fa-bell'"></i>
+                    {{ pushPermission === 'granted' ? 'Autorisé' : 'Autoriser le navigateur' }}
+                  </button>
+                  <button @click="sendTestPush" class="btn btn-sm btn-indigo" :disabled="pushPermission !== 'granted'">
+                    <i class="fa-solid fa-paper-plane"></i> Envoyer un test
+                  </button>
+                </div>
               </div>
 
               <div v-if="notifSuccessMsg" class="alert alert-success mb-24">{{ notifSuccessMsg }}</div>
@@ -385,8 +399,8 @@
                   <thead>
                     <tr>
                       <th>Événement</th>
-                      <th class="text-center">Email</th>
-                      <th class="text-center">Push / Web</th>
+                      <th class="text-center" style="width: 100px;">Email</th>
+                      <th class="text-center" style="width: 100px;">Web / Push</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -414,11 +428,12 @@
                 </table>
               </div>
 
-              <div class="pt-24 border-top mt-24">
+              <div class="pt-24 border-top mt-24 flex items-center justify-between">
                 <button @click="saveNotificationPrefs" class="btn btn-primary btn-lg" :disabled="notifLoading">
-                  <i class="fa-solid fa-bell mr-8"></i>
+                  <i class="fa-solid fa-check-double mr-8"></i>
                   {{ notifLoading ? 'Enregistrement...' : 'Enregistrer mes préférences' }}
                 </button>
+                <p class="text-xs text-muted italic">Les changements s'appliquent immédiatement aux futurs événements.</p>
               </div>
             </div>
           </div>
@@ -695,8 +710,12 @@ const initializeWidgets = (savedWidgets) => {
 const notifCategories = [
   { id: 'new_decision', label: 'Nouvelles décisions', icon: 'fa-solid fa-plus-circle', desc: 'Lorsqu\'une décision est créée dans l\'un de vos cercles.' },
   { id: 'phase_change', label: 'Changements de phase', icon: 'fa-solid fa-forward-step', desc: 'Dès qu\'une décision à laquelle vous participez change d\'étape.' },
+  { id: 'revision', label: 'Révisions & Nouvelles versions', icon: 'fa-solid fa-code-revision', desc: 'Lorsqu\'un auteur publie une nouvelle version d\'une proposition.' },
   { id: 'feedback', label: 'Messages & Mentions', icon: 'fa-solid fa-at', desc: 'Nouveau commentaire, feedback ou mention vous concernant.' },
-  { id: 'deadline', label: 'Échéances proches', icon: 'fa-solid fa-clock-rotate-left', desc: 'Alertes de rappel avant la fin d\'une phase (24h avant).' },
+  { id: 'deadline', label: 'Échéances proches (Rappels)', icon: 'fa-solid fa-clock-rotate-left', desc: 'Alertes de rappel avant la fin d\'une phase (24h avant).' },
+  { id: 'decision_adopted', label: 'Décisions adoptées', icon: 'fa-solid fa-check-circle', desc: 'Dès qu\'une proposition est officiellement validée.' },
+  { id: 'decision_rejected', label: 'Décisions refusées', icon: 'fa-solid fa-times-circle', desc: 'Lorsqu\'une proposition est abandonnée ou rejetée.' },
+  { id: 'system', label: 'Invitations & Système', icon: 'fa-solid fa-envelope-open-text', desc: 'Invitations à rejoindre des cercles et messages de sécurité.' },
 ];
 
 const viewOptions = [
@@ -721,6 +740,27 @@ notifCategories.forEach(c => {
 
 const notifLoading = ref(false);
 const notifSuccessMsg = ref('');
+
+const pushPermission = ref(Notification.permission);
+
+const requestPushPermission = async () => {
+  const result = await Notification.requestPermission();
+  pushPermission.value = result;
+  if (result === 'granted') {
+    new Notification("DAZO — Notifications activées", {
+      body: "Vous recevrez désormais des alertes directement sur votre bureau.",
+      icon: "/favicon.ico"
+    });
+  }
+};
+
+const sendTestPush = () => {
+  if (pushPermission.value !== 'granted') return;
+  new Notification("DAZO — Test de notification", {
+    body: "Ceci est une notification de test pour vérifier le bon fonctionnement.",
+    icon: "/favicon.ico"
+  });
+};
 
 // -- Custom Views state --
 const defaultCustomViewForm = () => ({

@@ -71,32 +71,12 @@ Actuellement `get()` sans limite. À remplacer par `paginate(20)` avec curseur.
 
 ---
 
-## 🟡 Amélioration (qualité)
+## 🟡 Amélioration (qualité) — TERMINÉ ✅
 
-### Optimistic UI — Checklist composants concernés
-
-| Composant | Action | Status |
-|---|---|---|
-| `DecisionDetail.vue` | Toggle favori | ✅ Fait (store) |
-| `FeedbackEngine.vue` | "C'est clair" / "Plus d'objection" | ⬜ À faire |
-| `ParticipationPanel` | Vote consentement | ⬜ À faire |
-| `FeedbackEngine.vue` | Envoi message dans thread | ⬜ À faire |
-
-### Tests à ajouter
-
-| Fichier | Tests manquants |
-|---|---|
-| `DecisionService` | `transition()` — transitions invalides, droits manquants |
-| `NotificationService` | Respect des préférences par décision |
-| `PendingItemsController` | Tests de cohérence items/compteurs |
-| `HasUserActionStatus` | Trait avec données en mémoire vs requêtes |
-| `AttachmentController` | Type MIME conforme vs déclaré (magic bytes) |
-
-### Gestion d'erreurs cohérente
-Créer un `Handler` API uniforme qui formate tous les erreurs Laravel (validation, auth, 404...) en JSON standardisé :
-```json
-{ "message": "...", "errors": { "field": ["msg"] }, "code": "VALIDATION_ERROR" }
-```
+- [x] **Refonte Admin Server** : Modernisation des tuiles statistiques (UI Premium).
+- [x] **Dashboard Quick Actions** : Redesign en mode "Bento Grid" centré.
+- [x] **Fix Layout Logs** : Passage en plein bloc pour le journal d'audit.
+- [x] **Personnalisation Dashboard** : Support du redimensionnement (drag-to-resize) et couleurs de catégories.
 
 ---
 

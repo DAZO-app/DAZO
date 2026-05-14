@@ -6,9 +6,10 @@ Ce document répertorie les axes d'amélioration identifiés pour faire passer D
 
 ## 🔝 Priorité 1 : Sécurité & Observabilité (Indispensable)
 
-### 1. Audit Logs (Journal d'activité structuré)
+### 1. Audit Logs (Journal d'activité structuré) — TERMINÉ ✅
 - **Description** : Création d'une table `activity_logs` enregistrant qui a fait quoi, quand et sur quelle ressource (Décisions, Cercles, Config).
 - **Valeur** : Traçabilité totale, indispensable pour la responsabilité en gouvernance.
+- **Détails** : Affichage plein bloc avec pagination, recherche par utilisateur et type d'événement.
 - **Complexité** : 4/10
 - **Priorité** : Urgente
 
@@ -81,11 +82,27 @@ Ce document répertorie les axes d'amélioration identifiés pour faire passer D
 
 ---
 
+## 🟢 Améliorations Terminées ✅
+
+### 11. Refonte Admin Server
+- **Description** : Modernisation des tuiles statistiques avec dégradés et icônes spécifiques pour CPU, RAM et Disque.
+- **Valeur** : Meilleure lisibilité et esthétique premium.
+
+### 12. Dashboard Quick Actions
+- **Description** : Redesign du bloc d'actions rapides en grille de cartes centrées ("Bento Grid").
+- **Valeur** : Navigation plus intuitive et moderne.
+
+### 13. Personnalisation Dashboard Utilisateur
+- **Description** : Support du redimensionnement (drag-to-resize) et gestion des couleurs de catégories personnalisées.
+- **Valeur** : Expérience utilisateur personnalisée et cohérente avec le branding.
+
+---
+
 ## Synthèse des efforts
 
 | Sujet | Priorité | Complexité | Estimation temps |
 | :--- | :---: | :---: | :---: |
-| **Audit Logs** | 🔴 | 4/10 | 2-3 jours |
+| **Audit Logs** | ✅ | 4/10 | TERMINÉ |
 | **Monitoring (Sentry)** | 🔴 | 2/10 | 0.5 jour |
 | **Tests / CI/CD** | 🟠 | 6/10 | 5 jours |
 | **2FA** | 🟠 | 5/10 | 3 jours |

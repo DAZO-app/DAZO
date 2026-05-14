@@ -502,6 +502,7 @@ class AdminToolController extends Controller
             $query->where('auditable_type', 'like', '%' . $request->resource_type . '%');
         }
 
-        return response()->json($query->paginate(50));
+        $perPage = $request->input('per_page', 50);
+        return response()->json($query->paginate($perPage));
     }
 }

@@ -18,16 +18,23 @@
       </div>
 
       <!-- RESOURCE GAUGES -->
-      <div class="stats-grid mt-32 mb-32">
-        <div class="stat-card" v-for="g in gauges" :key="g.label">
-            <div class="gauge-header">
-                <span class="stat-label">{{ g.label }}</span>
-                <span class="stat-value" :class="g.statusClass">{{ g.value }}%</span>
+      <div class="stats-row mt-32 mb-32">
+        <div class="stat-card-premium" v-for="g in gauges" :key="g.label" :class="getGaugeClass(g.label)">
+            <div class="stat-icon-part">
+                <div class="stat-icon-wrap">
+                    <i :class="getGaugeIcon(g.label)"></i>
+                </div>
             </div>
-            <div class="gauge-bar-bg">
-                <div class="gauge-bar-fill" :style="{ width: g.value + '%' }" :class="g.statusClass"></div>
+            <div class="stat-info-part">
+                <div class="stat-header-flex">
+                    <span class="stat-label-p">{{ g.label }}</span>
+                    <span class="stat-value-p" :class="g.statusClass">{{ g.value }}%</span>
+                </div>
+                <div class="gauge-bar-bg-p">
+                    <div class="gauge-bar-fill-p" :style="{ width: g.value + '%' }" :class="g.statusClass"></div>
+                </div>
+                <div class="stat-footer-p">{{ g.detail }}</div>
             </div>
-            <div class="stat-footer">{{ g.detail }}</div>
         </div>
       </div>
 
@@ -207,6 +214,20 @@ const folders = ref([
     { path: '/storage/framework', perm: '775', status: 'ok' },
     { path: '/bootstrap/cache', perm: '775', status: 'ok' },
 ]);
+
+const getGaugeClass = (label) => {
+    if (label.includes('CPU')) return 'v-cpu';
+    if (label.includes('RAM') || label.includes('Mémoire')) return 'v-ram';
+    if (label.includes('Disque')) return 'v-disk';
+    return '';
+};
+
+const getGaugeIcon = (label) => {
+    if (label.includes('CPU')) return 'fa-solid fa-microchip';
+    if (label.includes('RAM') || label.includes('Mémoire')) return 'fa-solid fa-memory';
+    if (label.includes('Disque')) return 'fa-solid fa-hard-drive';
+    return 'fa-solid fa-gauge-high';
+};
 </script>
 
 <style scoped>
@@ -219,22 +240,36 @@ const folders = ref([
 
 .uptime-pill { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 50px; font-size: 13px; color: white; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
 
-/* GAUGES */
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-.stat-card { background: white; border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-md); border: 1px solid var(--gray-100); }
-.gauge-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
-.stat-label { font-size: 13px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em; }
-.stat-value { font-size: 28px; font-weight: 800; }
-.stat-value.ok { color: var(--teal-600); }
-.stat-value.warn { color: #f59e0b; }
-.stat-value.err { color: #ef4444; }
+/* PREMIUM GAUGES */
+.stats-row { display: flex; gap: 20px; flex-wrap: wrap; }
+.stat-card-premium {
+  flex: 1; min-width: 300px; border-radius: 16px; padding: 24px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative; overflow: hidden; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1);
+}
+.stat-card-premium:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
+.stat-card-premium.v-cpu  { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+.stat-card-premium.v-ram  { background: linear-gradient(135deg, #4338ca, #6366f1); }
+.stat-card-premium.v-disk { background: linear-gradient(135deg, #0d9488, #14b8a6); }
 
-.gauge-bar-bg { height: 10px; background: var(--gray-100); border-radius: 5px; overflow: hidden; margin-bottom: 12px; }
-.gauge-bar-fill { height: 100%; border-radius: 5px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-.gauge-bar-fill.ok { background: linear-gradient(90deg, var(--teal-400), var(--teal-600)); }
-.gauge-bar-fill.warn { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-.gauge-bar-fill.err { background: linear-gradient(90deg, #f87171, #ef4444); }
-.stat-footer { font-size: 11px; color: var(--gray-400); font-weight: 500; }
+.stat-icon-part { flex: 0 0 80px; }
+.stat-icon-wrap { 
+  width: 60px; height: 60px; background: rgba(255,255,255,0.15); border-radius: 18px; 
+  display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; 
+  border: 1px solid rgba(255,255,255,0.25); 
+}
+
+.stat-info-part { flex: 1; display: flex; flex-direction: column; }
+.stat-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.stat-label-p { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 0.1em; }
+.stat-value-p { font-size: 24px; font-weight: 800; color: white; }
+
+.gauge-bar-bg-p { height: 8px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.gauge-bar-fill-p { height: 100%; border-radius: 4px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); background: white; }
+.gauge-bar-fill-p.warn { background: #fbbf24; }
+.gauge-bar-fill-p.err { background: #f87171; }
+
+.stat-footer-p { font-size: 10px; color: rgba(255,255,255,0.6); font-weight: 600; font-family: var(--font-mono); }
 
 /* HEALTH LIST */
 .health-checklist { display: flex; flex-direction: column; }

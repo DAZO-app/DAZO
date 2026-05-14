@@ -12,11 +12,14 @@ echo -e "${YELLOW}🚀 Starting DAZO Installation...${NC}"
 
 # Check System Dependencies
 echo -e "${YELLOW}🔍 Checking system dependencies...${NC}"
-for cmd in docker zip; do
+for cmd in docker zip python3; do
     if ! command -v $cmd &> /dev/null; then
         echo -e "${RED}❌ Error: $cmd is not installed. Please install it before proceeding.${NC}"
         if [ "$cmd" == "zip" ]; then
             echo -e "${YELLOW}💡 Tip: You can install zip using: sudo apt install zip${NC}"
+        fi
+        if [ "$cmd" == "python3" ]; then
+            echo -e "${YELLOW}💡 Tip: You can install python3 using: sudo apt install python3${NC}"
         fi
         exit 1
     fi
@@ -71,6 +74,7 @@ echo -e "${GREEN}✅ Storage link and atomic slots created${NC}"
 
 # Step 7: Permissions
 echo -e "${YELLOW}🔐 Setting storage permissions...${NC}"
+docker compose exec app mkdir -p storage/app/private/attachments/seed-pool
 docker compose exec app chown -R www-data:www-data storage bootstrap/cache
 echo -e "${GREEN}✅ Permissions set${NC}"
 

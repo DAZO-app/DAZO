@@ -17,6 +17,8 @@ Ces scripts sont conçus pour simplifier la gestion, le déploiement et la maint
 | `dazo-refresh.sh` | Rafraîchissement complet local | Purger caches, permissions et build (HMR bloqué) |
 | `dazo-rollback.sh` | Retour à la version précédente (Git) | En cas d'erreur critique après mise à jour |
 | `dazo-diag-storage.sh` | Diagnostic spécifique Stockage / Branding | En cas de logos ou pièces jointes invisibles |
+| `dazo-seed-full.sh` | Seeder full simulation | Générer ou vérifier les données massives de test |
+| `dazo-generate-fake-attachments.sh` | Générateur de PJ texte | Préparer un pool de pièces jointes pour le full seeder |
 
 ---
 
@@ -137,6 +139,29 @@ Ce script permet de gérer l'espace disque occupé par les sauvegardes automatiq
 ./dazo-cleanDBbackup.sh
 ```
 
+### 10. Seeder Full Simulation (`dazo-seed-full.sh`)
+Ce script pilote le seeder massif de démonstration `FullSimulationSeeder`.
+
+**Options disponibles :**
+- `./dazo-seed-full.sh --full` : lance uniquement `php artisan db:seed --class=FullSimulationSeeder`.
+- `./dazo-seed-full.sh --fresh --full` : réinitialise la base avec `migrate:fresh`, puis lance le seeder full simulation.
+- `./dazo-seed-full.sh --fresh --full --summary` : reset, seed, puis affiche les volumes principaux.
+- `./dazo-seed-full.sh --attachments --fresh --full --summary` : génère le pool de PJ texte, reset, seed, puis affiche le résumé.
+- `./dazo-seed-full.sh --summary` : affiche uniquement un résumé des volumes.
+- `./dazo-seed-full.sh` : ouvre un menu interactif.
+
+Le full seeder lit les pièces jointes dans `storage/app/private/attachments/seed-pool`.
+
+### 11. Générateur de Pièces Jointes Texte (`dazo-generate-fake-attachments.sh`)
+Ce script génère un stock de fichiers texte simples (`.txt`, `.md`, `.csv`, `.json`) utilisables par `FullSimulationSeeder`.
+
+**Commandes utiles :**
+- `./dazo-generate-fake-attachments.sh` : génère 80 fichiers dans `storage/app/private/attachments/seed-pool`.
+- `./dazo-generate-fake-attachments.sh --count 120 --clean` : vide le pool puis génère 120 fichiers.
+- `./dazo-generate-fake-attachments.sh --out ./storage/app/private/attachments/seed-pool` : choisit explicitement le dossier de sortie.
+
+Ces fichiers sont stockés sur le disque Laravel `local`, afin que les téléchargements passent par `Storage::disk('local')`.
+
 ```bash
 chmod +x dazo-*.sh
 ```
@@ -145,6 +170,7 @@ chmod +x dazo-*.sh
 Pour le bon fonctionnement des scripts et des tâches automatisées, les éléments suivants doivent être installés sur la machine hôte :
 - **Docker & Docker Compose** : Pour l'orchestration des containers.
 - **zip** : Indispensable pour la génération des sauvegardes de fichiers (attachments).
+- **python3** : Utilisé par `dazo-generate-fake-attachments.sh` pour générer le pool de PJ texte.
 - **Crontab** : Pour l'exécution du planificateur Laravel.
 
 ## 💾 Structure des Sauvegardes

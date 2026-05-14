@@ -11,4 +11,6 @@ enum NotificationCategory: string
     case FEEDBACK = 'feedback';
     case MENTION = 'mention';
     case SYSTEM = 'system';
+    case ADOPTED = 'decision_adopted';
+    case REJECTED = 'decision_rejected';
 }
