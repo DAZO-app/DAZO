@@ -70,6 +70,80 @@
               </div>
             </div>
           </div>
+          
+          <!-- SECTION AUTORISATION ACCES -->
+          <div v-if="activeSection === 'api_access'" class="premium-card animate-fade-in">
+            <div class="pc-header pc-header-blue">
+              <div class="pc-header-icon"><i class="fa-solid fa-shield-halved"></i></div>
+              <div class="pc-header-content">
+                <div class="pc-header-title">Autorisation d'accès</div>
+                <div class="pc-header-sub">Définissez les périmètres de données accessibles via l'API</div>
+              </div>
+            </div>
+            <div class="pc-body p-24">
+              <p class="help-text mb-24">Ces paramètres contrôlent quelles données sont retournées par l'API publique. Les décisions privées restent inaccessibles par défaut.</p>
+
+              <!-- CERCLES -->
+              <div class="form-group mb-32">
+                <label class="config-label">Cercles autorisés</label>
+                <p class="help-text mb-16">Seules les décisions rattachées à ces cercles (et marquées publiques) seront exposées.</p>
+                <div class="selection-chips">
+                  <label v-for="circle in circles" :key="circle.id" class="chip-item">
+                    <input type="checkbox" :value="circle.id" v-model="config.api_circles">
+                    <div class="chip-content">
+                      <i class="fa-solid fa-users-gear"></i>
+                      <span>{{ circle.name }}</span>
+                    </div>
+                  </label>
+                  <div v-if="circles.length === 0" class="text-muted p-16 text-xs italic">Aucun cercle trouvé.</div>
+                </div>
+                <div class="config-key">variable : <code>api_circles</code></div>
+              </div>
+
+              <!-- CATEGORIES -->
+              <div class="form-group mb-32">
+                <label class="config-label">Catégories autorisées</label>
+                <p class="help-text mb-16">Seules les décisions rattachées à ces catégories pourront être exposées via l'API.</p>
+                <div class="selection-chips">
+                  <label v-for="cat in categories" :key="cat.id" class="chip-item">
+                    <input type="checkbox" :value="cat.id" v-model="config.api_categories">
+                    <div class="chip-content">
+                      <i class="fa-solid fa-tag"></i>
+                      <span>{{ cat.name }}</span>
+                    </div>
+                  </label>
+                  <div v-if="categories.length === 0" class="text-muted p-16 text-xs italic">Aucune catégorie trouvée.</div>
+                </div>
+                <div class="config-key">variable : <code>api_categories</code></div>
+              </div>
+
+              <!-- STATUTS -->
+              <div class="form-group">
+                <label class="config-label">Statuts exposés</label>
+                <p class="help-text mb-16">Définissez quels statuts de décisions sont consultables en externe.</p>
+                <div class="selection-chips">
+                  <label v-for="status in availableStatuses" :key="status.value" class="chip-item">
+                    <input type="checkbox" :value="status.value" v-model="config.api_statuses">
+                    <div class="chip-badge" 
+                         :style="{ 
+                           color: status.defaultPrimary,
+                           backgroundColor: status.defaultSecondary
+                         }">
+                      <i class="fa-solid fa-circle-check"></i>
+                      <span>{{ status.label }}</span>
+                    </div>
+                  </label>
+                </div>
+                <div class="config-key">variable : <code>api_statuses</code></div>
+              </div>
+
+            </div>
+            <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
+              <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
+                <i class="fa-solid fa-check mr-8"></i> Enregistrer Autorisations
+              </button>
+            </div>
+          </div>
 
           <!-- SECTION FILTRES API -->
           <div v-if="activeSection === 'api_filters'" class="premium-card animate-fade-in">
@@ -84,11 +158,11 @@
               <p class="help-text mb-24">Activez les paramètres de filtrage que les clients externes pourront utiliser sur l'endpoint public.</p>
               <div class="checkbox-list inline-list">
                 <label v-for="filter in availableFilters" :key="filter.value" class="checkbox-item">
-                  <input type="checkbox" :value="filter.value" v-model="config.public_filters">
+                  <input type="checkbox" :value="filter.value" v-model="config.api_filters">
                   <span>{{ filter.label }} (<code>?{{ filter.value }}=...</code>)</span>
                 </label>
               </div>
-              <div class="config-key mt-16">variable : <code>public_filters</code></div>
+              <div class="config-key mt-16">variable : <code>api_filters</code></div>
             </div>
             <div class="pc-footer bg-gray-50 border-top p-16 flex justify-end">
               <button class="btn btn-primary shadow-blue" @click="saveConfig" :disabled="saving">
@@ -207,10 +281,10 @@ import axios from 'axios';
 
 const config = ref({
   public_api_key: '',
-  public_circles: [],
-  public_categories: [],
-  public_statuses: [],
-  public_filters: []
+  api_circles: [],
+  api_categories: [],
+  api_statuses: [],
+  api_filters: []
 });
 
 const circles = ref([]);
@@ -238,20 +312,21 @@ const copySnippet = () => {
 
 const sections = [
   { id: 'api_key', label: 'Clé API', icon: 'fa-solid fa-key' },
+  { id: 'api_access', label: 'Autorisation d\'accès', icon: 'fa-solid fa-shield-halved' },
   { id: 'api_filters', label: 'Filtres API', icon: 'fa-solid fa-sliders' },
   { id: 'snippet', label: 'Snippet Generator', icon: 'fa-solid fa-code' },
 ];
 
 const availableStatuses = [
-  { value: 'draft', label: 'Brouillon' },
-  { value: 'clarification', label: 'Clarification' },
-  { value: 'reaction', label: 'Réaction' },
-  { value: 'objection', label: 'Objection' },
-  { value: 'revision', label: 'En Révision' },
-  { value: 'adopted', label: 'Adoptée' },
-  { value: 'suspended', label: 'Suspendue' },
-  { value: 'abandoned', label: 'Abandonnée' },
-  { value: 'rejected', label: 'Rejetée' },
+  { value: 'draft', label: 'Brouillon', defaultPrimary: '#64748b', defaultSecondary: '#f1f5f9' },
+  { value: 'clarification', label: 'Clarification', defaultPrimary: '#f59e0b', defaultSecondary: '#fffbeb' },
+  { value: 'reaction', label: 'Réaction', defaultPrimary: '#3b82f6', defaultSecondary: '#eff6ff' },
+  { value: 'objection', label: 'Objection', defaultPrimary: '#ef4444', defaultSecondary: '#fef2f2' },
+  { value: 'revision', label: 'En Révision', defaultPrimary: '#8b5cf6', defaultSecondary: '#f5f3ff' },
+  { value: 'adopted', label: 'Adoptée', defaultPrimary: '#10b981', defaultSecondary: '#ecfdf5' },
+  { value: 'suspended', label: 'Suspendue', defaultPrimary: '#6366f1', defaultSecondary: '#eef2ff' },
+  { value: 'abandoned', label: 'Abandonnée', defaultPrimary: '#94a3b8', defaultSecondary: '#f8fafc' },
+  { value: 'rejected', label: 'Rejetée', defaultPrimary: '#475569', defaultSecondary: '#f1f5f9' },
 ];
 
 const availableFilters = [
@@ -264,10 +339,10 @@ const availableFilters = [
 
 const mapConfig = (data) => ({
   public_api_key: data.public_api_key || '',
-  public_circles: Array.isArray(data.public_circles) ? data.public_circles : [],
-  public_categories: Array.isArray(data.public_categories) ? data.public_categories : [],
-  public_statuses: Array.isArray(data.public_statuses) ? data.public_statuses : [],
-  public_filters: Array.isArray(data.public_filters) ? data.public_filters : [],
+  api_circles: Array.isArray(data.api_circles) ? data.api_circles : [],
+  api_categories: Array.isArray(data.api_categories) ? data.api_categories : [],
+  api_statuses: Array.isArray(data.api_statuses) ? data.api_statuses : [],
+  api_filters: Array.isArray(data.api_filters) ? data.api_filters : [],
 });
 
 const generateApiKey = async () => {
@@ -296,13 +371,13 @@ onMounted(async () => {
   try {
     const [configRes, circlesRes, categoriesRes] = await Promise.all([
       axios.get('/api/v1/admin/config'),
-      axios.get('/api/v1/circles'),
-      axios.get('/api/v1/categories'),
+      axios.get('/api/v1/admin/circles?per_page=100'),
+      axios.get('/api/v1/admin/categories?per_page=100'),
     ]);
     const data = configRes.data.config || configRes.data || {};
     config.value = mapConfig(data);
-    circles.value = circlesRes.data.circles || [];
-    categories.value = categoriesRes.data.categories || [];
+    circles.value = circlesRes.data.data || circlesRes.data.circles || [];
+    categories.value = categoriesRes.data.data || categoriesRes.data.categories || [];
   } catch (e) {
     console.error('Fetch error', e);
   } finally {

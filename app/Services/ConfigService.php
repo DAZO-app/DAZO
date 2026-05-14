@@ -37,7 +37,7 @@ class ConfigService
         }
 
         // Decode JSON arrays for specific keys so the frontend gets arrays
-        $jsonKeys = ['public_circles', 'public_categories', 'public_statuses', 'public_filters'];
+        $jsonKeys = ['public_circles', 'public_categories', 'public_statuses', 'public_filters', 'api_circles', 'api_categories', 'api_statuses', 'api_filters'];
         foreach ($jsonKeys as $key) {
             if (isset($merged[$key]) && is_string($merged[$key])) {
                 $decoded = json_decode($merged[$key], true);
@@ -76,6 +76,10 @@ class ConfigService
             'public_statuses'       => '[]',
             'public_filters'        => '[]',
             'public_api_key'        => '',
+            'api_circles'           => '[]',
+            'api_categories'        => '[]',
+            'api_statuses'          => '[]',
+            'api_filters'           => '[]',
             
             // Pages de contenu (Content stored as HTML)
             'page_legal_content'    => '<h1>Mentions Légales</h1><p>Contenu par défaut à personnaliser...</p>',

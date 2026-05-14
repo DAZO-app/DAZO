@@ -33,8 +33,8 @@ class PublicDecisionController extends Controller
         $perPage = $request->integer('per_page', 20);
         $perPage = min(max($perPage, 5), 100);
 
-        $query = $this->buildBaseQuery();
-        $this->applyFilters($query, $request);
+        $query = $this->buildBaseQuery('front');
+        $this->applyFilters($query, $request, 'front');
         
         $decisions = $query->paginate($perPage);
 
@@ -54,7 +54,7 @@ class PublicDecisionController extends Controller
             abort(404);
         }
 
-        $decision = $this->buildBaseQuery()
+        $decision = $this->buildBaseQuery('front')
                          ->with([
                              'versions.attachments',
                              'versions.feedbacks.author:id,name',
@@ -103,7 +103,7 @@ class PublicDecisionController extends Controller
             return response()->json(['results' => []]);
         }
 
-        $baseQuery = $this->buildBaseQuery();
+        $baseQuery = $this->buildBaseQuery('front');
         $termLike = '%' . strtolower($term) . '%';
 
         $results = [];
@@ -196,10 +196,14 @@ class PublicDecisionController extends Controller
      * Apply query filters. All standard filters (search, status, circle, category) are always
      * available on the public front — no gate on public_filters config needed here.
      */
-    private function applyFilters($query, Request $request): void
+    private function applyFilters($query, Request $request, string $context = 'front'): void
     {
+        $prefix = ($context === 'api') ? 'api' : 'public';
+        $allowedFilters = $this->configService->get($prefix . '_filters', []);
+        if (!is_array($allowedFilters)) $allowedFilters = [];
+
         // Texte libre — titre ou auteur
-        if ($request->filled('search')) {
+        if ($request->filled('search') && in_array('search', $allowedFilters)) {
             $searchTerm = '%' . strtolower($request->query('search')) . '%';
             $query->where(function($q) use ($searchTerm) {
                 $q->whereRaw('LOWER(title) LIKE ?', [$searchTerm])
@@ -208,36 +212,36 @@ class PublicDecisionController extends Controller
                          ->whereHas('user', function($q3) use ($searchTerm) {
                              $q3->whereRaw('LOWER(name) LIKE ?', [$searchTerm]);
                          });
-                  });
+                   });
             });
         }
 
         // Phase / statut
-        if ($request->filled('status')) {
+        if ($request->filled('status') && in_array('status', $allowedFilters)) {
             $query->where('status', $request->query('status'));
         }
 
         // Cercle
-        if ($request->filled('circle')) {
+        if ($request->filled('circle') && in_array('circle', $allowedFilters)) {
             $query->where('circle_id', $request->query('circle'));
         }
 
         // Catégorie
-        if ($request->filled('category')) {
+        if ($request->filled('category') && in_array('category', $allowedFilters)) {
             $query->whereHas('categories', function ($q) use ($request) {
                 $q->where('categories.id', $request->query('category'));
             });
         }
 
         // Auteur
-        if ($request->filled('author')) {
+        if ($request->filled('author') && in_array('author', $allowedFilters)) {
             $query->whereHas('participants', function ($q) use ($request) {
                 $q->where('role', 'author')
                   ->where('user_id', $request->query('author'));
             });
         }
 
-        // Date range
+        // Date range (Allowed by default if any filter is allowed, or should it be explicit? Let's keep it simple)
         if ($request->filled('date_start')) {
             $query->whereDate('created_at', '>=', $request->query('date_start'));
         }
@@ -259,8 +263,8 @@ class PublicDecisionController extends Controller
 
     public function index(Request $request): Response|AnonymousResourceCollection
     {
-        $query = $this->buildBaseQuery();
-        $this->applyFilters($query, $request);
+        $query = $this->buildBaseQuery('api');
+        $this->applyFilters($query, $request, 'api');
 
         $perPage = $request->integer('per_page', 20);
         $perPage = min(max($perPage, 5), 100);
@@ -277,7 +281,7 @@ class PublicDecisionController extends Controller
 
     public function show($id): Response|DecisionResource
     {
-        $decision = $this->buildBaseQuery()
+        $decision = $this->buildBaseQuery('api')
                          ->with(['currentVersion', 'categories', 'circle'])
                          ->findOrFail($id);
 
@@ -292,46 +296,48 @@ class PublicDecisionController extends Controller
     /**
      * Build the base query applying the strict publication rules.
      */
-    private function buildBaseQuery()
+    private function buildBaseQuery(string $context = 'front')
     {
         $query = Decision::query()->with(['circle.members.user', 'categories', 'currentVersion', 'author.user', 'currentAnimator.user']);
 
         // Rule 1: Decision itself must be public
         $query->where('visibility', 'public');
 
-        // Extract settings
-        $publicCircles = $this->configService->get('public_circles', []);
-        $publicCategories = $this->configService->get('public_categories', []);
-        $publicStatuses = $this->configService->get('public_statuses', []);
+        // Extract settings based on context
+        $prefix = ($context === 'api') ? 'api' : 'public';
+        
+        $allowedCircles = $this->configService->get($prefix . '_circles', []);
+        $allowedCategories = $this->configService->get($prefix . '_categories', []);
+        $allowedStatuses = $this->configService->get($prefix . '_statuses', []);
 
         // Ensure they are arrays
-        if (!is_array($publicCircles)) $publicCircles = [];
-        if (!is_array($publicCategories)) $publicCategories = [];
-        if (!is_array($publicStatuses)) $publicStatuses = [];
+        if (!is_array($allowedCircles)) $allowedCircles = [];
+        if (!is_array($allowedCategories)) $allowedCategories = [];
+        if (!is_array($allowedStatuses)) $allowedStatuses = [];
 
         // Rule 2: Must belong to an allowed circle
-        if (!empty($publicCircles)) {
-            $query->whereIn('circle_id', $publicCircles);
+        if (!empty($allowedCircles)) {
+            $query->whereIn('circle_id', $allowedCircles);
         } else {
-            \Illuminate\Support\Facades\Log::warning("PublicDecisionController: No public circles configured.");
+            \Illuminate\Support\Facades\Log::warning("PublicDecisionController: No allowed circles configured for $context.");
             $query->whereRaw('1 = 0');
         }
 
         // Rule 3: Must have at least one allowed category
-        if (!empty($publicCategories)) {
-            $query->whereHas('categories', function($q) use ($publicCategories) {
-                $q->whereIn('categories.id', $publicCategories);
+        if (!empty($allowedCategories)) {
+            $query->whereHas('categories', function($q) use ($allowedCategories) {
+                $q->whereIn('categories.id', $allowedCategories);
             });
         } else {
-             \Illuminate\Support\Facades\Log::warning("PublicDecisionController: No public categories configured.");
+             \Illuminate\Support\Facades\Log::warning("PublicDecisionController: No allowed categories configured for $context.");
              $query->whereRaw('1 = 0');
         }
 
         // Rule 4: Must have an allowed status
-        if (!empty($publicStatuses)) {
-            $query->whereIn('status', $publicStatuses);
+        if (!empty($allowedStatuses)) {
+            $query->whereIn('status', $allowedStatuses);
         } else {
-             \Illuminate\Support\Facades\Log::warning("PublicDecisionController: No public statuses configured.");
+             \Illuminate\Support\Facades\Log::warning("PublicDecisionController: No allowed statuses configured for $context.");
              $query->whereRaw('1 = 0');
         }
 
