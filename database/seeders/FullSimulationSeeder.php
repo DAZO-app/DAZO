@@ -1495,7 +1495,7 @@ class FullSimulationSeeder extends Seeder
     private function seedRandomGenerators(): void
     {
         mt_srand(self::RANDOM_SEED);
-        fake()->seed(self::RANDOM_SEED);
+        \fake()->seed(self::RANDOM_SEED);
     }
 
     /**
