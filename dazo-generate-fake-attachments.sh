@@ -69,11 +69,10 @@ if [ "$CLEAN" = true ]; then
     rm -rf "$OUT_DIR"
 fi
 
-mkdir -p "$OUT_DIR"
-
 echo -e "${YELLOW}📎 Génération de $COUNT pièces jointes texte dans : $OUT_DIR${NC}"
 
-python3 - "$COUNT" "$OUT_DIR" <<'PYEOF'
+# On exécute la génération via Docker pour éviter les problèmes de permissions hôte/container
+docker compose exec -T app python3 - "$COUNT" "$OUT_DIR" <<'PYEOF'
 import csv
 import json
 import os
@@ -82,6 +81,9 @@ from datetime import datetime, timedelta
 
 count = int(sys.argv[1])
 out_dir = sys.argv[2]
+
+# On s'assure que le dossier existe avec les bons droits (exécuté dans le container)
+os.makedirs(out_dir, exist_ok=True)
 
 subjects = [
     "analyse-impact",
@@ -178,7 +180,7 @@ PYEOF
 echo ""
 echo -e "${GREEN}✅ Pool de pièces jointes généré.${NC}"
 echo -e "${YELLOW}📁 Dossier : $OUT_DIR${NC}"
-find "$OUT_DIR" -maxdepth 1 -type f | awk -F'.' '{print $NF}' | sort | uniq -c | awk '{printf "   %-6s : %s fichier(s)\n", $2, $1}'
+docker compose exec app ls "$OUT_DIR" | awk -F'.' '{print $NF}' | sort | uniq -c | awk '{printf "   %-6s : %s fichier(s)\n", $2, $1}'
 
 if [ "$RETURN_MENU" = true ]; then
     echo -e "\n${YELLOW}Appuyez sur Entrée pour revenir au menu...${NC}"

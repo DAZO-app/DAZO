@@ -24,7 +24,8 @@ RUN apk add --no-cache \
     libzip-dev \
     oniguruma-dev \
     nodejs \
-    npm
+    npm \
+    python3
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql mbstring bcmath zip xml gd

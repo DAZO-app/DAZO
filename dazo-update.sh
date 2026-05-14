@@ -53,8 +53,10 @@ docker compose exec app php artisan db:seed --class=WikiPageSeeder --force
 echo -e "${GREEN}✅ Database updated${NC}"
 
 # Step 6: Permissions
-echo -e "${YELLOW}🔐 Setting storage permissions...${NC}"
+echo -e "${YELLOW}🔐 Resetting permissions...${NC}"
+docker compose exec app mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views storage/app/public/branding storage/app/private/attachments/seed-pool bootstrap/cache
 docker compose exec app chown -R www-data:www-data storage bootstrap/cache
+docker compose exec app chmod -R 775 storage bootstrap/cache
 echo -e "${GREEN}✅ Permissions set${NC}"
 
 # Step 7: Storage Link

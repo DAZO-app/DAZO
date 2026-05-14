@@ -17,10 +17,12 @@ if ! docker compose ps | grep -q "Up"; then
     exit 1
 fi
 
-# 2. Check Storage Permissions
-echo -e "${YELLOW}📁 Checking internal storage permissions...${NC}"
-docker compose exec app ls -ld storage storage/app/private storage/app/public bootstrap/cache
-echo -e "${GREEN}✅ Base directories exist.${NC}"
+# 2. Check and Fix Storage Permissions
+echo -e "${YELLOW}📁 Checking and fixing internal storage permissions...${NC}"
+docker compose exec app mkdir -p storage/app/private/attachments/seed-pool
+docker compose exec app chown -R www-data:www-data storage bootstrap/cache
+docker compose exec app ls -ld storage storage/app/private storage/app/private/attachments/seed-pool bootstrap/cache
+echo -e "${GREEN}✅ Base directories exist and permissions fixed.${NC}"
 
 # 3. Check for the public/storage symbolic link
 echo -e "${YELLOW}🔗 Checking public/storage symbolic link...${NC}"

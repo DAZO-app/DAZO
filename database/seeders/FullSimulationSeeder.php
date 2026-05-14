@@ -1327,6 +1327,23 @@ class FullSimulationSeeder extends Seeder
 
     private function seedUsers(): Collection
     {
+        $users = collect();
+
+        // On s'assure d'avoir toujours le compte admin principal
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@dazo.test'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'role' => UserRole::SUPERADMIN,
+                'is_active' => true,
+                'is_global_animator' => true,
+                'dashboard_widgets' => ['admin_health', 'activity_feed', 'my_actions', 'recent_decisions'],
+            ]
+        );
+        $users->push($admin);
+
         $names = [
             'Alice Durand',
             'Hugo Bernard',
@@ -1380,10 +1397,8 @@ class FullSimulationSeeder extends Seeder
             'Fatou Diop',
         ];
 
-        $users = collect();
-
-        foreach (array_slice($names, 0, self::CONFIG['user_count']) as $index => $name) {
-            $number = $index + 1;
+        foreach (array_slice($names, 0, self::CONFIG['user_count'] - 1) as $index => $name) {
+            $number = $index + 2; // On commence à 2 car l'admin est le 1
             $role = match (true) {
                 $number === 1 => UserRole::SUPERADMIN,
                 $number <= 5 => UserRole::ADMIN,
