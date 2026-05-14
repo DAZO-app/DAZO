@@ -17,6 +17,7 @@ for cmd in docker zip; do
         echo -e "${GREEN}✅ $cmd is installed${NC}"
     else
         echo -e "${RED}❌ $cmd is MISSING${NC}"
+        echo -e "${YELLOW}💡 Fix: sudo apt update && sudo apt install -y $cmd${NC}"
     fi
 done
 if [ ! -f .env ]; then

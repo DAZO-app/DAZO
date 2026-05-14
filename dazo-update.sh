@@ -14,6 +14,14 @@ TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
 echo -e "${YELLOW}🔄 Starting DAZO Update Process...${NC}"
 
+# Ensure basic system dependencies are present
+for cmd in zip; do
+    if ! command -v $cmd &> /dev/null; then
+        echo -e "${YELLOW}⚠️  $cmd is missing. Attempting to install...${NC}"
+        sudo apt update && sudo apt install -y $cmd
+    fi
+done
+
 # Load environment variables from .env
 if [ -f .env ]; then
     export $(grep -v '^#' .env | xargs)
@@ -34,7 +42,12 @@ git log HEAD..origin/main --oneline
 git pull origin main
 echo -e "${GREEN}✅ Code updated${NC}"
 
-# Step 3: Composer Install
+# Step 3: Rebuild Containers (if Dockerfile changed)
+echo -e "${YELLOW}🐳 Checking for environment changes...${NC}"
+docker compose up -d --build app
+echo -e "${GREEN}✅ Environment ready${NC}"
+
+# Step 4: Composer Install
 echo -e "${YELLOW}🐘 Updating PHP dependencies...${NC}"
 docker compose exec app composer install --no-dev --optimize-autoloader
 echo -e "${GREEN}✅ PHP dependencies updated${NC}"

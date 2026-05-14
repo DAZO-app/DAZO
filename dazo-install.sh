@@ -14,14 +14,15 @@ echo -e "${YELLOW}🚀 Starting DAZO Installation...${NC}"
 echo -e "${YELLOW}🔍 Checking system dependencies...${NC}"
 for cmd in docker zip python3; do
     if ! command -v $cmd &> /dev/null; then
-        echo -e "${RED}❌ Error: $cmd is not installed. Please install it before proceeding.${NC}"
+        echo -e "${YELLOW}⚠️  $cmd is missing. Attempting to install...${NC}"
         if [ "$cmd" == "zip" ]; then
-            echo -e "${YELLOW}💡 Tip: You can install zip using: sudo apt install zip${NC}"
+            sudo apt update && sudo apt install -y zip
+        elif [ "$cmd" == "python3" ]; then
+            sudo apt update && sudo apt install -y python3
+        elif [ "$cmd" == "docker" ]; then
+            echo -e "${RED}❌ Docker is missing. Please install Docker and Docker Compose before running this script.${NC}"
+            exit 1
         fi
-        if [ "$cmd" == "python3" ]; then
-            echo -e "${YELLOW}💡 Tip: You can install python3 using: sudo apt install python3${NC}"
-        fi
-        exit 1
     fi
 done
 echo -e "${GREEN}✅ System dependencies ok${NC}"
