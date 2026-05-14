@@ -14,10 +14,10 @@
         "laravel/tinker": "^3.0",
         "socialiteproviders/apple": "^5.10",
         "socialiteproviders/franceconnect": "^4.1",
-        "socialiteproviders/microsoft": "^4.9"
+        "socialiteproviders/microsoft": "^4.9",
+        "fakerphp/faker": "^1.23"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.23",
         "laravel/pail": "^1.2.5",
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
